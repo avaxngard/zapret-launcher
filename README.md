@@ -8,7 +8,7 @@
 > По возможности проверьте файлы через [**VirusTotal**](https://www.virustotal.com/gui/home/upload)
 
 # Установка
-- Скачайте инсталлятор с [**официального сайта**](https://zapret-launcher.ru/#download) или [**страницы релизов**](https://gitlab.com/tweenkrage/zapret-launcher/-/releases)
+- Скачайте инсталлятор с [**официального сайта**](https://zapret-launcher.ru/#download) или [**страницы релизов**](https://github.com/avaxngard/zapret-launcher/releases/latest)
 - Установите лаунчер и его компоненты
 - Запустите и пользуйтесь
 
