@@ -4,7 +4,7 @@
 Внутри имеется встроенный **tg-ws-proxy** и **zapret-discord-youtube** от **Flowseal**, автообновления, постоянная поддержка и быстрая находка неисправностей.
 
 > [!WARNING]
-> Если вы скачали лаунчер с [официального сайта](https://zapret-launcher.ru/) или одного из репозиториев ([**GitHub**](https://github.com/avaxngard/zapret-launcher/), ([**GitLab**](https://gitlab.com/tweenkrage/zapret-launcher/))
+> Если вы скачали лаунчер с [официального сайта](https://zapret-launcher.ru/) или одного из репозиториев ([**GitHub**](https://github.com/avaxngard/zapret-launcher), ([**GitLab**](https://gitlab.com/tweenkrage/zapret-launcher))
 > - По возможности проверьте файлы через [**VirusTotal**](https://www.virustotal.com/gui/home/upload)
 
 # Установка
