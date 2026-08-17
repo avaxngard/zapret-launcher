@@ -48,7 +48,7 @@
 
 1. Всегда загружайте из **официальных** источников:
    - Официальный сайт: https://zapret-launcher.ru
-   - GitHub: https://github.com/tweenkedrage/zapret-launcher
+   - GitHub: https://github.com/avaxngard/zapret-launcher
    - GitLab: https://gitlab.com/tweenkrage/zapret-launcher
    - Никогда не загружайте со сторонних сайтов/форумов
 
