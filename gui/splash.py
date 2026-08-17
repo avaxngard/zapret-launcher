@@ -14,7 +14,9 @@ from utils.languages import tr
 from typing import Optional
 from gui.theme import get_theme
 from utils.version import compare_builds, compare_zapret_versions
-from config import APPDATA_DIR, ZAPRET_VERSION_URL, ZAPRET_CORE_URL, ZIP_URL, EXE_URL, BUILDNUMBER_URL, RAW_ZAPRET_VERSION_URL, RAW_ZAPRET_CORE_URL, RAW_BUILDNUMBER_URL, RAW_EXE_URL, RAW_ZIP_URL, INSTALLER_URL, ICON_PATH
+from config import APPDATA_DIR, ZAPRET_VERSION_URL, ZAPRET_CORE_URL, ZIP_URL, EXE_URL, BUILDNUMBER_URL, INSTALLER_URL, ICON_PATH
+from config import GITHUB_ZAPRET_VERSION_URL, GITHUB_ZAPRET_CORE_URL, GITHUB_BUILDNUMBER_URL, GITHUB_EXE_URL, GITHUB_ZIP_URL
+from config import GITLAB_ZAPRET_VERSION_URL, GITLAB_ZAPRET_CORE_URL, GITLAB_BUILDNUMBER_URL, GITLAB_EXE_URL, GITLAB_ZIP_URL
 import urllib.request
 import subprocess
 import sys
@@ -63,23 +65,35 @@ class SplashWindow:
         self._is_closing = False
 
         self.auto_update_enabled = auto_update_enabled
-        self.zapret_version_url_main = ZAPRET_VERSION_URL
-        self.build_url_main = BUILDNUMBER_URL
-        self.exe_url_main = EXE_URL
-        self.zip_url_main = ZIP_URL
-        self.zapret_url_main = ZAPRET_CORE_URL
 
-        self.zapret_version_url_alt = RAW_ZAPRET_VERSION_URL
-        self.build_url_alt = RAW_BUILDNUMBER_URL
-        self.exe_url_alt = RAW_EXE_URL
-        self.zip_url_alt = RAW_ZIP_URL
-        self.zapret_url_alt = RAW_ZAPRET_CORE_URL
+        self.sources = [
+            {
+                'name': 'main',
+                'zapret_version': ZAPRET_VERSION_URL,
+                'build': BUILDNUMBER_URL,
+                'exe': EXE_URL,
+                'zip': ZIP_URL,
+                'zapret': ZAPRET_CORE_URL
+            },
+            {
+                'name': 'github',
+                'zapret_version': GITHUB_ZAPRET_VERSION_URL,
+                'build': GITHUB_BUILDNUMBER_URL,
+                'exe': GITHUB_EXE_URL,
+                'zip': GITHUB_ZIP_URL,
+                'zapret': GITHUB_ZAPRET_CORE_URL
+            },
+            {
+                'name': 'gitlab',
+                'zapret_version': GITLAB_ZAPRET_VERSION_URL,
+                'build': GITLAB_BUILDNUMBER_URL,
+                'exe': GITLAB_EXE_URL,
+                'zip': GITLAB_ZIP_URL,
+                'zapret': GITLAB_ZAPRET_CORE_URL
+            }
+        ]
 
-        self.zapret_version_url = self.zapret_version_url_main
-        self.build_url = self.build_url_main
-        self.exe_url = self.exe_url_main
-        self.zip_url = self.zip_url_main
-        self.zapret_url = self.zapret_url_main
+        self.current_source_index = 0
         
         self.appdata_path = APPDATA_DIR
         self.internal_path = self.appdata_path / "_internal"
@@ -109,6 +123,22 @@ class SplashWindow:
             except:
                 pass
         return None
+
+    def _get_url(self, url_type):
+        if 0 <= self.current_source_index < len(self.sources):
+            return self.sources[self.current_source_index][url_type]
+        return None
+
+    def _get_source_name(self, index):
+        if 0 <= index < len(self.sources):
+            return self.sources[index]['name'].capitalize()
+        return "Unknown"
+
+    def _switch_to_next_source(self):
+        if self.current_source_index < len(self.sources) - 1:
+            self.current_source_index += 1
+            return True
+        return False
         
     def setup_window(self):
         self.window.overrideredirect(False)
@@ -307,9 +337,6 @@ class SplashWindow:
                     self.after(0, self._check_for_update)
                     return
                 
-                req = urllib.request.Request("http://www.google.com", headers={'User-Agent': 'Mozilla/5.0', 'Connection': 'close'})
-                urllib.request.urlopen(req, timeout=5)
-
                 if self.auto_update_enabled:
                     self.after(0, self._check_for_update)
                 else:
@@ -393,100 +420,91 @@ class SplashWindow:
             self._run_strategy_and_restart()
         else:
             self._launch_main_app()
-    
-    def _switch_to_alternative_urls(self):
-        self.zapret_version_url = self.zapret_version_url_alt
-        self.build_url = self.build_url_alt
-        self.exe_url = self.exe_url_alt
-        self.zip_url = self.zip_url_alt
-        self.zapret_url = self.zapret_url_alt
 
-    def _download_file_with_fallback(self, url, dest_path, start_progress=0, end_progress=100, use_alternative_on_error=True):
-        try:
-            return self._download_with_progress(url, dest_path, start_progress, end_progress)
-        except Exception:
-            if use_alternative_on_error and url in [self.exe_url_main, self.zip_url_main, self.zapret_url_main]:
-                if url == self.exe_url_main:
-                    alt_url = self.exe_url_alt
-                elif url == self.zip_url_main:
-                    alt_url = self.zip_url_alt
-                elif url == self.zapret_url_main:
-                    alt_url = self.zapret_url_alt
-                else:
-                    raise
+    def _download_file_with_fallback(self, url_type, dest_path, start_progress=0, end_progress=100):
+        for i in range(self.current_source_index, len(self.sources)):
+            try:
+                source_name = self._get_source_name(i)
+                if i > self.current_source_index:
+                    current_source = source_name
+                    self.after(0, lambda: self.update_status(tr('splash_trying_source').format(source=current_source), start_progress))
                 
-                time.sleep(1)
-                return self._download_with_progress(alt_url, dest_path, start_progress, end_progress)
-            raise
+                url = self.sources[i][url_type]
+                result = self._download_with_progress(url, dest_path, start_progress, end_progress)
+                if result:
+                    self.current_source_index = i
+                    return True
+            except Exception:
+                continue
+        raise Exception(f"Failed to download {url_type} from all sources")
 
     def _check_for_update(self):
         self.update_status(tr('splash_check_updates'), 30)
         
         def check():
-            try:
-                req = urllib.request.Request(self.build_url, headers={'User-Agent': 'Mozilla/5.0', 'Connection': 'close'})
+            for source_index in range(len(self.sources)):
                 try:
-                    with urllib.request.urlopen(req, timeout=10) as response:
-                        latest_build = response.read().decode('utf-8').strip()
-                except Exception:
-                    if self.build_url == self.build_url_main:
-                        self._switch_to_alternative_urls()
-                        req = urllib.request.Request(
-                            self.build_url,
-                            headers={'User-Agent': 'Mozilla/5.0', 'Connection': 'close'}
-                        )
-                        with urllib.request.urlopen(req, timeout=10) as response:
-                            latest_build = response.read().decode('utf-8').strip()
-                    else:
-                        raise
-                
-                latest_build = re.sub(r'[^\d]', '', latest_build)
-                current_build = self.current_build
-                need_launcher_update = compare_builds(current_build, latest_build)
-                need_zapret_update, latest_zapret = self._check_zapret_core_update()
-                
-                if need_launcher_update:
-                    self.after(1000, lambda: self._start_update(latest_build))
-                elif need_zapret_update:
-                    self.after(1000, lambda: self._update_zapret_core_only(latest_zapret))
-                else:
-                    self.after(0, lambda: self.update_status(tr('splash_starting_exe'), 100))
-                    self.after(1000, self._launch_main_app)
+                    source_name = self._get_source_name(source_index)
+                    current_source = source_name
                     
-            except Exception:
-                self.after(0, lambda: self.update_status(tr('splash_starting_exe'), 100))
-                self.after(1000, self._launch_main_app)
-        
+                    if source_index == 0:
+                        self.after(0, lambda: self.update_status(tr('splash_check_updates'), 30))
+                    else:
+                        self.after(0, lambda: self.update_status(tr('splash_trying_source').format(source=current_source), 30))
+                    
+                    url = self.sources[source_index]['build']
+                    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0', 'Connection': 'close'})
+                    with urllib.request.urlopen(req, timeout=15) as response:
+                        latest_build = response.read().decode('utf-8').strip()
+                        latest_build = re.sub(r'[^\d]', '', latest_build)
+                        current_build = self.current_build
+                        need_launcher_update = compare_builds(current_build, latest_build)
+                        
+                        self.current_source_index = source_index
+                        
+                        need_zapret_update, latest_zapret = self._check_zapret_core_update()
+                        
+                        if need_launcher_update:
+                            self.after(1000, lambda: self._start_update(latest_build))
+                        elif need_zapret_update:
+                            self.after(1000, lambda: self._update_zapret_core_only(latest_zapret))
+                        else:
+                            self.after(0, lambda: self.update_status(tr('splash_starting_exe'), 100))
+                            self.after(1000, self._launch_main_app)
+                        return
+                        
+                except Exception as e:
+                    if source_index < len(self.sources) - 1:
+                        continue
+                    else:
+                        self.after(0, lambda: self.update_status(tr('splash_all_sources_failed'), 100))
+                        self.after(1000, self._launch_main_app)
+                        return
+            
         threading.Thread(target=check, daemon=True).start()
 
     def _check_zapret_core_update(self) -> tuple[bool, Optional[str]]:
-        try:
-            req = urllib.request.Request(self.zapret_version_url, headers={'User-Agent': 'Mozilla/5.0', 'Connection': 'close'})
-            
+        for source_index in range(self.current_source_index, len(self.sources)):
             try:
-                with urllib.request.urlopen(req, timeout=10) as response:
+                source_name = self._get_source_name(source_index)
+                if source_index > self.current_source_index:
+                    self.after(0, lambda: self.update_status(tr('splash_trying_zapret_source').format(source=source_name), 40))
+                
+                url = self.sources[source_index]['zapret_version']
+                req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0', 'Connection': 'close'})
+                with urllib.request.urlopen(req, timeout=15) as response:
                     latest_version = response.read().decode('utf-8').strip()
+                    self.current_source_index = source_index
+                    current_version = self.get_current_zapret_version()
+                    need_update = compare_zapret_versions(current_version, latest_version)
+                    return need_update, latest_version
             except Exception:
-                if self.zapret_version_url == self.zapret_version_url_main:
-                    self.zapret_version_url = self.zapret_version_url_alt
-                    req = urllib.request.Request(
-                        self.zapret_version_url,
-                        headers={'User-Agent': 'Mozilla/5.0', 'Connection': 'close'}
-                    )
-                    with urllib.request.urlopen(req, timeout=10) as response:
-                        latest_version = response.read().decode('utf-8').strip()
-                else:
-                    raise
-            
-            current_version = self.get_current_zapret_version()
-            need_update = compare_zapret_versions(current_version, latest_version)
-            return need_update, latest_version
-            
-        except Exception:
-            return False, None
+                continue
+        return False, None
 
     def _start_update(self, new_build):
-        self.update_status(f"{tr('splash_downloading')}", 50)
+        source_name = self._get_source_name(self.current_source_index)
+        self.after(0, lambda: self.update_status(tr('splash_using_source').format(source=source_name), 50))
         self.after(500, self._download_and_update)
 
     def _download_with_progress(self, url, dest_path, start_progress=0, end_progress=100):
@@ -555,7 +573,7 @@ class SplashWindow:
             temp_zip = self.appdata_path / "zapret_core_temp.zip"
             
             self.update_status(tr('splash_downloading_zapret'), 80)
-            success = self._download_with_progress(self.zapret_url, temp_zip, 80, 88)
+            success = self._download_file_with_fallback('zapret', temp_zip, 80, 88)
             
             if not success:
                 raise Exception("Failed to download zapret_core.zip")
@@ -691,13 +709,13 @@ class SplashWindow:
                 update_script = current_exe.parent / "update_temp.bat"
                 
                 self.after(0, lambda: self.update_status(tr('splash_downloading_exe'), 0))
-                exe_success = self._download_with_progress(self.exe_url, temp_exe, 0, 30)
+                exe_success = self._download_file_with_fallback('exe', temp_exe, 0, 30)
                 
                 if not exe_success:
                     raise Exception("Failed to download exe file")
                 
                 self.after(0, lambda: self.update_status(tr('splash_downloading_zip'), 30))
-                zip_success = self._download_with_progress(self.zip_url, temp_zip, 30, 60)
+                zip_success = self._download_file_with_fallback('zip', temp_zip, 30, 60)
                 
                 if not zip_success:
                     raise Exception("Failed to download zip file")
