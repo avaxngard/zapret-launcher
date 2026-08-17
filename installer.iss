@@ -6,7 +6,7 @@ AppVerName=Zapret Launcher 3.2.3.2
 AppPublisher=avaxngard corp
 AppPublisherURL=https://zapret-launcher.ru
 AppSupportURL=https://t.me/zapret_launcher_bot
-AppUpdatesURL=https://gitlab.com/tweenkrage/zapret-launcher/-/releases
+AppUpdatesURL=https://zapret-launcher.ru
 
 DefaultDirName={userappdata}\Zapret Launcher
 DisableDirPage=yes
