@@ -16,7 +16,7 @@
 - Для **Windows 10/11**: `Python 3.12`
 - Для **Windows 7**: `Python 3.8`
 
-# Нашли неисправность или есть идея для улучшения? —> [@zapret_launcher_bot](https://t.me/zapret_launcher_bot)
+# Нашли неисправность? —> [@zapret_launcher_bot](https://t.me/zapret_launcher_bot)
 
 # Поддержать
 - [**DonationAlerts**](https://www.donationalerts.com/r/tweenkedrage)
