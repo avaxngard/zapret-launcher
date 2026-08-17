@@ -14,7 +14,7 @@ VSVersionInfo(
       [
         StringTable('041904B0',
           [
-            StringStruct('CompanyName', 'trimansberg'),
+            StringStruct('CompanyName', 'avaxngard corporation'),
             StringStruct('FileDescription', 'Zapret Launcher - DPI Bypass'),
             StringStruct('FileVersion', '3.2.3.2'),
             StringStruct('InternalName', 'updater'),
