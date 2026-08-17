@@ -1,0 +1,678 @@
+# Zapret Launcher - Bypass restrictions
+# Copyright (C) 2026 avaxngard corp
+#
+# This is free software: you can redistribute it and/or modify it
+# under the terms of the GNU GPL v3 or any later version.
+#
+# Distributed WITHOUT ANY WARRANTY.
+
+import json
+from config import CONFIG_FILE
+
+class Languages:
+    LANGUAGES = {
+        'Russian': 'Russian',
+        'English': 'English'
+    }
+    
+    TRANSLATIONS = {
+        'Russian': {
+            'main_title': 'Главная',
+            'main_desc': 'Управление подключением и мониторинг состояния',
+            'status': 'Статус:',
+            'status_ready': 'Готов к работе',
+            'status_connected': 'Подключено',
+            'mode': 'Режим:',
+            'mode_not_selected': 'Не выбран',
+            'stats_session': 'Статистика сессии',
+            'stats_time': 'время работы',
+            'stats_speed': 'Скорость:',
+            'stats_rtt': 'RTT:',
+            'stats_rtt_ms': 'ms',
+            'button_connect': 'ПОДКЛЮЧИТЬСЯ',
+            'button_disconnect': 'ОТКЛЮЧИТЬСЯ',
+
+            'update_available': 'Доступно обновление',
+            'information_desc': 'Информация',
+            'dev': 'В разработке',
+            
+            'service_title': 'Сервис',
+            'service_desc': 'Инструменты для ядра zapret',
+            'service_filters': 'Фильтры',
+            'service_tools': 'Инструменты',
+            'service_game_filter': 'Game Filter',
+            'service_ipset_filter': 'IPSet Filter',
+            'service_run_diagnostic': 'Диагностика',
+            'service_run_tests': 'Тест стратегий',
+                
+            'lists_title': 'Редактор',
+            'lists_desc': 'Редактирование списков для обхода блокировок',
+            'lists_general': 'Общие',
+            'lists_white': 'Исключения',
+            'lists_google': 'Браузер',
+            'lists_custom': 'Пользовательские',
+            'lists_ipset_white': 'IP-исключения',
+            'lists_ipset': 'IP-разрешенные',
+            'lists_edit': 'Изменить',
+            'lists_open_folder': 'Папка с листами',
+            
+            'traffic_title': 'Трафик',
+            'traffic_desc': 'Мониторинг сетевого трафика по процессам',
+            'traffic_warning': 'Обновление таблицы может занимать до 60 секунд',
+            'traffic_process': 'Процесс',
+            'traffic_speed': 'Скорость',
+            'traffic_vpn': 'VPN',
+            'traffic_direct': 'Прямой',
+            'traffic_connections': 'Соед.',
+            'traffic_host': 'Хост',
+            'traffic_total': 'Всего',
+            'traffic_no_connections': 'Нет активных соединений',
+            'error_traffic_collection': 'Ошибка сбора трафика',
+
+            'hosts_title': 'Хосты',
+            'hosts_desc': 'Управление файлом hosts',
+            'hosts_reload': 'Обновить',
+            'hosts_download': 'Пакеты',
+            'hosts_pack': 'Пакет',
+            'hosts_templates_title': 'Установка готовых пакетов',
+            'hosts_install_btn': 'Установить',
+            'hosts_update_title': 'Обновление пакета',
+            'hosts_confirm_download': 'Вы действительно хотите установить этот пакет?',
+            'hosts_installed': 'успешно установлен',
+            'hosts_updated': 'успешно обновлен',
+            'hosts_empty_content': 'Получен пустой файл',
+            'hosts_already_exists': 'уже установлен',
+            'hosts_partial_exists': 'установлен частично',
+            'hosts_missing_entries': 'Отсутствующие записи',
+            'hosts_update_question': 'Хотите добавить недостающие записи?',
+            'hosts_template_telegram': 'Доступ к Telegram Web',
+            'hosts_template_rutracker': 'Доступ к RuTracker',
+            'hosts_template_spotify': 'Доступ к Spotify',
+            'hosts_template_github': 'Доступ к GitHub',
+
+            'duplicates_title': 'Обнаружены дубликаты',
+            'duplicates_subtitle': 'В файлах списков найдены дублирующиеся записи',
+            'duplicates_total': 'Всего доменов',
+            'duplicates_unique': 'Уникальных',
+            'duplicates_count': 'Дубликатов',
+            'duplicates_lines': 'строки',
+
+            'logs_title': 'Логи',
+            'logs_desc': 'Журнал событий',
+            'logs_clear': 'Очистить',
+            'logs_refresh': 'Обновить',
+
+            'splash_check_connecting': 'Проверяем подключение к сети..',
+            'splash_check_updates': 'Проверяем обновления...',
+            'splash_download_update': 'Подготовка к обновлению..',
+            'splash_downloading': 'Начинаем загрузку обновления..',
+            'splash_downloading_percent': 'Загружено:',
+            'splash_downloading_exe': 'Загрузка обновления...',
+            'splash_downloading_zip': 'Загрузка внутренних файлов...',
+            'splash_extracting_files': 'Распаковка файлов...',
+            'splash_extracting': 'Распаковка...',
+            'splash_downloading_zapret': 'Загрузка zapret...',
+            'splash_extracting_zapret': 'Распаковка zapret...',
+            'splash_updating_zapret': 'Обновление zapret...',
+            'splash_stopping_processes': 'Остановка процессов...',
+            'splash_install_update': 'Устанавливаем обновление...',
+            'splash_starting_exe': 'Запускаем лаунчер..',
+            'splash_update_error': 'Ошибка обновления',
+            'splash_help_update': 'Ошибка обновления? Нажмите сюда',
+            'splash_check_connect_error': 'Ошибка подключения к сети',
+            'splash_no_internet_title': 'Нет подключения к интернету',
+            'splash_no_internet_text': 'Не удалось подключиться к интернету\n\nЗапустить {strategy} и открыть лаунчер?\nЕсли вы не хотите запускать стратегию, нажмите Нет',
+            'splash_no_internet_default_strategy': 'стандартную стратегию',
+                        
+            'settings_title': 'Настройки',
+            'settings_desc': 'Настройка интерфейса и параметров работы',
+            'settings_theme': 'Оформление',
+            'settings_language': 'Язык / Language',
+            'settings_recovery': 'Лаунчер',
+            'settings_integrity': 'Проверить целостность',
+            'settings_integrity_title': 'Проверка целостности',
+            'settings_reinstall': 'Переустановить zapret',
+            'settings_reinstall_title': 'Переустановка ядра',
+            'settings_integrity_folder_missing': 'папка отсутствует',
+            'settings_integrity_missing_count': 'Отсутствует файлов:',
+            'settings_integrity_success': 'Все файлы имеются',
+            'settings_reinstall_all_exists': 'Все файлы ядра уже имеются\nВы точно хотите переустановить их?',
+            'settings_reinstall_missing': 'Обнаружены отсутствующие файлы ядра\nПереустановить?',
+            'settings_reinstall_active': 'Активное подключение',
+            'settings_reinstall_disconnect': 'Для переустановки ядра необходимо отключить активное подключение\nОтключиться и продолжить?',
+            'settings_current_tg_secret': 'Текущий секрет:',
+            'settings_open_folder': 'Открыть папку',
+            'settings_autostart': 'Автозапуск',
+            'settings_search_dublicate': 'Поиск дубликатов',
+            'settings_search_vpn': 'Поиск VPN-процессов',
+            'settings_toggle_on_autoupdate': 'Включить автообновления',
+            'settings_toggle_off_autoupdate': 'Выключить автообновления',
+            'settings_toggle_on_analytics': 'Включить сбор аналитики',
+            'settings_toggle_off_analytics': 'Выключить сбор аналитики',
+            
+            'mode_standard': 'Стандартный',
+            'mode_standard_desc': 'Обход блокировок через Zapret',
+            'mode_tgproxy_desc': 'Ускорение работы Telegram',
+            'mode_zapret_tgproxy': 'Совместный',
+            'mode_zapret_tgproxy_desc': 'Zapret и Telegram Proxy',
+            'mode_select_title': 'Выбор режима',
+            'mode_select': 'Выберите режим запуска',
+            'mode_select_button': 'Выбрать',
+            'mode_cancel': 'Отмена',
+            
+            'notification_save_settings': 'Перезапустите Telegram Proxy',
+            'notification_copied': 'Ссылка скопирована',
+            'notification_copied_secret': 'Секрет-ключ скопирован',
+            'notification_updated_secret': 'Секрет-ключ обновлен',
+            
+            'dialog_exit': 'Выход',
+            'dialog_exit_message': 'Активное подключение будет разорвано\nВы действительно хотите закрыть лаунчер?',
+            'dialog_no_connection': 'Лаунчер не может работать без прав администратора',
+            'dialog_admin_message': 'Лаунчер требует прав администратора для работы\nЗапустить от имени администратора?',
+            'restart_manual_title': 'Требуется перезапуск',
+            'restart_manual_message': 'Настройки сохранены\nНажмите "Ок", чтобы перезапустить лаунчер',
+
+            'vpn_detected_title': 'Обнаружен VPN-клиент',
+            'vpn_detected_message': 'Обнаружено подключение к VPN-клиенту, рекомендуется его отключить',
+            'vpn_detected_processes': 'Найденные процессы',
+            'vpn_detected_interfaces': 'Найденные интерфейсы',
+            'vpn_ignore': 'Игнорировать',
+            'vpn_disable': 'Отключить VPN',
+
+            'dialog_enabled': 'Окно будет показываться',
+            'dialog_disabled': 'Окно не будет показываться',
+                        
+            'tg_instruction_title': 'Настройка Telegram',
+            'tg_instruction_subtitle': 'Для использования прокси выполните следующие шаги:',
+            'tg_generate_secret': 'Сгенерировать секрет-ключ',
+            'tg_instruction_settings_show': 'Показывать инструкцию',
+            'tg_instruction_settings_hide': 'Скрыть инструкцию',
+            'tg_copy_secret': 'Скопировать секрет-ключ',
+            'tg_step1': 'Откройте Telegram и перейдите в',
+            'tg_step1_desc': 'Настройки - Продвинутые настройки',
+            'tg_step2': 'В разделе «Тип соединения» выберите:',
+            'tg_step2_desc': 'Использовать собственный прокси',
+            'tg_step3': 'Заполните поля прокси:',
+            'tg_type': 'Тип: MTPROTO',
+            'tg_host': 'Хост: указан на главной странице',
+            'tg_port': 'Порт: указан на главной странице',
+            'tg_secret': 'Secret: (Генерируется автоматически)',
+            'tg_copy_link': 'Скопировать ссылку подключения',
+            'tg_copied': 'Скопировано',
+            'tg_dont_show': 'Больше не показывать',
+            'tg_instruction_hidden': 'Инструкция скрыта',
+            'tg_instruction_shown': 'Инструкция доступна',
+
+            'instruction_title_window': 'Инструкция',
+            'edit_title_window': 'Редактирование',
+            
+            'error_update_check': 'Не удалось проверить обновления',
+            'error_no_strategies': 'Нет доступных стратегий zapret',
+            'error_select_strategy': 'Выберите стратегию',
+            'error_zapret_folder': 'Папка с zapret не найдена',
+            'error_tgproxy_start': 'Не удалось запустить Telegram Proxy',
+            'error_tgproxy_timeout': 'Таймаут запуска',
+            'error_admin_required': 'Требуются права администратора!',
+            'error_strategy_not_found': 'Стратегия не найдена:',
+            'error_winws_not_found': 'Стратегия запущена, но winws.exe не обнаружен',
+            'error_secret_not_found': 'Секрет-ключ не найден',
+            'error_secret_not_generate': 'Секрет-ключ не сгенерирован',
+            'error_telegram_proxy_start': 'Сначала запустите Telegram Proxy режим',
+            'error_startup': 'Ошибка запуска',
+            'error_icon_not_found': 'Иконка не найдена',
+            'error_unknown_command': 'Неизвестная команда',
+            'error_autostart': 'Ошибка настройки автозапуска',
+            'error_port_have_words': 'Порт должен содержать число',
+            'error_no_connection': 'Ошибка',
+            'error_warning': 'Предупреждение',
+            'error_occurred': 'Произошла ошибка',
+            'error_timeout': 'Превышено время ожидания',
+            'error': 'Ошибка',
+
+            'tg_secret_required_message': 'Для работы Telegram Proxy требуется секрет-ключ.\n\nСгенерировать новый секрет и продолжить?',
+            'tg_secret_updated': 'Секрет-ключ обновлен',
+            'tg_secret_new': 'Новый секрет:',
+            'tg_paste_instruction': 'Вставьте его в Telegram для подключения',
+                        
+            'status_connecting': 'Запуск...',
+            'status_disconnecting': 'Отключение...',
+            'status_starting': 'Подключение...',
+            'status_error': 'Ошибка запуска',
+            'status_strategy_started': 'Запущена стратегия:',
+            'status_enabled': 'включен',
+            'status_disabled': 'выключен',
+            'restart_zapret': 'Перезапустите zapret',
+            
+            'main_page_tg_proxy_host': 'Хост',
+            'main_page_tg_proxy_port': 'Порт',
+            'main_page_tg_proxy_domain': 'Домен',
+            
+            'autostart_enabled': 'Автозапуск включен',
+            'autostart_disabled': 'Автозапуск отключен',
+            'autostart_error': 'Не удалось изменить настройки автозапуска',
+            
+            'editor_title': 'Редактирование',
+            'editor_save': 'Сохранить',
+            'editor_cancel': 'Отмена',
+            'editor_success': 'Файл успешно сохранен',
+            'editor_error_load': 'Не удалось загрузить файл',
+            'editor_error_save': 'Не удалось сохранить файл',
+            'editor_find': 'Найти:',
+            'editor_find_next': 'Далее',
+            'editor_close': 'Закрыть',
+            'editor_enter_text': 'Введите текст для поиска',
+            'editor_not_found': 'не найден',
+            'editor_tooltip': 'Ctrl+F — поиск | Esc — закрыть (ENG раскладка)',
+            
+            'menu_show_app': 'Показать лаунчер',
+            'menu_minimaze': 'Свернуть в трей',
+            'menu_connect': 'Подключиться',
+            'menu_disconnect': 'Отключиться',
+            'menu_change_mode': 'Сменить режим',
+            'menu_settings': 'Настройки',
+            'menu_settings_copy_secret': 'Скопировать секрет-ключ прокси',
+            'menu_settings_on_auto_update': 'Включить автообновления',
+            'menu_settings_off_auto_update': 'Выключить автообновления',
+            'menu_settings_folder': 'Открыть папку с лаунчером',
+            'menu_help': 'Помощь',
+            'menu_help_changelog': 'Список изменений',
+            'menu_help_report': 'Сообщить об ошибке',
+            'menu_help_license': 'Условия использования',
+            'menu_help_security': 'Политика безопасности',
+            'menu_help_logs': 'Логи',
+            'menu_exit': 'Выход',
+            
+            'button_start': 'Запустить',
+            'button_apply': 'Применить',
+            'button_close': 'Закрыть',
+            'button_restart': 'Перезапустить',
+            
+            'select_strategy': 'Выбор стратегии',
+            'select_strategy_title': 'Выбор стратегии',
+            'available_strategies': 'Доступные стратегии:',
+            'selected': 'Выбрано:',
+
+            'update_title': 'Обновление Zapret Launcher',
+            'update_available_question': 'Доступна новая версия',
+            'update_ask_now': 'Хотите обновиться прямо сейчас?',
+            'update_link_changelog': 'Посмотреть изменения',
+
+            'seconds': 'сек',
+            'and': 'и еще',
+            'please_wait': 'Пожалуйста, подождите...',
+            'confirm_title': 'Подтверждение',
+            
+            'success': 'Успех',
+            'is_empty': 'пустой',
+            'not_found': 'отсутствует',
+            'files': 'файлов',
+            'strategies_count': 'Стратегии',
+        },
+        
+        'English': {
+            'main_title': 'Home',
+            'main_desc': 'Connection management and monitoring',
+            'status': 'Status:',
+            'status_ready': 'Ready',
+            'status_connected': 'Connected',
+            'mode': 'Mode:',
+            'mode_not_selected': 'Not selected',
+            'stats_session': 'Session statistics',
+            'stats_time': 'uptime',
+            'stats_speed': 'Speed:',
+            'stats_rtt': 'RTT:',
+            'stats_rtt_ms': 'ms',
+            'button_connect': 'CONNECT',
+            'button_disconnect': 'DISCONNECT',
+
+            'update_available': 'Update available',
+            'information_desc': 'Information',
+            'dev': 'In development',
+            
+            'service_title': 'Service',
+            'service_desc': 'Zapret-core tools',
+            'service_filters': 'Filters',
+            'service_tools': 'Tools',
+            'service_game_filter': 'Game Filter',
+            'service_ipset_filter': 'IPSet Filter',
+            'service_run_diagnostic': 'Diagnostics',
+            'service_run_tests': 'Run tests',
+            
+            'lists_title': 'Editor',
+            'lists_desc': 'Edit lists for bypassing blocks',
+            'lists_general': 'General',
+            'lists_white': 'Exceptions',
+            'lists_google': 'Browser',
+            'lists_custom': 'Custom',
+            'lists_ipset_white': 'IP-exceptions',
+            'lists_ipset': 'IP-allowed',
+            'lists_edit': 'Edit',
+            'lists_open_folder': 'Lists folder',
+            
+            'traffic_title': 'Traffic',
+            'traffic_desc': 'Network traffic monitoring by process',
+            'traffic_warning': 'Updating a table can take up to 60 seconds',
+            'traffic_process': 'Process',
+            'traffic_speed': 'Speed',
+            'traffic_vpn': 'VPN',
+            'traffic_direct': 'Direct',
+            'traffic_connections': 'Conn.',
+            'traffic_host': 'Host',
+            'traffic_total': 'Total',
+            'traffic_no_connections': 'No active connections',
+            'error_traffic_collection': 'Traffic collection error',
+
+            'hosts_title': 'Hosts',
+            'hosts_desc': 'Manage hosts file',
+            'hosts_reload': 'Refresh',
+            'hosts_download': 'Packages',
+            'hosts_pack': 'Package',
+            'hosts_templates_title': 'Installing pre-built packages',
+            'hosts_install_btn': 'Install',
+            'hosts_update_title': 'Package update',
+            'hosts_confirm_download': 'Do you really want to install this package?',
+            'hosts_installed': 'successfully installed',
+            'hosts_updated': 'successfully updated',
+            'hosts_empty_content': 'An empty file was received',
+            'hosts_already_exists': 'is already installed',
+            'hosts_partial_exists': 'is partially installed',
+            'hosts_missing_entries': 'Missing entries',
+            'hosts_update_question': 'Do you want to add the missing entries?',
+            'hosts_template_telegram': 'Access to Telegram Web',
+            'hosts_template_rutracker': 'Access to RuTracker',
+            'hosts_template_spotify': 'Access to Spotify',
+            'hosts_template_github': 'Access to GitHub',
+
+            'duplicates_title': 'Duplicates found',
+            'duplicates_subtitle': 'Duplicate entries found in the list files',
+            'duplicates_total': 'Total domains',
+            'duplicates_unique': 'Unique',
+            'duplicates_count': 'Duplicates',
+            'duplicates_lines': 'lines',
+
+            'logs_title': 'Logs',
+            'logs_desc': 'Event log',
+            'logs_clear': 'Clear',
+            'logs_refresh': 'Refresh',
+
+            'splash_check_connecting': 'Checking your network..',
+            'splash_check_updates': 'Checking for updates...',
+            'splash_download_update': 'Preparing for the update..',
+            'splash_downloading': 'Starting to download the update..',
+            'splash_downloading_percent': 'Uploaded:',
+            'splash_install_update': 'Installing update...',
+            'splash_starting_exe': 'Starting..',
+            'splash_downloading_exe': 'Downloading executable...',
+            'splash_downloading_zip': 'Downloading files...',
+            'splash_extracting_files': 'Extracting files...',
+            'splash_extracting': 'Extracting...',
+            'splash_downloading_zapret': 'Downloading zapret...',
+            'splash_updating_zapret': 'Updating zapret...',
+            'splash_extracting_zapret': 'Extracting zapret...',
+            'splash_stopping_processes': 'Stopping processes...',
+            'splash_update_error': 'Update error',
+            'splash_help_update': 'Update error? Click here',
+            'splash_check_connect_error': 'Network connection error',
+            'splash_no_internet_title': 'No internet connection',
+            'splash_no_internet_text': 'Failed to connect to the internet\n\nRun {strategy} and open the launcher?\nIf you don\'t want to run the strategy, click No',
+            'splash_no_internet_default_strategy': 'the default strategy',
+            
+            'settings_title': 'Settings',
+            'settings_desc': 'Interface and operation settings',
+            'settings_theme': 'Theme',
+            'settings_language': 'Language',
+            'settings_recovery': 'Launcher',
+            'settings_integrity': 'Check integrity',
+            'settings_integrity_title': 'Integrity check',
+            'settings_reinstall': 'Reinstall zapret',
+            'settings_reinstall_title': 'Reinstalling the core',
+            'settings_integrity_folder_missing': 'folder missing',
+            'settings_integrity_missing_count': 'Missing files:',
+            'settings_integrity_success': 'All files are present',
+            'settings_reinstall_all_exists': 'All core files are already present\nAre you want to reinstall them?',
+            'settings_reinstall_missing': 'Missing core files detected\nReinstall?',
+            'settings_reinstall_active': 'Active connection',
+            'settings_reinstall_disconnect': 'To reinstall the core, you must disconnect the active connection\nDisconnect and continue?',
+            'settings_current_tg_secret': 'Current secret:',
+            'settings_open_folder': 'Open folder',
+            'settings_autostart': 'Autostart',
+            'settings_search_dublicate': 'Duplicate search',
+            'settings_search_vpn': 'VPN search',
+            'settings_toggle_on_autoupdate': 'Enable auto-updates',
+            'settings_toggle_off_autoupdate': 'Disable auto-updates',
+            'settings_toggle_on_analytics': 'Enable analytics collection',
+            'settings_toggle_off_analytics': 'Disable analytics collection',
+            
+            'mode_standard': 'Standard',
+            'mode_standard_desc': 'Bypass blocks via Zapret',
+            'mode_tgproxy_desc': 'Telegram acceleration',
+            'mode_zapret_tgproxy': 'Combined',
+            'mode_zapret_tgproxy_desc': 'Zapret and Telegram Proxy',
+            'mode_select_title': 'Select mode',
+            'mode_select': 'Select launch mode',
+            'mode_select_button': 'Select',
+            'mode_cancel': 'Cancel',
+            
+            'notification_save_settings': 'Restart Telegram Proxy',
+            'notification_copied': 'Link copied',
+            'notification_copied_secret': 'Secret-key copied',
+            'notification_updated_secret': 'Secret-key updated',
+            
+            'dialog_exit': 'Exit',
+            'dialog_exit_message': 'Active connection will be terminated\nDo you really want to close the launcher?',
+            'dialog_no_connection': 'Launcher cannot run without administrator rights',
+            'dialog_admin_message': 'Launcher requires administrator rights to run\nRun as administrator?',
+            'restart_manual_title': 'Restart Required',
+            'restart_manual_message': 'Settings has been saved\nClick "OK" to restart the launcher',
+
+            'vpn_detected_title': 'VPN Detected',
+            'vpn_detected_message': 'An VPN client connection has been detected, it is recommended to disable it',
+            'vpn_detected_processes': 'Detected processes',
+            'vpn_detected_interfaces': 'Detected interfaces',
+            'vpn_ignore': 'Ignore',
+            'vpn_disable': 'Disable VPN',
+
+            'dialog_enabled': 'Window will be displayed',
+            'dialog_disabled': 'Window will not be displayed',
+            
+            'tg_instruction_title': 'Telegram Setup',
+            'tg_instruction_subtitle': 'To use the proxy, follow these steps:',
+            'tg_generate_secret': 'Generate secret-key',
+            'tg_instruction_settings_show': 'Show instruction',
+            'tg_instruction_settings_hide': 'Hide instruction',
+            'tg_copy_secret': 'Copy the secret-key',
+            'tg_step1': 'Open Telegram and go to',
+            'tg_step1_desc': 'Settings - Advanced Settings',
+            'tg_step2': 'In the "Connection Type" section select:',
+            'tg_step2_desc': 'Use custom proxy',
+            'tg_step3': 'Fill in the proxy fields:',
+            'tg_type': 'Type: MTPROTO',
+            'tg_host': 'Host: listed on the main page',
+            'tg_port': 'Port: listed on the main page',
+            'tg_secret': 'Secret: (auto-generated)',
+            'tg_copied': 'Copied',
+            'tg_dont_show': 'Don\'t show again',
+            'tg_instruction_hidden': 'Instruction unavailable',
+            'tg_instruction_shown': 'Instruction available',
+
+            'instruction_title_window': 'Instruction',
+            'edit_title_window': 'Editing',
+            
+            'error_update_check': 'Failed to check for updates',
+            'error_no_strategies': 'No zapret strategies available',
+            'error_select_strategy': 'Select a strategy',
+            'error_zapret_folder': 'Zapret folder not found',
+            'error_tgproxy_start': 'Failed to start Telegram Proxy',
+            'error_tgproxy_timeout': 'Startup timeout',
+            'error_admin_required': 'Administrator rights required!',
+            'error_strategy_not_found': 'Strategy not found:',
+            'error_winws_not_found': 'Strategy started but winws.exe not detected',
+            'error_secret_not_found': 'Secret-key not found',
+            'error_secret_not_generate': 'The secret key was not generated',
+            'error_telegram_proxy_start': 'First, launch Telegram Proxy mode',
+            'error_startup': 'Startup error',
+            'error_unknown_command': 'Unknown command',
+            'error_autostart': 'Autostart configuration error',
+            'error_port_have_words': 'Port must contain numbers',
+            'error_no_connection': 'Error',
+            'error_warning': 'Warning',
+            'error_occurred': 'Error occurred',
+            'error_timeout': 'Request timed out',
+            'error': 'Error',
+
+            'tg_secret_required_message': 'A secret-key is required for Telegram Proxy to work.\n\nGenerate a new secret and continue?',
+            'tg_secret_updated': 'Secret-key updated',
+            'tg_secret_new': 'New secret:',
+            'tg_paste_instruction': 'Paste it into Telegram to connect.',
+            'tg_proxy_restarted': 'Proxy restarted with new secret.',
+                        
+            'status_connecting': 'Starting...',
+            'status_disconnecting': 'Disconnecting...',
+            'status_starting': 'Connecting...',
+            'status_error': 'Startup error',
+            'status_strategy_started': 'Strategy started:',
+            'status_enabled': 'enabled',
+            'status_disabled': 'disabled',
+            'restart_zapret': 'Restart the zapret',
+
+            'main_page_tg_proxy_host': 'Host',
+            'main_page_tg_proxy_port': 'Port',
+            'main_page_tg_proxy_domain': 'Domain',
+            
+            'autostart_enabled': 'Autostart enabled',
+            'autostart_disabled': 'Autostart disabled',
+            'autostart_error': 'Failed to change autostart settings',
+            
+            'editor_title': 'Editing',
+            'editor_save': 'Save',
+            'editor_cancel': 'Cancel',
+            'editor_success': 'File saved successfully',
+            'editor_error_load': 'Failed to load file',
+            'editor_error_save': 'Failed to save file',
+            'editor_find': 'Find:',
+            'editor_find_next': 'Next',
+            'editor_close': 'Close',
+            'editor_enter_text': 'Enter text to search',
+            'editor_not_found': 'not found',
+            'editor_tooltip': 'Ctrl+F — search | Esc — close (ENG keyboard layout)',
+            
+            'menu_show_app': 'Show launcher',
+            'menu_minimaze': 'Minimize to tray',
+            'menu_connect': 'Connect',
+            'menu_disconnect': 'Disconnect',
+            'menu_change_mode': 'Change mode',
+            'menu_settings': 'Settings',
+            'menu_settings_copy_secret': 'Copy proxy secret-key',
+            'menu_settings_on_auto_update': 'Enable auto-updates',
+            'menu_settings_off_auto_update': 'Disable auto-updates',
+            'menu_settings_folder': 'Open launcher folder',
+            'menu_help': 'Help',
+            'menu_help_changelog': 'Release notes',
+            'menu_help_report': 'Report a bug',
+            'menu_help_license': 'Terms of use',
+            'menu_help_security': 'Security Policy',
+            'menu_help_logs': 'Logs',
+            'menu_exit': 'Exit',
+            
+            'button_start': 'Start',
+            'button_apply': 'Apply',
+            'button_close': 'Close',
+            'button_restart': 'Restart',
+            
+            'select_strategy': 'Select bat strategy',
+            'select_strategy_title': 'Select strategy',
+            'available_strategies': 'Available strategies:',
+            'selected': 'Selected:',
+
+            'update_title': 'Update Zapret Launcher',
+            'update_available_question': 'New version available',
+            'update_ask_now': 'Want to upgrade now?',
+            'update_link_changelog': 'View changes',
+
+            'seconds': 'sec',
+            'and': 'and also',
+            'please_wait': 'Please wait...',
+            'confirm_title': 'Сonfirmation',
+            
+            'success': 'Success',
+            'not_found': 'is missing',
+            'files': 'files',
+            'strategies_count': 'Strategies',
+        }
+    }
+    
+    def __init__(self):
+        self._current_lang = 'Russian'
+        self._config_file = CONFIG_FILE
+        self.load_language()
+    
+    def load_language(self):
+        try:
+            if self._config_file.exists():
+                with open(self._config_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    lang = data.get('language', 'Russian')
+                    if lang in self.LANGUAGES:
+                        self._current_lang = lang
+        except:
+            pass
+    
+    def save_language(self):
+        try:
+            data = {}
+            if self._config_file.exists():
+                with open(self._config_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+            
+            data['language'] = self._current_lang
+            
+            self._config_file.parent.mkdir(parents=True, exist_ok=True)
+            with open(self._config_file, 'w', encoding='utf-8') as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
+        except:
+            pass
+    
+    def set_language(self, lang_code: str) -> bool:
+        if lang_code in self.LANGUAGES:
+            self._current_lang = lang_code
+            self.save_language()
+            return True
+        return False
+    
+    def get_current_language(self) -> str:
+        return self._current_lang
+    
+    def get_language_name(self) -> str:
+        return self.LANGUAGES.get(self._current_lang, 'Russian')
+    
+    def get_available_languages(self) -> dict:
+        return self.LANGUAGES.copy()
+    
+    def tr(self, key: str, **kwargs) -> str:
+        text = self.TRANSLATIONS.get(self._current_lang, {}).get(key, key)
+        
+        if kwargs:
+            for k, v in kwargs.items():
+                text = text.replace(f'{{{k}}}', str(v))
+        
+        return text
+
+_languages = None
+
+def get_languages() -> Languages:
+    global _languages
+    if _languages is None:
+        _languages = Languages()
+    return _languages
+
+def tr(key: str, **kwargs) -> str:
+    return get_languages().tr(key, **kwargs)
+
+def set_language(lang_code: str) -> bool:
+    return get_languages().set_language(lang_code)
+
+def get_current_language() -> str:
+    return get_languages().get_current_language()
+
+def get_available_languages() -> dict:
+    return get_languages().get_available_languages()
