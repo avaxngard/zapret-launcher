@@ -21,7 +21,7 @@ def _get_parent_bg(parent):
 
 class ModernSwitch(tk.Canvas):
     def __init__(self, parent, width=50, height=24, bg_color='#25252B', active_color='#4361ee', command=None, initial=False):
-        super().__init__(parent, width=width, height=height, highlightthickness=0, bg=_get_parent_bg(parent))
+        super().__init__(parent, width=width, height=height, highlightthickness=0, bg=parent.cget('bg') if hasattr(parent, 'cget') else '#2b2b2b')
         self.active_color = active_color
         self.inactive_color = bg_color
         self.state = initial
@@ -130,26 +130,20 @@ class RoundedButton(tk.Canvas):
             return
         
         progress = 1 - (step / self.animation_steps) * 0.05
-        new_width = int(self.original_width * progress)
-        new_height = int(self.original_height * progress)
+        new_width = max(20, int(self.original_width * progress))
+        new_height = max(20, int(self.original_height * progress))
         x_offset = (self.original_width - new_width) // 2
         y_offset = (self.original_height - new_height) // 2
+        
+        corner = min(self.corner_radius, new_width // 2, new_height // 2)
         
         self.config(width=new_width, height=new_height)
         
         points = []
-        points.extend([self.corner_radius - x_offset, y_offset, 
-                    new_width - self.corner_radius + x_offset, y_offset])
-        points.extend([new_width - x_offset, y_offset, 
-                    new_width - x_offset, self.corner_radius + y_offset, 
-                    new_width - x_offset, new_height - self.corner_radius + y_offset, 
-                    new_width - x_offset, new_height - y_offset])
-        points.extend([new_width - self.corner_radius + x_offset, new_height - y_offset, 
-                      self.corner_radius - x_offset, new_height - y_offset])
-        points.extend([x_offset, new_height - y_offset, 
-                    x_offset, new_height - self.corner_radius + y_offset, 
-                    x_offset, self.corner_radius + y_offset, 
-                    x_offset, y_offset])
+        points.extend([corner, 0, new_width - corner, 0])
+        points.extend([new_width, 0, new_width, corner, new_width, new_height - corner, new_width, new_height])
+        points.extend([new_width - corner, new_height, corner, new_height])
+        points.extend([0, new_height, 0, new_height - corner, 0, corner, 0, 0])
         
         self.coords(self.rect, points)
         self.coords(self.text_id, new_width//2, new_height//2)
