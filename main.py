@@ -518,6 +518,7 @@ class ZapretCore:
 class ZapretLauncher:
     def __init__(self, root):
         self.root = root
+        self.root.withdraw()
         self.root.overrideredirect(False)
         self.root.attributes('-toolwindow', False)
 
@@ -540,8 +541,6 @@ class ZapretLauncher:
             pass
 
         self.scale_factor = get_optimal_scale()
-
-        self.root.withdraw()
         
         self.base_width = 1200
         self.base_height = 800
@@ -713,8 +712,26 @@ class ZapretLauncher:
         self.root.after(1500, lambda: self.news_manager.check_news(show_on_start=True))
         self.news_manager.schedule_check()
         threading.Thread(target=self.tray_icon.run, daemon=True).start()
-        self.root.deiconify()
         self.root.update_idletasks()
+        self.root.attributes('-alpha', 0.0)
+        self.root.deiconify()
+        self.root.update()
+
+        def fade_in(alpha=0.0):
+            if alpha < 1.0:
+                alpha += 0.15
+                try:
+                    self.root.attributes('-alpha', alpha)
+                    self.root.after(12, lambda: fade_in(alpha))
+                except:
+                    pass
+            else:
+                try:
+                    self.root.attributes('-alpha', 1.0)
+                except:
+                    pass
+
+        self.root.after(100, fade_in)
 
     def on_window_state_change(self, event=None):
         if self._updating:
@@ -1921,9 +1938,9 @@ class ZapretLauncher:
         
         if self.set_autostart(new_state):
             if new_state:
-                messagebox.showinfo(tr('success'), tr('autostart_enabled'))
+                messagebox.showinfo(tr('information_desc'), tr('autostart_enabled'))
             else:
-                messagebox.showinfo(tr('success'), tr('autostart_disabled'))
+                messagebox.showinfo(tr('information_desc'), tr('autostart_disabled'))
         else:
             messagebox.showerror(tr('error_occurred'), tr('autostart_error'))
 
