@@ -16,7 +16,7 @@ import urllib.request
 import threading
 import re
 from utils.version import compare_builds, compare_zapret_versions
-from config import CURRENT_BUILD, BUILDNUMBER_URL, ZAPRET_VERSION_URL, ICON_PATH
+from config import CURRENT_BUILD, BUILDNUMBER_URL, ZAPRET_VERSION_URL, ICON_PATH, CHECK_UPDATES_INTERVAL
 
 class ModernSystemTray:
     def __init__(self, app):
@@ -119,12 +119,6 @@ class ModernSystemTray:
     def _hex_to_rgb(self, hex_color):
         hex_color = hex_color.lstrip('#')
         return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
-    
-    def _get_auto_update_button_text(self):
-        if getattr(self.app, '_auto_update_enabled', True):
-            return tr('menu_settings_off_auto_update')
-        else:
-            return tr('menu_settings_on_auto_update')
 
     def get_tooltip_text(self):
         
@@ -157,12 +151,12 @@ class ModernSystemTray:
         help_menu = pystray.Menu(
             pystray.MenuItem(
                 tr('menu_help_security'),
-                lambda: webbrowser.open("https://gitlab.com/tweenkrage/zapret-launcher/-/blob/main/SECURITY.md"),
+                lambda: webbrowser.open("https://github.com/avaxngard/zapret-launcher/blob/main/SECURITY.md"),
                 enabled=True
             ),
             pystray.MenuItem(
                 tr('menu_help_license'),
-                lambda: webbrowser.open("https://gitlab.com/tweenkrage/zapret-launcher/-/blob/main/LICENSE"),
+                lambda: webbrowser.open("https://github.com/avaxngard/zapret-launcher/blob/main/LICENSE"),
                 enabled=True
             ),
             pystray.MenuItem(
@@ -191,12 +185,7 @@ class ModernSystemTray:
                 tr('menu_settings_folder'),
                 self.app.open_appdata_folder,
                 enabled=True
-            ),
-            pystray.MenuItem(
-                self._get_auto_update_button_text(),
-                self._toggle_auto_update,
-                enabled=True
-            ),
+            )
         )
         
         is_connecting = hasattr(self.app, '_connecting') and self.app._connecting
@@ -314,9 +303,6 @@ class ModernSystemTray:
             except:
                 pass
 
-    def _toggle_auto_update(self):
-        self.app.toggle_auto_update()
-
     def check_for_updates(self):
         try:
             buildnumber_url = BUILDNUMBER_URL
@@ -386,7 +372,7 @@ class ModernSystemTray:
             self.update_check_timer_id = None
 
     def _schedule_update_check(self):
-        interval = 60 * 60 * 1000
+        interval = CHECK_UPDATES_INTERVAL
         self.update_check_timer_id = self.app.root.after(interval, self._do_update_check)
 
     def _do_update_check(self):
