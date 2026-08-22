@@ -304,6 +304,13 @@ class ModernSystemTray:
                 pass
 
     def check_for_updates(self):
+        if not getattr(self.app, '_auto_update_enabled', True):
+            if self.update_available or self.zapret_update_available:
+                self.update_available = False
+                self.zapret_update_available = False
+                self.update_icon_state()
+            return
+        
         try:
             buildnumber_url = BUILDNUMBER_URL
             req = urllib.request.Request(buildnumber_url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
@@ -418,7 +425,9 @@ class ModernSystemTray:
                 indicator_x = 64 - indicator_size - 4
                 indicator_y = 64 - indicator_size - 4
                 
-                if hasattr(self, 'update_available') and self.update_available:
+                auto_update_enabled = getattr(self.app, '_auto_update_enabled', True)
+                
+                if auto_update_enabled and hasattr(self, 'update_available') and self.update_available:
                     draw.ellipse(
                         [indicator_x, indicator_y, indicator_x + indicator_size, indicator_y + indicator_size],
                         fill=(30, 144, 255)
@@ -428,7 +437,7 @@ class ModernSystemTray:
                         outline=(255, 255, 255, 255),
                         width=1
                     )
-                elif hasattr(self, 'zapret_update_available') and self.zapret_update_available:
+                elif auto_update_enabled and hasattr(self, 'zapret_update_available') and self.zapret_update_available:
                     draw.ellipse(
                         [indicator_x, indicator_y, indicator_x + indicator_size, indicator_y + indicator_size],
                         fill=(30, 144, 255)
