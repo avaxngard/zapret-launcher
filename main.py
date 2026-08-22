@@ -1158,6 +1158,9 @@ class ZapretLauncher:
         self.credit_label.bind("<Button-1>", lambda e: self.open_website())
 
     def show_update_label(self):
+        if not getattr(self, '_auto_update_enabled', True):
+            return
+    
         try:
             if not hasattr(self, 'foundupdates_frame'):
                 if hasattr(self, 'credit_frame'):
@@ -1192,6 +1195,10 @@ class ZapretLauncher:
             pass
 
     def check_for_updates(self):
+        if not getattr(self, '_auto_update_enabled', True):
+            self.root.after(0, self.hide_update_label)
+            return
+    
         try:
             headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)', 'Accept': 'text/plain', 'Connection': 'close'}
             
@@ -1249,6 +1256,9 @@ class ZapretLauncher:
         return "0.0"
 
     def show_update_label_zapret(self):
+        if not getattr(self, '_auto_update_enabled', True):
+            return
+    
         try:
             if not hasattr(self, 'foundupdates_frame_zapret'):
                 if hasattr(self, 'credit_frame'):
