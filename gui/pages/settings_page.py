@@ -166,7 +166,7 @@ class SettingsPage:
             hover_color=self.colors['accent'],
             theme_name=self.app.current_theme
         )
-        regenerate_btn.pack(anchor='w', pady=5)
+        regenerate_btn.pack(anchor='w', pady=3)
 
         def copy_current_link():
             secret = getattr(self.app, '_tg_secret', None)
@@ -198,7 +198,7 @@ class SettingsPage:
             hover_color=self.colors['accent'],
             theme_name=self.app.current_theme
         )
-        copy_btn.pack(anchor='w', pady=5)
+        copy_btn.pack(anchor='w', pady=3)
 
         self.tg_instruction_btn = RoundedButton(
             tg_inner,
@@ -212,7 +212,7 @@ class SettingsPage:
             hover_color=self.colors['accent'],
             theme_name=self.app.current_theme
         )
-        self.tg_instruction_btn.pack(anchor='w', pady=5)
+        self.tg_instruction_btn.pack(anchor='w', pady=3)
 
         maintenance_card = tk.Frame(left_column, bg=self.colors['bg_light'], relief=tk.FLAT, bd=0)
         maintenance_card.pack(fill=tk.X, pady=scale_size(6, self.scale_factor))
