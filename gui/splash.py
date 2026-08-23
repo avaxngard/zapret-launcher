@@ -336,6 +336,9 @@ class SplashWindow:
                 if self._is_winws_running():
                     self.after(0, self._check_for_update)
                     return
+
+                req = urllib.request.Request("http://www.google.com", headers={'User-Agent': 'Mozilla/5.0', 'Connection': 'close'})
+                urllib.request.urlopen(req, timeout=5)
                 
                 if self.auto_update_enabled:
                     self.after(0, self._check_for_update)
@@ -377,16 +380,19 @@ class SplashWindow:
             if config_file.exists():
                 with open(config_file, 'r', encoding='utf-8') as f:
                     data = json.load(f)
-                    return data.get('current_strategy')
+                    strategy = data.get('current_strategy')
+                    if strategy and strategy != "null" and strategy.strip():
+                        return strategy
         except Exception:
             pass
         return None
     
-    def _run_strategy_and_restart(self):
+    def _run_strategy_and_restart(self, strategy=None):
         try:
-            strategy = self._get_current_strategy()
-            if not strategy:
-                return
+            if strategy is None:
+                strategy = self._get_current_strategy()
+                if not strategy:
+                    strategy = "general (EXP).bat"
             
             zapret_dir = self.appdata_path / "zapret_core"
             strategy_path = zapret_dir / strategy
@@ -409,17 +415,20 @@ class SplashWindow:
         strategy = self._get_current_strategy()
         
         if strategy:
-            strategy_display = strategy.replace(".bat", "").replace("general", "").strip() or tr('splash_no_internet_default_strategy')
+            strategy_display = strategy.replace(".bat", "").replace("general", "").strip()
+            if not strategy_display:
+                strategy_display = tr('splash_no_internet_default_strategy')
         else:
             strategy_display = tr('splash_no_internet_default_strategy')
+            strategy = "general (EXP).bat"
         
         text = tr('splash_no_internet_text').format(strategy=strategy_display)
-        result = messagebox.askyesno(tr('splash_no_internet_title'), text)
+        result = messagebox.askyesno(tr('error'), text)
         
         if result:
-            self._run_strategy_and_restart()
+            self._run_strategy_and_restart(strategy)
         else:
-            self._launch_main_app()
+            sys.exit(0)
 
     def _download_file_with_fallback(self, url_type, dest_path, start_progress=0, end_progress=100):
         for i in range(self.current_source_index, len(self.sources)):
