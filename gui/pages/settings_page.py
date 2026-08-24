@@ -166,7 +166,7 @@ class SettingsPage:
             hover_color=self.colors['accent'],
             theme_name=self.app.current_theme
         )
-        regenerate_btn.pack(anchor='w', pady=3)
+        regenerate_btn.pack(anchor='w', pady=2)
 
         def copy_current_link():
             secret = getattr(self.app, '_tg_secret', None)
@@ -198,7 +198,7 @@ class SettingsPage:
             hover_color=self.colors['accent'],
             theme_name=self.app.current_theme
         )
-        copy_btn.pack(anchor='w', pady=3)
+        copy_btn.pack(anchor='w', pady=2)
 
         self.tg_instruction_btn = RoundedButton(
             tg_inner,
@@ -212,7 +212,7 @@ class SettingsPage:
             hover_color=self.colors['accent'],
             theme_name=self.app.current_theme
         )
-        self.tg_instruction_btn.pack(anchor='w', pady=3)
+        self.tg_instruction_btn.pack(anchor='w', pady=2)
 
         maintenance_card = tk.Frame(left_column, bg=self.colors['bg_light'], relief=tk.FLAT, bd=0)
         maintenance_card.pack(fill=tk.X, pady=scale_size(6, self.scale_factor))
@@ -428,12 +428,11 @@ class SettingsPage:
             ("zapret_core/bin/winws.exe", "winws.exe"),
             ("zapret_core/bin/WinDivert.dll", "WinDivert.dll"),
             ("zapret_core/bin/WinDivert64.sys", "WinDivert64.sys"),
-            ("zapret_core/bin/quic_initial_dbankcloud_ru.bin", "quic_initial_dbankcloud_ru.bin"),
             ("zapret_core/bin/quic_initial_rutube_ru.bin", "quic_initial_rutube_ru.bin"),
             ("zapret_core/bin/quic_initial_www_google_com.bin", "quic_initial_www_google_com.bin"),
             ("zapret_core/bin/stun.bin", "stun.bin"),
             ("zapret_core/bin/stun2.bin", "stun2.bin"),
-            ("zapret_core/bin/quic_initial_4pda.to.bin", "quic_initial_4pda.to.bin"),
+            ("zapret_core/bin/quic_initial_4pda_to.bin", "quic_initial_4pda_to.bin"),
             ("zapret_core/bin/ACTIVE_DISCORD_UDP.bin", "ACTIVE_DISCORD_UDP.bin"),
             ("zapret_core/bin/ACTIVE_GAME_UDP.bin", "ACTIVE_GAME_UDP.bin"),
             ("zapret_core/bin/tls_clienthello_4pda_to.bin", "tls_clienthello_4pda_to.bin"),
@@ -572,12 +571,11 @@ class SettingsPage:
             "zapret_core/bin/winws.exe",
             "zapret_core/bin/WinDivert.dll",
             "zapret_core/bin/WinDivert64.sys",
-            "zapret_core/bin/quic_initial_dbankcloud_ru.bin",
             "zapret_core/bin/quic_initial_rutube_ru.bin",
             "zapret_core/bin/tls_clienthello_5ka_ru.bin",
             "zapret_core/bin/ACTIVE_DISCORD_UDP.bin",
             "zapret_core/bin/ACTIVE_GAME_UDP.bin",
-            "zapret_core/bin/quic_initial_4pda.to.bin",
+            "zapret_core/bin/quic_initial_4pda_to.bin",
             "zapret_core/bin/quic_initial_steamcommunity_com.bin",
             "zapret_core/bin/quic_initial_tencent_com.bin",
             "zapret_core/bin/stun2.bin",
