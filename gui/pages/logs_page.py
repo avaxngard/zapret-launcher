@@ -122,25 +122,56 @@ class LogsPage:
         
         self.logs_text.bind("<MouseWheel>", self._on_scroll)
         self.logs_text.config(state=tk.DISABLED)
+        self.update_logs_display()
         self.start_auto_update()
 
     def start_auto_update(self):
         if self._update_job is None:
             self._update_job = self.app.root.after(self.update_interval, self._auto_update_logs)
 
+    def stop_auto_update(self):
+        if self._update_job is not None:
+            try:
+                self.app.root.after_cancel(self._update_job)
+            except:
+                pass
+            self._update_job = None
+
     def _auto_update_logs(self):
+        if not hasattr(self, 'logs_text') or not self.logs_text.winfo_exists():
+            self.stop_auto_update()
+            return
+        
         self.update_logs_display()
         self._update_job = self.app.root.after(self.update_interval, self._auto_update_logs)
 
     def _on_scroll(self, event):
-        self.auto_scroll_enabled = False
         if self.logs_text and self.logs_text.winfo_exists():
             current_view = self.logs_text.yview()
-            self.was_at_bottom = (current_view[1] >= 0.99)
-            self.old_scroll_position = current_view[0]
+            if current_view[1] >= 0.99:
+                self.auto_scroll_enabled = True
+            else:
+                self.auto_scroll_enabled = False
+                self.old_scroll_position = current_view[0]
+
+    def _full_reload_logs(self, logs):
+        self.logs_text.config(state=tk.NORMAL)
+        self.logs_text.delete(1.0, tk.END)
+        
+        for log_line in logs:
+            log_line = log_line.strip()
+            if log_line:
+                self.logs_text.insert(tk.END, log_line + "\n")
+        
+        self.logs_text.config(state=tk.DISABLED)
+        self.last_log_count = len(logs)
+        
+        if self.auto_scroll_enabled:
+            self.logs_text.see(tk.END)
 
     def refresh_logs(self):
         self.auto_scroll_enabled = True
+        self.last_log_count = 0
         self.update_logs_display()
         if self._update_job is None:
             self.start_auto_update()
@@ -167,7 +198,7 @@ class LogsPage:
         
         try:
             if self.logs_text.tag_ranges(tk.SEL):
-                if not hasattr(self, '_delayed_update'):
+                if self._delayed_update is None:
                     self._delayed_update = self.app.root.after(1000, self.update_logs_display)
                 return
         except:
@@ -184,23 +215,31 @@ class LogsPage:
         
         current_view = self.logs_text.yview()
         was_at_bottom = (current_view[1] >= 0.99)
-        current_position = current_view[0]
         
         logs = self.app.load_logs()
         
-        if len(logs) == self.last_log_count:
+        if len(logs) < self.last_log_count:
+            self._full_reload_logs(logs)
+            self._delayed_update = None
             return
         
-        self.last_log_count = len(logs)
-        self.logs_text.config(state=tk.NORMAL)
-        self.logs_text.delete(1.0, tk.END)
+        new_logs = logs[self.last_log_count:] if len(logs) > self.last_log_count else []
         
-        for log_line in logs:
-            log_line = log_line.strip()
-            if log_line:
-                self.logs_text.insert(tk.END, log_line + "\n")
-        
-        self.logs_text.config(state=tk.DISABLED)
+        if new_logs:
+            self.logs_text.config(state=tk.NORMAL)
+            for log_line in new_logs:
+                log_line = log_line.strip()
+                if log_line:
+                    self.logs_text.insert(tk.END, log_line + "\n")
+            self.logs_text.config(state=tk.DISABLED)
+            self.last_log_count = len(logs)
+            
+            if self.auto_scroll_enabled or was_at_bottom:
+                self.logs_text.see(tk.END)
+                self.auto_scroll_enabled = True
+        else:
+            if len(logs) != self.last_log_count:
+                self.last_log_count = len(logs)
         
         if has_selection and sel_start and sel_end:
             try:
@@ -209,13 +248,7 @@ class LogsPage:
             except:
                 pass
         
-        if self.auto_scroll_enabled:
-            self.logs_text.see(tk.END)
-        else:
-            if was_at_bottom:
-                self.logs_text.see(tk.END)
-            else:
-                self.logs_text.yview_moveto(current_position)
+        self._delayed_update = None
     
     def get_frame(self):
         return self.frame
