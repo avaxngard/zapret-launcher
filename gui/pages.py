@@ -10,7 +10,6 @@ import tkinter as tk
 from .page.main_page import MainPage
 from .page.service_page import ServicePage
 from .page.lists_page import ListsPage
-from .page.traffic_page import TrafficPage
 from .page.hosts_page import HostsPage
 from .page.logs_page import LogsPage
 from .page.settings_page import SettingsPage
@@ -33,9 +32,6 @@ class Pages:
         
         self.lists_page_obj = ListsPage(app.content_panel, app)
         self.lists_page = self.lists_page_obj.get_frame()
-        
-        self.traffic_page_obj = TrafficPage(app.content_panel, app)
-        self.traffic_page = self.traffic_page_obj.get_frame()
 
         self.hosts_page_obj = HostsPage(app.content_panel, app, app.dialogs)
         self.hosts_page = self.hosts_page_obj.get_frame()
@@ -50,7 +46,6 @@ class Pages:
             "main": self.main_page,
             "service": self.service_page,
             "lists": self.lists_page,
-            "traffic": self.traffic_page,
             "hosts": self.hosts_page,
             "logs": self.logs_page,
             "settings": self.settings_page
