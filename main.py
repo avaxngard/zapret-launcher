@@ -75,7 +75,7 @@ class StatsMonitor:
         self.disconnection_count = 0
         self.is_monitoring = False
         self._monitor_thread = None
-        self._cache_duration = 2.0
+        self._cache_duration = 1.0
         self._cached_stats = (0, 0)
         self._cached_time = 0
         self._stop_event = None
@@ -606,13 +606,37 @@ class ZapretLauncher:
         self.update_timer_id = None
 
         self.rtt_timer_id = None
-        self.rtt_update_interval = 60000
+        self.rtt_update_interval = 30000
 
         self.last_selected_index = -1
 
         self._cached_rtt = -1
         self._cached_rtt_time = 0
-        self.rtt_cache_duration = 60
+        self.rtt_cache_duration = 30
+
+        self.MAX_HISTORY_SIZE = 100
+        self.MAX_HISTORY_AGE = 3600
+
+        self.traffic_history = {}
+        self.traffic_history_vpn = {}
+        self.traffic_history_direct = {}
+        self.traffic_speed_history = {}
+        self.traffic_speed_vpn_history = {}
+        self.traffic_speed_direct_history = {}
+        self.traffic_last_update = time.time()
+        self._traffic_update_scheduled = False
+        self._traffic_collecting = False
+        self._traffic_collecting_start = 0
+        self._traffic_update_timer = None
+        self.hostname_cache = {}
+        self.hostname_cache_time = {}
+
+        self._cached_processes = []
+        self._last_process_time = 0
+        self.hostname_cache_maxsize = 100
+        self.traffic_history_maxsize = 50
+
+        self.dns_cache_ttl = 240
         
         self.colors = get_theme('Dark')
         self.setup_scrollbar_style()
@@ -824,7 +848,7 @@ class ZapretLauncher:
         if hasattr(self, 'pages') and self.pages:
             self.pages.colors = self.colors
             
-            for page_name in ['main_page', 'service_page', 'lists_page', 'settings_page', 'logs_page']:
+            for page_name in ['main_page', 'service_page', 'lists_page', 'traffic_page', 'settings_page', 'logs_page']:
                 if hasattr(self.pages, page_name):
                     page = getattr(self.pages, page_name)
                     if page:
@@ -1055,6 +1079,7 @@ class ZapretLauncher:
             (tr('main_title'), self.show_main_page),
             (tr('service_title'), self.show_service_page),
             (tr('lists_title'), self.show_lists_page),
+            (tr('traffic_title'), self.show_traffic_page),
             (tr('hosts_title'), self.show_hosts_page),
             (tr('logs_title'), self.show_logs_page)
         ]
@@ -1386,6 +1411,8 @@ class ZapretLauncher:
                 self.dialogs.show_strategy_selector(mode["name"])
                 return
 
+            self._reset_traffic_history()
+
             self.update_status(tr('status_starting'), self.colors['accent'])
             if hasattr(self, 'connect_btn') and self.connect_btn:
                 self.connect_btn.set_enabled(False)
@@ -1467,6 +1494,7 @@ class ZapretLauncher:
         self.show_notification(notification_text, 3000)
         
     def _do_start_tg_proxy(self):
+        self._reset_traffic_history()
         self.update_status(tr('status_starting'), self.colors['accent'])
         if hasattr(self, 'connect_btn') and self.connect_btn:
             self.connect_btn.set_enabled(False)
@@ -1584,6 +1612,7 @@ class ZapretLauncher:
         self.rtt_timer_id = self.root.after(self.rtt_update_interval, self._update_rtt)
 
     def start_rtt_monitoring(self):
+        self.stop_rtt_monitoring()
         self.rtt_timer_id = self.root.after(1000, self._update_rtt)
 
     def stop_rtt_monitoring(self):
@@ -1664,7 +1693,7 @@ class ZapretLauncher:
         elif self.update_interval == 0:
             interval = 1000
         elif self.update_interval > 0:
-            interval = max(1000, int(self.update_interval * 1000))
+            interval = max(500, int(self.update_interval * 1000))
         else:
             interval = 1000
         
@@ -2007,6 +2036,7 @@ class ZapretLauncher:
             messagebox.showerror(tr('information_desc'), tr('error_select_strategy'))
             return
         
+        self._reset_traffic_history()
         self.update_status(tr('status_starting'), self.colors['accent'])
         self.connect_btn.set_enabled(False)
         self.root.update()
@@ -2077,6 +2107,7 @@ class ZapretLauncher:
         if hasattr(self, 'connect_btn') and self.connect_btn:
             self.connect_btn.set_enabled(False)
         self.root.update()
+        self.stop_rtt_monitoring()
         
         def stop_all():
             try:
@@ -2122,6 +2153,8 @@ class ZapretLauncher:
 
     def finish_disconnect(self):
         try:
+            self._cached_processes = []
+
             if hasattr(self, 'mode_label') and self.mode_label and self.mode_label.winfo_exists():
                 self.mode_label.config(text=tr('mode_not_selected'), fg=self.colors['text_secondary'])
             self.update_status(tr('status_ready'), self.colors['text_secondary'])
@@ -2143,7 +2176,17 @@ class ZapretLauncher:
                 self.stats_rtt_label.config(text="-- ms", fg=self.colors['text_secondary'])
 
             self.stop_stats_monitoring()
-            self.stop_rtt_monitoring()
+            self._cached_processes = []
+            self._last_process_time = 0
+            self._traffic_collecting = False
+            self._traffic_collecting_start = 0
+
+            if hasattr(self, '_traffic_update_timer') and self._traffic_update_timer:
+                try:
+                    self.root.after_cancel(self._traffic_update_timer)
+                except:
+                    pass
+                self._traffic_update_timer = None
             
             def update_button():
                 try:
@@ -2164,6 +2207,24 @@ class ZapretLauncher:
                     self.tray_icon.update_menu()
                 except:
                     pass
+
+            self.traffic_history = {}
+            self.traffic_history_vpn = {}
+            self.traffic_history_direct = {}
+            self.traffic_speed_history = {}
+            self.traffic_speed_vpn_history = {}
+            self.traffic_speed_direct_history = {}
+            self.hostname_cache = {}
+            self.hostname_cache_time = {}
+            
+            if hasattr(self, 'pages') and hasattr(self.pages, 'current_page'):
+                if self.pages.current_page == "traffic":
+                    if hasattr(self.pages, 'traffic_page_obj'):
+                        tree = self.pages.traffic_page_obj.traffic_tree
+                        if tree and tree.winfo_exists():
+                            for item in tree.get_children():
+                                tree.delete(item)
+                        self.root.after(500, self.update_traffic_table)
             
             self.update_tray_icon_state()
             self._disconnecting = False
@@ -2323,11 +2384,34 @@ class ZapretLauncher:
     def show_settings_page(self):
         self.pages.show_page_with_animation("settings")
 
+    def show_traffic_page(self):
+        self.pages.show_page_with_animation("traffic")
+        self._cached_processes = []
+
+        if hasattr(self, '_traffic_collecting'):
+            self._traffic_collecting = False
+            
+        if hasattr(self, '_traffic_update_timer') and self._traffic_update_timer:
+            try:
+                self.root.after_cancel(self._traffic_update_timer)
+            except:
+                pass
+        self.root.after(100, self.update_traffic_table)
+
     def show_hosts_page(self):
             self.pages.show_page_with_animation("hosts")
 
     def show_logs_page(self):
         self.pages.show_page_with_animation("logs")
+
+    def _reset_traffic_history(self):
+        self.traffic_history = {}
+        self.traffic_history_vpn = {}
+        self.traffic_history_direct = {}
+        self.traffic_speed_history = {}
+        self.traffic_speed_vpn_history = {}
+        self.traffic_speed_direct_history = {}
+        self.traffic_last_update = time.time()
 
     def check_lists_for_duplicates(self):
         if getattr(self, '_hide_duplicates_warning', False):
@@ -2360,9 +2444,400 @@ class ZapretLauncher:
         self.root.clipboard_append(link)
         self.root.update()
         self.log_event("info", f"Proxy secret-key with fake tls copied to clipboard")
+    
+    def get_process_traffic(self):
+        self._cleanup_traffic_history()
+        processes = []
+        current_time = time.time()
+        time_diff = current_time - self.traffic_last_update
+
+        if (hasattr(self, '_cached_processes') and self._cached_processes and (current_time - self._last_process_time < 1.5)):
+            return self._cached_processes
+        
+        if time_diff < 0.1:
+            time_diff = 0.5
+        elif time_diff > 5:
+            time_diff = 5
+        
+        self.traffic_last_update = current_time
+        
+        connections = []
+        try:
+            connections = psutil.net_connections(kind='inet')
+        except psutil.AccessDenied:
+            self.log_event("info", "Administrator rights required to view network connections")
+            self._cached_processes = [{
+                'name': tr('error_admin_required'),
+                'speed': '-',
+                'vpn': '-',
+                'direct': '-',
+                'connections': 0,
+                'host': '',
+                'total': '-'
+            }]
+            self._last_process_time = current_time
+            return self._cached_processes
+        except Exception as e:
+            self.log_event("info", f"Failed to get network connections: {str(e)}")
+            self._cached_processes = [{
+                'name': tr('error_traffic_collection'),
+                'speed': '-',
+                'vpn': '-',
+                'direct': '-',
+                'connections': 0,
+                'host': '',
+                'total': '-'
+            }]
+            self._last_process_time = current_time
+            return self._cached_processes
+        
+        try:
+            pid_counts = {}
+            pid_hosts = {}
+            
+            for conn in connections:
+                if conn.pid and conn.pid > 0:
+                    pid_counts[conn.pid] = pid_counts.get(conn.pid, 0) + 1
+                    
+                    if conn.raddr and conn.raddr.ip and conn.raddr.port:
+                        remote_ip = conn.raddr.ip
+                        if remote_ip not in ['127.0.0.1', '0.0.0.0', '::1']:
+                            if conn.pid not in pid_hosts:
+                                pid_hosts[conn.pid] = {}
+                            pid_hosts[conn.pid][remote_ip] = pid_hosts[conn.pid].get(remote_ip, 0) + 1
+            
+            top_pids = sorted(pid_counts.items(), key=lambda x: x[1], reverse=True)[:50]
+            top_pids_set = {pid for pid, _ in top_pids}
+            
+            vpn_ports = {1443}
+            vpn_connections = {}
+            
+            for conn in connections:
+                if conn.pid and conn.pid in top_pids_set:
+                    is_vpn = False
+                    if conn.raddr and conn.raddr.port in vpn_ports:
+                        is_vpn = True
+                    elif conn.laddr and conn.laddr.port in vpn_ports:
+                        is_vpn = True
+                    
+                    if is_vpn:
+                        if conn.pid not in vpn_connections:
+                            vpn_connections[conn.pid] = []
+                        vpn_connections[conn.pid].append(conn)
+            
+            proc_data = {}
+            
+            for pid in top_pids_set:
+                try:
+                    proc = psutil.Process(pid)
+                    proc_name = proc.name()
+                    
+                    if proc_name not in proc_data:
+                        try:
+                            if hasattr(proc, 'io_counters'):
+                                net_io = proc.io_counters()
+                            elif hasattr(proc, 'net_io_counters'):
+                                net_io = proc.net_io_counters()
+                            else:
+                                net_io = None
+                            
+                            if net_io:
+                                bytes_sent = net_io.write_bytes if hasattr(net_io, 'write_bytes') else 0
+                                bytes_recv = net_io.read_bytes if hasattr(net_io, 'read_bytes') else 0
+                            else:
+                                bytes_sent = 0
+                                bytes_recv = 0
+                        except:
+                            bytes_sent = 0
+                            bytes_recv = 0
+                        
+                        main_host = ''
+                        if pid in pid_hosts and pid_hosts[pid]:
+                            top_ip = max(pid_hosts[pid].items(), key=lambda x: x[1])[0]
+                            main_host = self._get_hostname(top_ip)
+                        
+                        proc_data[proc_name] = {
+                            'name': proc_name,
+                            'connections': pid_counts.get(pid, 0),
+                            'bytes_sent': bytes_sent,
+                            'bytes_recv': bytes_recv,
+                            'host': main_host,
+                            'pid': pid
+                        }
+                    
+                    if pid in vpn_connections:
+                        proc_data[proc_name]['vpn_connections'] = proc_data[proc_name].get('vpn_connections', 0) + len(vpn_connections[pid])
+                        
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                    pass
+
+            for proc_name, data in proc_data.items():
+                total_connections = data['connections']
+                vpn_conn_count = data.get('vpn_connections', 0)
+                
+                total_bytes = data['bytes_sent'] + data['bytes_recv']
+                
+                if total_connections > 0 and total_bytes > 0:
+                    vpn_bytes = int(total_bytes * vpn_conn_count / total_connections)
+                    direct_bytes = total_bytes - vpn_bytes
+                else:
+                    vpn_bytes = 0
+                    direct_bytes = 0
+                
+                speed = 0
+                if proc_name in self.traffic_history:
+                    prev_total = self.traffic_history[proc_name]
+                    if time_diff > 0 and total_bytes >= prev_total:
+                        raw_speed = (total_bytes - prev_total) / time_diff
+                        raw_speed = max(0, raw_speed)
+                        raw_speed = min(raw_speed, 100 * 1024 * 1024)
+                        
+                        if proc_name in self.traffic_speed_history:
+                            speed = self.traffic_speed_history[proc_name] * 0.7 + raw_speed * 0.3
+                        else:
+                            speed = raw_speed
+                        
+                        self.traffic_speed_history[proc_name] = speed
+                else:
+                    speed = 0
+                    if proc_name not in self.traffic_speed_history:
+                        self.traffic_speed_history[proc_name] = 0
+                
+                speed_vpn = 0
+                speed_direct = 0
+                
+                if proc_name in self.traffic_history_vpn:
+                    prev_vpn = self.traffic_history_vpn[proc_name]
+                    if time_diff > 0 and vpn_bytes >= prev_vpn:
+                        raw_speed_vpn = (vpn_bytes - prev_vpn) / time_diff
+                        raw_speed_vpn = max(0, min(raw_speed_vpn, 100 * 1024 * 1024))
+                        
+                        if proc_name in self.traffic_speed_vpn_history:
+                            speed_vpn = self.traffic_speed_vpn_history[proc_name] * 0.7 + raw_speed_vpn * 0.3
+                        else:
+                            speed_vpn = raw_speed_vpn
+                        
+                        self.traffic_speed_vpn_history[proc_name] = speed_vpn
+                
+                if proc_name in self.traffic_history_direct:
+                    prev_direct = self.traffic_history_direct[proc_name]
+                    if time_diff > 0 and direct_bytes >= prev_direct:
+                        raw_speed_direct = (direct_bytes - prev_direct) / time_diff
+                        raw_speed_direct = max(0, min(raw_speed_direct, 100 * 1024 * 1024))
+                        
+                        if proc_name in self.traffic_speed_direct_history:
+                            speed_direct = self.traffic_speed_direct_history[proc_name] * 0.7 + raw_speed_direct * 0.3
+                        else:
+                            speed_direct = raw_speed_direct
+                        
+                        self.traffic_speed_direct_history[proc_name] = speed_direct
+                
+                self.traffic_history[proc_name] = total_bytes
+                self.traffic_history_vpn[proc_name] = vpn_bytes
+                self.traffic_history_direct[proc_name] = direct_bytes
+                
+                vpn_display = self._format_speed(speed_vpn) if speed_vpn > 0 else '-'
+                direct_display = self._format_speed(speed_direct) if speed_direct > 0 else '-'
+                
+                processes.append({
+                    'name': proc_name[:35],
+                    'speed': self._format_speed(speed),
+                    'vpn': vpn_display,
+                    'direct': direct_display,
+                    'connections': data['connections'],
+                    'host': data['host'][:40] if data['host'] else '',
+                    'total': self._format_bytes(total_bytes)
+                })
+            
+            processes.sort(key=lambda x: (x['connections'], self._parse_speed_value(x['speed'])), reverse=True)
+            processes = processes[:40]
+            
+        except Exception as e:
+            self.log_event("info", f"Error collecting traffic: {str(e)}")
+            processes = [{
+                'name': tr('error_traffic_collection'),
+                'speed': '-',
+                'vpn': '-',
+                'direct': '-',
+                'connections': 0,
+                'host': '',
+                'total': '-'
+            }]
+        
+        if not processes:
+            processes.append({
+                'name': tr('traffic_no_connections'),
+                'speed': '-',
+                'vpn': '-',
+                'direct': '-',
+                'connections': 0,
+                'host': '',
+                'total': '-'
+            })
+        
+        self._cached_processes = processes
+        self._last_process_time = current_time
+        return processes
+
+    def _parse_speed_value(self, speed_str):
+        if speed_str == '-' or not speed_str:
+            return 0
+        try:
+            if 'KB/s' in speed_str:
+                return float(speed_str.replace(' KB/s', '')) * 1024
+            elif 'MB/s' in speed_str:
+                return float(speed_str.replace(' MB/s', '')) * 1024 * 1024
+            elif 'B/s' in speed_str:
+                return float(speed_str.replace(' B/s', ''))
+        except:
+            pass
+        return 0
+    
+    def _format_bytes(self, bytes_val):
+        if bytes_val < 1024:
+            return f"{bytes_val} B"
+        elif bytes_val < 1024 * 1024:
+            return f"{bytes_val / 1024:.1f} KB"
+        elif bytes_val < 1024 * 1024 * 1024:
+            return f"{bytes_val / (1024 * 1024):.1f} MB"
+        else:
+            return f"{bytes_val / (1024 * 1024 * 1024):.2f} GB"
+    
+    def _format_speed(self, bytes_per_sec):
+        if bytes_per_sec < 1024:
+            return f"{bytes_per_sec:.0f} B/s"
+        elif bytes_per_sec < 1024 * 1024:
+            return f"{bytes_per_sec / 1024:.1f} KB/s"
+        else:
+            return f"{bytes_per_sec / (1024 * 1024):.1f} MB/s"
+
+    def _get_hostname(self, ip):
+        if not ip or ip in ['127.0.0.1', '0.0.0.0', '::1']:
+            return ip
+        
+        current_time = time.time()
+        
+        if len(self.hostname_cache) > self.hostname_cache_maxsize:
+            to_remove = len(self.hostname_cache) - self.hostname_cache_maxsize
+            oldest = sorted(self.hostname_cache_time.items(), key=lambda x: x[1])[:to_remove + 10]
+            for ip_key, _ in oldest:
+                self.hostname_cache.pop(ip_key, None)
+                self.hostname_cache_time.pop(ip_key, None)
+        
+        if ip in self.hostname_cache and (current_time - self.hostname_cache_time.get(ip, 0)) < self.dns_cache_ttl:
+            return self.hostname_cache[ip]
+        
+        try:
+            socket.setdefaulttimeout(1)
+            hostname = socket.gethostbyaddr(ip)[0]
+            if len(hostname) > 40:
+                hostname = hostname[:37] + '...'
+            self.hostname_cache[ip] = hostname
+            self.hostname_cache_time[ip] = current_time
+            return hostname
+        except (socket.herror, socket.gaierror, socket.timeout):
+            self.hostname_cache[ip] = ip
+            self.hostname_cache_time[ip] = current_time
+            return ip
+        except Exception:
+            return ip
+        finally:
+            socket.setdefaulttimeout(None)
+
+    def update_traffic_table(self):
+        if self.update_interval is None:
+            return
+        
+        current_page = None
+        if hasattr(self, 'pages'):
+            current_page = getattr(self.pages, 'current_page', None)
+        
+        if current_page != "traffic":
+            self._schedule_next_traffic_update()
+            return
+        
+        if hasattr(self, '_traffic_collecting') and self._traffic_collecting:
+            if time.time() - self._traffic_collecting_start > 5:
+                self._traffic_collecting = False
+                self._traffic_collecting_start = 0
+            else:
+                self._schedule_next_traffic_update()
+                return
+        
+        self._traffic_collecting = True
+        self._traffic_collecting_start = time.time()
+        
+        def collect_data():
+            try:
+                processes = self.get_process_traffic()
+                self.root.after(0, lambda: self._update_traffic_table_ui(processes))
+            except Exception as e:
+                self.log_event("info", f"Error collecting traffic data: {str(e)}")
+            finally:
+                self._traffic_collecting = False
+                self.root.after(0, self._schedule_next_traffic_update)
+        
+        threading.Thread(target=collect_data, daemon=True).start()
+
+    def _schedule_next_traffic_update(self):
+        if self.update_interval is None:
+            return
+        
+        if self.update_interval == 0:
+            interval_ms = 500
+        else:
+            interval_ms = int(self.update_interval * 1000)
+        
+        if hasattr(self, '_traffic_update_timer') and self._traffic_update_timer:
+            try:
+                self.root.after_cancel(self._traffic_update_timer)
+            except:
+                pass
+        
+        self._traffic_update_timer = self.root.after(interval_ms, self.update_traffic_table)
+
+    def _schedule_traffic_update(self):
+        self._schedule_next_traffic_update()
+
+    def _update_traffic_table_ui(self, processes):
+        try:
+            if hasattr(self, 'pages') and hasattr(self.pages, 'traffic_page_obj'):
+                tree = self.pages.traffic_page_obj.traffic_tree
+                if tree and tree.winfo_exists():
+                    for item in tree.get_children():
+                        tree.delete(item)
+                    
+                    for proc in processes:
+                        speed_display = proc.get('speed', '-')
+                        
+                        tree.insert("", "end", values=(
+                            proc['name'],
+                            speed_display,
+                            proc['vpn'],
+                            proc['direct'],
+                            str(proc['connections']) if proc['connections'] > 0 else '-',
+                            proc['host'],
+                            proc['total']
+                        ))
+        except Exception as e:
+            self.log_event("info", f"Error updating traffic table: {str(e)}")
 
     def is_any_connection_active(self):
         return self.is_connected or self.zapret.is_winws_running() or (hasattr(self, 'tg_proxy') and self.tg_proxy.is_running)
+
+    def _cleanup_traffic_history(self):
+        current_time = time.time()
+        
+        if len(self.traffic_history) > self.MAX_HISTORY_SIZE:
+            to_remove = len(self.traffic_history) - self.MAX_HISTORY_SIZE
+            oldest_keys = list(self.traffic_history.keys())[:to_remove]
+            for key in oldest_keys:
+                self.traffic_history.pop(key, None)
+                self.traffic_history_vpn.pop(key, None)
+                self.traffic_history_direct.pop(key, None)
+                self.traffic_speed_history.pop(key, None)
+                self.traffic_speed_vpn_history.pop(key, None)
+                self.traffic_speed_direct_history.pop(key, None)
 
     def setup_scrollbar_style(self):
         style = ttk.Style()
