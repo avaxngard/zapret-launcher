@@ -157,6 +157,9 @@ class LogsPage:
     def _full_reload_logs(self, logs):
         self.logs_text.config(state=tk.NORMAL)
         self.logs_text.delete(1.0, tk.END)
+
+        if len(logs) > 1000:
+            logs = logs[-1000:]
         
         for log_line in logs:
             log_line = log_line.strip()
@@ -193,7 +196,16 @@ class LogsPage:
             pass
     
     def update_logs_display(self):
+        if not self.app.root.winfo_viewable():
+            return
+        
         if not hasattr(self, 'logs_text') or not self.logs_text.winfo_exists():
+            return
+
+        if self.last_log_count == 0:
+            logs = self.app.load_logs()
+            self._full_reload_logs(logs)
+            self._delayed_update = None
             return
         
         try:
@@ -231,6 +243,13 @@ class LogsPage:
                 log_line = log_line.strip()
                 if log_line:
                     self.logs_text.insert(tk.END, log_line + "\n")
+            
+            line_count = int(self.logs_text.index('end-1c').split('.')[0])
+            if line_count > 1000:
+                lines_to_delete = line_count - 1000
+                self.logs_text.delete('1.0', f'{lines_to_delete + 1}.0')
+                self.last_log_count = self.last_log_count - lines_to_delete
+            
             self.logs_text.config(state=tk.DISABLED)
             self.last_log_count = len(logs)
             
