@@ -82,15 +82,15 @@ class SplashWindow:
                 'exe': GITHUB_EXE_URL,
                 'zip': GITHUB_ZIP_URL,
                 'zapret': GITHUB_ZAPRET_CORE_URL
-            },
-            {
-                'name': 'gitlab',
-                'zapret_version': GITLAB_ZAPRET_VERSION_URL,
-                'build': GITLAB_BUILDNUMBER_URL,
-                'exe': GITLAB_EXE_URL,
-                'zip': GITLAB_ZIP_URL,
-                'zapret': GITLAB_ZAPRET_CORE_URL
-            }
+            }#,
+            #{
+            #    'name': 'gitlab',
+            #    'zapret_version': GITLAB_ZAPRET_VERSION_URL,
+            #    'build': GITLAB_BUILDNUMBER_URL,
+            #    'exe': GITLAB_EXE_URL,
+            #    'zip': GITLAB_ZIP_URL,
+            #    'zapret': GITLAB_ZAPRET_CORE_URL
+            #}
         ]
 
         self.current_source_index = 0
