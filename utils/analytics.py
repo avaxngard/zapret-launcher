@@ -92,13 +92,13 @@ class UserStats:
         except Exception:
             return "Windows Unknown"
 
-    def _send(self, action):
+    def _send(self, action, extra_data=None):
         if not self._enabled:
             return
         
         now = time.time()
         
-        if action == 'heartbeat' and now - self._last_send < 120:
+        if action == 'heartbeat' and now - self._last_send < 30:
             return
         
         self._last_send = now
@@ -115,6 +115,9 @@ class UserStats:
                     'timestamp': datetime.now().isoformat()
                 }
                 
+                if extra_data:
+                    payload.update(extra_data)
+                
                 response = requests.post(
                     self.api_stats_url,
                     json=payload,
@@ -126,6 +129,16 @@ class UserStats:
                 pass
         
         threading.Thread(target=send, daemon=True).start()
+
+    def on_connect(self, mode=None):
+        if not self._enabled:
+            return
+        
+        extra_data = {}
+        if mode:
+            extra_data['mode'] = mode
+        
+        self._send('connect', extra_data)
     
     def start(self):
         if not self._enabled or self._is_active:
@@ -154,8 +167,5 @@ class UserStats:
     
     def on_launch(self):
         self.start()
-    
-    def on_connect(self):
-        self._send('heartbeat')
 
 user_stats = UserStats()
