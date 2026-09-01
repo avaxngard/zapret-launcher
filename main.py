@@ -1552,9 +1552,15 @@ class ZapretLauncher:
 
             self._connecting = False
             self.force_tray_menu_update()
+            self.update_tray_icon_state()
+
+            try:
+                if hasattr(self, 'user_stats'):
+                    self.user_stats.on_connect("Telegram Proxy")
+            except Exception:
+                pass
         
         self.connect_btn.set_enabled(True)
-        self.root.after(500, self.update_tray_icon_state)
 
     def _on_tg_proxy_failed_direct(self, error_msg):
         self.update_status(tr('status_error'), self.colors['accent_red'])
@@ -2069,12 +2075,6 @@ class ZapretLauncher:
             self.connect_btn.set_enabled(True)
 
         self.update_tray_icon_state()
-
-        try:
-            if hasattr(self, 'user_stats'):
-                self.user_stats.on_connect()
-        except Exception:
-            pass
 
         mode_name = strategy.replace(".bat", "").replace("general", "").strip() or "Стандартный"
         self.log_event("connect", "", mode_name)
@@ -3011,6 +3011,13 @@ class ZapretLauncher:
             self.root.after(500, self.dialogs.show_tg_proxy_instruction)
 
         self.update_tray_icon_state()
+
+        try:
+            if hasattr(self, 'user_stats'):
+                self.user_stats.on_connect(mode_name)
+        except Exception:
+            pass
+        
         self._connecting = False
         self.force_tray_menu_update()
         self.log_event("connect", "", mode_name)
