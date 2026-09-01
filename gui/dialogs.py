@@ -498,6 +498,12 @@ class Dialogs:
                 if hasattr(self.app, 'connect_btn') and self.app.connect_btn:
                     self.app.connect_btn.set_enabled(True)
 
+                try:
+                    if hasattr(self.app, 'user_stats'):
+                        self.app.user_stats.on_connect(mode["name"])
+                except Exception:
+                    pass
+
                 self.app._connecting = False
                 self.app.force_tray_menu_update()
         
