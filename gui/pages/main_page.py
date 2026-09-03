@@ -7,6 +7,7 @@
 # Distributed WITHOUT ANY WARRANTY.
 
 import tkinter as tk
+from tkinter import messagebox
 from gui.widgets import RoundedButton
 import webbrowser
 from pathlib import Path
@@ -311,7 +312,7 @@ class MainPage:
                 fg=self.colors['text_secondary'], bg=self.colors['bg_light'], width=scale_size(8, self.scale_factor), anchor='w').pack(side=tk.LEFT)
         
         self.tg_domain_entry = tk.Entry(row3, font=("Inter", scale_size(10, self.scale_factor)),
-                                        bg=self.colors['bg_light'], fg=self.colors['text_secondary'],
+                                        bg=self.colors['bg_light'], fg=self.colors['text_primary'],
                                         relief=tk.FLAT, highlightthickness=1,
                                         highlightcolor=self.colors['accent'],
                                         highlightbackground=self.colors['separator'])
@@ -324,13 +325,45 @@ class MainPage:
             command=self.save_tg_proxy_settings,
             width=scale_size(200, self.scale_factor), height=scale_size(32, self.scale_factor),
             bg=self.colors['accent'],
-            fg=self.colors['text_primary'],
+            fg=self.colors['text_secondary'],
             font=("Inter", scale_size(10, self.scale_factor)),
             corner_radius=scale_size(8, self.scale_factor),
             hover_color=self.colors['accent'],
             theme_name=self.app.current_theme
         )
         apply_btn.pack(pady=(scale_size(5, self.scale_factor), 5))
+
+        copy_secret_btn = RoundedButton(
+            inner,
+            text=tr('tg_copy_secret'),
+            command=self.copy_current_link,
+            width=scale_size(200, self.scale_factor), height=scale_size(32, self.scale_factor),
+            bg=self.colors['button_bg'],
+            fg=self.colors['text_secondary'],
+            font=("Inter", scale_size(10, self.scale_factor)),
+            corner_radius=scale_size(8, self.scale_factor),
+            hover_color=self.colors['accent'],
+            theme_name=self.app.current_theme
+        )
+        copy_secret_btn.pack(pady=(scale_size(5, self.scale_factor), 5))
+
+    def copy_current_link(self):
+        secret = getattr(self.app, '_tg_secret', None)
+        if secret:
+            if self.app.tg_fake_tls and self.app.tg_fake_tls_domain:
+                domain_hex = self.app.tg_fake_tls_domain.encode('ascii').hex()
+                link = f"ee{secret}{domain_hex}"
+                notification = tr('notification_copied_secret')
+            else:
+                link = secret
+                notification = tr('notification_copied_secret')
+                    
+            self.app.root.clipboard_clear()
+            self.app.root.clipboard_append(link)
+            self.app.root.update()
+            self.app.show_notification(notification, 2000)
+        else:
+            messagebox.showwarning(tr('error_secret_not_found'), tr('error_telegram_proxy_start'))
 
     def _get_icon_path(self, filename):
         base_path = Path("resources") / filename
