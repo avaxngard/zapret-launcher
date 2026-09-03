@@ -183,7 +183,7 @@ class Languages:
             'tg_instruction_subtitle': 'Для использования прокси выполните следующие шаги:',
             'tg_generate_secret': 'Сгенерировать секрет-ключ',
             'tg_instruction_settings_show': 'Показывать инструкцию',
-            'tg_instruction_settings_hide': 'Скрыть инструкцию',
+            'tg_instruction_settings_hide': 'Скрывать инструкцию',
             'tg_copy_secret': 'Скопировать секрет-ключ',
             'tg_step1': 'Откройте Telegram и перейдите в',
             'tg_step1_desc': 'Настройки - Продвинутые настройки',
