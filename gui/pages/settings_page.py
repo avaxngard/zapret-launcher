@@ -168,38 +168,6 @@ class SettingsPage:
         )
         regenerate_btn.pack(anchor='w', pady=2)
 
-        def copy_current_link():
-            secret = getattr(self.app, '_tg_secret', None)
-            if secret:
-                if self.app.tg_fake_tls and self.app.tg_fake_tls_domain:
-                    domain_hex = self.app.tg_fake_tls_domain.encode('ascii').hex()
-                    link = f"ee{secret}{domain_hex}"
-                    notification = tr('notification_copied_secret')
-                else:
-                    link = secret
-                    notification = tr('notification_copied_secret')
-                
-                self.app.root.clipboard_clear()
-                self.app.root.clipboard_append(link)
-                self.app.root.update()
-                self.app.show_notification(notification, 2000)
-            else:
-                messagebox.showwarning(tr('error_secret_not_found'), tr('error_telegram_proxy_start'))
-
-        copy_btn = RoundedButton(
-            tg_inner,
-            text=tr('tg_copy_secret'),
-            command=copy_current_link,
-            width=btn_width_large, height=btn_height_large,
-            bg=self.colors['button_bg'],
-            fg=self.colors['text_secondary'],
-            font=("Inter", font_size_btn_small),
-            corner_radius=btn_radius_large,
-            hover_color=self.colors['accent'],
-            theme_name=self.app.current_theme
-        )
-        copy_btn.pack(anchor='w', pady=2)
-
         self.tg_instruction_btn = RoundedButton(
             tg_inner,
             text=self._get_instruction_button_text(),
