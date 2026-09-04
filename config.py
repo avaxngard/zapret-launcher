@@ -19,7 +19,7 @@ PNG_ICON_PATH = BASE_DIR / "resources" / "icon.png"
 HOSTS_PATH = Path(r"C:\Windows\System32\drivers\etc\hosts")
 
 CURRENT_VERSION = "3.2.3.2"
-CURRENT_BUILD = "3424"
+CURRENT_BUILD = "3425"
 
 CHECK_UPDATES_INTERVAL = 3 * 60 * 60 * 1000
 
