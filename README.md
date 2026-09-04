@@ -14,6 +14,9 @@
 
 # Нашли неисправность? —> [@zapret_launcher_bot](https://t.me/zapret_launcher_bot)
 
+# Новости
+- [**Telegram**](https://t.me/zapret_launcher)
+
 # Поддержать
 - [**DonationAlerts**](https://www.donationalerts.com/r/tweenkedrage)
 
