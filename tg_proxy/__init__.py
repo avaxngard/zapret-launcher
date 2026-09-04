@@ -3,7 +3,7 @@ from tg_proxy.utils import get_link_host, build_github_opener
 from .tg_ws_proxy import run_proxy
 from .logger_setup import setup_tg_logging, get_log_file_path
 
-__version__ = "1.10.0"
+__version__ = "1.10.1"
 
 __all__ = [
     "__version__", 
