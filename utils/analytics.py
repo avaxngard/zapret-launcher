@@ -15,6 +15,7 @@ import struct
 import uuid
 import time
 from datetime import datetime
+from config import CONFIG_FILE
 from config import APPDATA_DIR, ZAPRET_CORE_DIR, CURRENT_VERSION, CURRENT_BUILD, API_URL_STATS
 
 class UserStats:
@@ -98,13 +99,21 @@ class UserStats:
         
         now = time.time()
         
-        if action == 'heartbeat' and now - self._last_send < 30:
+        if action == 'heartbeat' and now - self._last_send < 300:
             return
         
         self._last_send = now
         
         def send():
             try:
+                settings = {}
+                try:
+                    if CONFIG_FILE.exists():
+                        with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
+                            settings = json.load(f)
+                except:
+                    pass
+                
                 payload = {
                     'install_id': self.install_id,
                     'version': CURRENT_VERSION,
@@ -112,7 +121,12 @@ class UserStats:
                     'zapret': self._get_zapret_version(),
                     'os': self.os_info,
                     'action': action,
-                    'timestamp': datetime.now().isoformat()
+                    'timestamp': datetime.now().isoformat(),
+                    'auto_update_enabled': settings.get('auto_update_enabled', True),
+                    'autostart_enabled': settings.get('autostart_enabled', False),
+                    'current_strategy': settings.get('current_strategy'),
+                    'language': settings.get('language', 'Russian'),
+                    'theme': settings.get('theme', 'Default')
                 }
                 
                 if extra_data:
