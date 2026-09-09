@@ -324,7 +324,6 @@ class SplashWindow:
             return
         
         threading.Thread(target=self.cleanup_old_internal_folders, daemon=True).start()
-        threading.Thread(target=self.cleanup_old_exclude_files, daemon=True).start()
     
         self._check_internet()
         self.window.mainloop()
@@ -624,6 +623,8 @@ class SplashWindow:
                     "general (ALT10).bat",
                     "general (ALT11).bat",
                     "general (ALT12).bat",
+                    "general (ALT13).bat",
+                    "general (EXP).bat",
                     "general (FAKE TLS AUTO).bat",
                     "general (FAKE TLS AUTO ALT2).bat",
                     "general (FAKE TLS AUTO ALT3).bat",
@@ -796,7 +797,6 @@ class SplashWindow:
         try:
             subprocess.run(['taskkill', '/F', '/IM', 'winws.exe'], capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW)
             subprocess.run(['sc', 'stop', 'WinDivert'], capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW)
-            subprocess.run(['taskkill', '/F', '/IM', 'nfqws.exe'], capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW)
             time.sleep(1)
         except:
             pass
@@ -828,34 +828,6 @@ class SplashWindow:
                             pass
                     except Exception:
                         pass
-        except Exception:
-            pass
-    
-    def cleanup_old_exclude_files(self):
-        try:
-            lists_dir = APPDATA_DIR / "zapret_core" / "lists"
-            if not lists_dir.exists():
-                return
-            
-            files_to_remove = [
-                "ipset-exclude-user.txt",
-                "ipset-exclude.txt", 
-                "list-exclude-user.txt",
-                "list-exclude.txt",
-                "list-general-user.txt"
-            ]
-            
-            removed_count = 0
-            for filename in files_to_remove:
-                file_path = lists_dir / filename
-                if file_path.exists():
-                    try:
-                        os.chmod(file_path, 0o666)
-                        file_path.unlink()
-                        removed_count += 1
-                    except Exception:
-                        pass
-                
         except Exception:
             pass
 
