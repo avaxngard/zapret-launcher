@@ -662,6 +662,7 @@ class ZapretLauncher:
 
         self.ensure_appdata_dir()
         self.ensure_custom_list_file()
+        self.ensure_ipset_user_list_file()
         
         self.zapret = ZapretCore(self)
         self.user_stats = user_stats
@@ -783,6 +784,20 @@ class ZapretLauncher:
                 
         except Exception:
             pass
+
+    def ensure_ipset_user_list_file(self):
+            try:
+                lists_dir = LISTS_DIR
+                if not lists_dir.exists():
+                    lists_dir.mkdir(parents=True, exist_ok=True)
+                
+                ipset_user_path = lists_dir / "ipset-white-user.txt"
+                if not ipset_user_path.exists():
+                    with open(ipset_user_path, 'w', encoding='utf-8') as f:
+                        f.write("203.0.113.113/32\n")
+                    
+            except Exception:
+                pass
 
     def update_tray_icon_state(self):
         if hasattr(self, 'tray_icon') and self.tray_icon:
