@@ -1544,9 +1544,6 @@ class ZapretLauncher:
             self.update_stats_display()
             self.log_event("connect", "", "Telegram Proxy")
 
-            if self.tg_fake_tls:
-                self.root.after(1000, self.copy_tg_link_to_clipboard)
-
             if not self._tg_instruction:
                 self.root.after(500, self.dialogs.show_tg_proxy_instruction)
 
@@ -2443,7 +2440,6 @@ class ZapretLauncher:
         self.root.clipboard_clear()
         self.root.clipboard_append(link)
         self.root.update()
-        self.log_event("info", f"Proxy secret-key with fake tls copied to clipboard")
     
     def get_process_traffic(self):
         self._cleanup_traffic_history()
@@ -3003,9 +2999,6 @@ class ZapretLauncher:
 
         if hasattr(self, 'connect_btn') and self.connect_btn:
             self.connect_btn.set_enabled(True)
-
-        if self.tg_fake_tls:
-            self.root.after(1000, self.copy_tg_link_to_clipboard)
 
         if not self._tg_instruction:
             self.root.after(500, self.dialogs.show_tg_proxy_instruction)
