@@ -995,7 +995,8 @@ tochka-tech.com
 tochka.com
 vtb.ru
 steamcommunity.com
-api.steampowered.com
+steamusercontent.com
+steampowered.com
 libreoffice.org
 documentfoundation.org
 7-zip.org
