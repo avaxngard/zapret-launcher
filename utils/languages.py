@@ -132,7 +132,7 @@ class Languages:
             'settings_reinstall': 'Переустановить zapret',
             'settings_reinstall_title': 'Переустановка ядра',
             'settings_integrity_folder_missing': 'папка отсутствует',
-            'settings_integrity_missing_count': 'Отсутствует файлов:',
+            'settings_integrity_missing_count': 'Отсутствующие файлы:',
             'settings_integrity_success': 'Все файлы имеются',
             'settings_reinstall_all_exists': 'Все файлы ядра уже имеются\nВы точно хотите переустановить их?',
             'settings_reinstall_missing': 'Обнаружены отсутствующие файлы ядра\nПереустановить?',
