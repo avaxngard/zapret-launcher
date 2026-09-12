@@ -48,28 +48,28 @@ def get_theme(theme_name='Default'):
             
             'separator': "#46435A",
         },
-        'Light': {
-            'accent': '#7c5a8a',
-            'accent_hover': '#9b78a8',
-            'accent_green': '#059669',
-            'accent_darkgreen': '#047857',
-            'accent_red': '#DC2626',
+        'Old': {
+            'accent': "#3B82F6",
+            'accent_hover': "#60A5FA",
+            'accent_green': '#4ade80',
+            'accent_darkgreen': '#348f55',
+            'accent_red': '#EF4444',
             
-            'bg_dark': '#E8E8E8',
-            'bg_medium': '#D4D4D4',
-            'bg_light': '#FFFFFF',
-            'bg_light_hover': '#C8C8C8',
+            'bg_dark': '#0F172A',
+            'bg_medium': '#1E293B',
+            'bg_light': '#334155',
+            'bg_light_hover': '#475569',
             
-            'text_primary': '#111111',
-            'text_secondary': '#4B4B4B',
+            'text_primary': '#FFFFFF',
+            'text_secondary': "#94A3B8",
             
-            'button_bg': '#D4D4D4',
-            'button_hover': '#B8B8B8',
+            'button_bg': '#475569',
+            'button_hover': '#64748B',
             
-            'separator': '#B8B8B8',
+            'separator': "#3E4C63",
         }
     }
     return themes.get(theme_name, themes['Default'])
 
 def get_theme_names():
-    return ['Default', 'Pink']
+    return ['Default', 'Pink']#, 'Old']
