@@ -367,7 +367,6 @@ class SettingsPage:
             
             if result == 'ok':
                 self.app.show_notification(tr('please_wait'), 1500)
-                self.app.log_event("info", f"Theme changed: {current_theme} -> {new_theme}")
                 self.app.current_theme = new_theme
                 self.app.save_settings()
                 self.app.root.after(1500, self._restart_launcher)
@@ -383,7 +382,6 @@ class SettingsPage:
             
             if result == 'ok':
                 self.app.show_notification(tr('please_wait'), 1500)
-                self.app.log_event("info", f"Interface language changed: {current_lang} -> {new_lang}")
                 self.app.languages.set_language(new_lang)
                 self.app.save_settings()
                 self.app.root.after(1500, self._restart_launcher)
@@ -425,6 +423,7 @@ class SettingsPage:
             ("zapret_core/general (ALT10).bat", "general (ALT10).bat"),
             ("zapret_core/general (ALT11).bat", "general (ALT11).bat"),
             ("zapret_core/general (ALT12).bat", "general (ALT12).bat"),
+            ("zapret_core/general (ALT13).bat", "general (ALT13).bat"),
             ("zapret_core/general (EXP).bat", "general (EXP).bat"),
             ("zapret_core/general (FAKE TLS AUTO).bat", "general (FAKE TLS AUTO).bat"),
             ("zapret_core/general (FAKE TLS AUTO ALT).bat", "general (FAKE TLS AUTO ALT).bat"),
@@ -567,6 +566,7 @@ class SettingsPage:
             "zapret_core/general (ALT10).bat",
             "zapret_core/general (ALT11).bat",
             "zapret_core/general (ALT12).bat",
+            "zapret_core/general (ALT13).bat",
             "zapret_core/general (EXP).bat",
             "zapret_core/general (FAKE TLS AUTO).bat",
             "zapret_core/general (FAKE TLS AUTO ALT).bat",
@@ -658,6 +658,7 @@ class SettingsPage:
                         "general (ALT10).bat",
                         "general (ALT11).bat",
                         "general (ALT12).bat",
+                        "general (ALT13).bat",
                         "general (EXP).bat",
                         "general (FAKE TLS AUTO).bat",
                         "general (FAKE TLS AUTO ALT2).bat",
