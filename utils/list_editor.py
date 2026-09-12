@@ -318,8 +318,6 @@ class ListEditor:
             with open(self.file_path, 'w', encoding='utf-8') as f:
                 f.write(content)
 
-            if self.app:
-                self.app.log_event("info", f"File has been saved: {os.path.basename(self.file_path)}")
             messagebox.showinfo(tr('success'), f"{tr('editor_success')}\n{tr('restart_zapret')}")
             self.dialog.destroy()
         except Exception as e:
