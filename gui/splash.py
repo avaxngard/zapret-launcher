@@ -175,10 +175,10 @@ class SplashWindow:
         try:
             if self.colors_name == 'Default':
                 header_color = "#0F0F12"
-            elif self.colors_name == 'Pink':
-                header_color = "#1E1B2E"
+            elif self.colors_name == 'Old':
+                header_color = "#0F172A"
             else:
-                header_color = self.colors['bg_dark']
+                header_color = "#1E1B2E"
             pywinstyles.change_header_color(self.window, header_color)
             
         except ImportError:
