@@ -61,8 +61,8 @@ class RoundedButton(tk.Canvas):
         if hover_color is None:
             if theme_name == 'Pink':
                 hover_color = '#DD72A9'
-            #elif theme_name == 'Light':
-            #    hover_color = '#8b6b9e'
+            elif theme_name == 'Old':
+                hover_color = '#60A5FA'
             else:
                 hover_color = '#6c5579'
 
