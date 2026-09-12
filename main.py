@@ -211,7 +211,6 @@ class TGProxyServer:
 
     def set_log_callback(self, callback):
         self._log_callback = callback
-        #run.set_log_callback(callback)
     
     def _log(self, message):
         if self._log_callback:
@@ -265,7 +264,7 @@ class TGProxyServer:
                     proxy_config.secret = self._secret
                 else:
                     if self._log_callback:
-                        self._log_callback("error", "No secret set for TG Proxy")
+                        self._log_callback("info", "No secret set for TG Proxy")
                     return
                 
                 if not proxy_config.dc_redirects:
@@ -277,7 +276,7 @@ class TGProxyServer:
                 run_proxy(self._stop_event)
             except Exception as e:
                 if self._log_callback:
-                    self._log_callback("error", f"TG Proxy error: {e}")
+                    self._log_callback("info", f"TG Proxy error: {e}")
             finally:
                 if loop is not None:
                     loop.close()
@@ -455,8 +454,6 @@ class ZapretCore:
             
         try:
             self.stop_current_strategy()
-            self.log_event("info", f"Starting winws.exe with strategy {strategy_name}")
-
             self.current_process = subprocess.Popen(
                 ["cmd.exe", "/c", str(strategy_path)],
                 cwd=str(self.zapret_dir),
@@ -606,7 +603,7 @@ class ZapretLauncher:
         self.update_timer_id = None
 
         self.rtt_timer_id = None
-        self.rtt_update_interval = 30000
+        self.rtt_update_interval = 300000
 
         self.last_selected_index = -1
 
@@ -638,7 +635,7 @@ class ZapretLauncher:
 
         self.dns_cache_ttl = 240
         
-        self.colors = get_theme('Dark')
+        self.colors = get_theme('Default')
         self.setup_scrollbar_style()
         self.root.configure(bg=self.colors['bg_dark'])
 
@@ -863,7 +860,7 @@ class ZapretLauncher:
         if hasattr(self, 'pages') and self.pages:
             self.pages.colors = self.colors
             
-            for page_name in ['main_page', 'service_page', 'lists_page', 'traffic_page', 'settings_page', 'logs_page']:
+            for page_name in ['main_page', 'service_page', 'lists_page', 'traffic_page', 'settings_page', 'logs_page', 'hosts_page']:
                 if hasattr(self.pages, page_name):
                     page = getattr(self.pages, page_name)
                     if page:
@@ -893,6 +890,8 @@ class ZapretLauncher:
         try:
             if self.current_theme == 'Default':
                 header_color = "#0F0F12"
+            elif self.current_theme == 'Old':
+                header_color = "#0F172A"
             else:
                 header_color = "#1E1B2E"
             
@@ -1240,7 +1239,7 @@ class ZapretLauncher:
                     latest_zapret_version = response.read().decode('utf-8').strip()
                     
             except Exception as e:
-                self.log_event("info", f"Failed to check Zapret update: {e}")
+                self.log_event("info", f"Failed to check zapret update: {e}")
                 self.root.after(0, self.hide_update_label)
                 return
             
@@ -1490,23 +1489,19 @@ class ZapretLauncher:
             time.sleep(1)
             self.tg_proxy.start()
         
-        self.log_event("info", f"New secret-key generated: {new_secret[:8]}...")
-        
         if hasattr(self, 'pages') and hasattr(self.pages, 'settings_page_obj'):
             self.pages.settings_page_obj.update_secret_display()
         
         if self.tg_fake_tls and self.tg_fake_tls_domain:
             domain_hex = self.tg_fake_tls_domain.encode('ascii').hex()
             link = f"ee{new_secret}{domain_hex}"
-            notification_text = tr('notification_updated_secret')
         else:
             link = f"dd{new_secret}"
-            notification_text = tr('notification_updated_secret')
         
         self.root.clipboard_clear()
         self.root.clipboard_append(link)
         self.root.update()
-        self.show_notification(notification_text, 3000)
+        self.show_notification('notification_copied_secret', 3000)
         
     def _do_start_tg_proxy(self):
         self._reset_traffic_history()
@@ -1523,8 +1518,6 @@ class ZapretLauncher:
         
         self.tg_proxy.set_secret(secret)
         proxy_config.secret = secret
-        
-        self.log_event("info", f"Starting TG Proxy with secret from config: {secret[:8]}...")
         
         def start_thread():
             try:
@@ -1894,14 +1887,11 @@ class ZapretLauncher:
                 
                 with winreg.OpenKey(winreg.HKEY_CURRENT_USER, key_path, 0, winreg.KEY_SET_VALUE) as key:
                     winreg.SetValueEx(key, "Zapret Launcher", 0, winreg.REG_SZ, f'"{exe_path}" --from-splash')
-                
-                self.log_event("info", f"Auto-start added to registry: {exe_path}")
                 return True
             else:
                 try:
                     with winreg.OpenKey(winreg.HKEY_CURRENT_USER, key_path, 0, winreg.KEY_SET_VALUE) as key:
                         winreg.DeleteValue(key, "Zapret Launcher")
-                    self.log_event("info", "Auto-start removed from registry")
                 except FileNotFoundError:
                     pass
                 return True
@@ -2269,10 +2259,8 @@ class ZapretLauncher:
         
         if new_state:
             self.show_notification(tr('dialog_enabled'), 2000)
-            self.log_event("info", "VPN detection enabled")
         else:
             self.show_notification(tr('dialog_disabled'), 2000)
-            self.log_event("info", "VPN detection disabled")
 
     def toggle_hide_duplicates_warning(self):
         current = getattr(self, '_hide_duplicates_warning', False)
@@ -2282,10 +2270,8 @@ class ZapretLauncher:
         
         if new_state:
             self.show_notification(tr('dialog_disabled'), 2000)
-            self.log_event("info", "Duplicates warning hidden")
         else:
             self.show_notification(tr('dialog_enabled'), 2000)
-            self.log_event("info", "Duplicates warning shown")
 
     def _stop_windivert_service(self):
         try:
@@ -2348,7 +2334,6 @@ class ZapretLauncher:
                         
         except Exception as e:
             self.log_event("info", f"Failed to load settings: {e}")
-            self.log_event("info", "New secret key has been generated (first run)")
             self._tg_secret = os.urandom(16).hex()
             self.current_theme = 'Default'
             self.tg_host = TG_HOST
@@ -2476,7 +2461,6 @@ class ZapretLauncher:
         try:
             connections = psutil.net_connections(kind='inet')
         except psutil.AccessDenied:
-            self.log_event("info", "Administrator rights required to view network connections")
             self._cached_processes = [{
                 'name': tr('error_admin_required'),
                 'speed': '-',
