@@ -336,7 +336,7 @@ class SplashWindow:
                     self.after(0, self._check_for_update)
                     return
 
-                req = urllib.request.Request("http://www.google.com", headers={'User-Agent': 'Mozilla/5.0', 'Connection': 'close'})
+                req = urllib.request.Request("https://www.google.com/generate_204", headers={'User-Agent': 'Mozilla/5.0', 'Connection': 'close'})
                 urllib.request.urlopen(req, timeout=5)
                 
                 if self.auto_update_enabled:
