@@ -1,8 +1,8 @@
 [Setup]
 AppId={{8A5F5B5E-8B5E-4B5E-8B5E-8B5E8B5E8B5E}}
 AppName=Zapret Launcher
-AppVersion=3.2.3.2
-AppVerName=Zapret Launcher 3.2.3.2
+AppVersion=3.2.3.3
+AppVerName=Zapret Launcher 3.2.3.3
 AppPublisher=avaxngard corp
 AppPublisherURL=https://zapret-launcher.ru
 AppSupportURL=https://t.me/zapret_launcher_bot
