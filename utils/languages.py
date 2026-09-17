@@ -121,6 +121,11 @@ class Languages:
             'splash_trying_source': 'Пробуем источник: {source}',
             'splash_using_source': 'Используем источник: {source}',
             'splash_all_sources_failed': 'Все источники недоступны, запуск без обновлений',
+            'splash_checking_signature': 'Проверка подписи...',
+            'splash_signature_ok': 'Подпись подтверждена',
+            'splash_update_blocked': 'Обновление заблокировано',
+            'update_blocked': 'Подпись обновления не совпадает',
+            'update_title': 'Обновление Zapret Launcher',
                         
             'settings_title': 'Настройки',
             'settings_desc': 'Настройка интерфейса и параметров работы',
@@ -410,6 +415,10 @@ class Languages:
             'splash_trying_source': 'Trying source: {source}',
             'splash_using_source': 'Using source: {source}',
             'splash_all_sources_failed': 'All sources unavailable, starting without updates',
+            'splash_checking_signature': 'Verifying signature...',
+            'splash_signature_ok': 'Signature verified',
+            'splash_update_blocked': 'Update blocked',
+            'update_blocked': 'Update signature does not match',
                         
             'settings_title': 'Settings',
             'settings_desc': 'Interface and operation settings',
