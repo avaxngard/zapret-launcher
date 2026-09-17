@@ -13,6 +13,7 @@ from PIL import Image, ImageTk
 from utils.languages import tr
 from typing import Optional
 from gui.theme import get_theme
+from utils.update_verifier import is_safe_to_install
 from utils.version import compare_builds, compare_zapret_versions
 from config import APPDATA_DIR, ZAPRET_VERSION_URL, ZAPRET_CORE_URL, ZIP_URL, EXE_URL, BUILDNUMBER_URL, INSTALLER_URL, ICON_PATH
 from config import GITHUB_ZAPRET_VERSION_URL, GITHUB_ZAPRET_CORE_URL, GITHUB_BUILDNUMBER_URL, GITHUB_EXE_URL, GITHUB_ZIP_URL
@@ -720,10 +721,29 @@ class SplashWindow:
                 
                 self.after(0, lambda: self.update_status(tr('splash_downloading_exe'), 0))
                 exe_success = self._download_file_with_fallback('exe', temp_exe, 0, 30)
-                
+
                 if not exe_success:
                     raise Exception("Failed to download exe file")
-                
+
+                self.after(0, lambda: self.update_status(tr('splash_checking_signature'), 32))
+
+                safe, message = is_safe_to_install(str(temp_exe))
+
+                if not safe:
+                    self.after(0, lambda: self.update_status(tr('splash_update_blocked'), 100))
+                    self.after(0, lambda: messagebox.showerror(
+                        tr('update_title'),
+                        f"{tr('update_blocked')}\n{message}"
+                    ))
+                    try:
+                        temp_exe.unlink()
+                    except Exception:
+                        pass
+                    self.after(3000, self._launch_main_app)
+                    return
+
+                self.after(0, lambda: self.update_status(tr('splash_signature_ok'), 35))
+
                 self.after(0, lambda: self.update_status(tr('splash_downloading_zip'), 30))
                 zip_success = self._download_file_with_fallback('zip', temp_zip, 30, 60)
                 
