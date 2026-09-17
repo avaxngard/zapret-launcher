@@ -33,7 +33,7 @@ def create_manifest():
     manifest_content = '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
   <assemblyIdentity
-    version="3.2.3.2"
+    version="3.2.3.3"
     processorArchitecture="*"
     name="ZapretLauncher"
     type="win32"
