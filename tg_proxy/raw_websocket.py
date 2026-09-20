@@ -1,5 +1,6 @@
 import os
 import ssl
+import certifi
 import base64
 import struct
 import asyncio
@@ -16,7 +17,8 @@ _st_BBQ4s = struct.Struct('>BBQ4s')
 _st_H = struct.Struct('>H')
 _st_Q = struct.Struct('>Q')
 
-_ssl_ctx = ssl.create_default_context()
+_ssl_ctx = ssl.create_default_context(cafile=certifi.where())
+_ssl_ctx_fronting = ssl.create_default_context(cafile=certifi.where())
 _ssl_ctx.check_hostname = False
 _ssl_ctx.verify_mode = ssl.CERT_NONE
 
