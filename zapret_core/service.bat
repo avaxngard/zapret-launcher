@@ -8,20 +8,6 @@ if "%~1"=="status_zapret" (
     exit /b
 )
 
-if "%~1"=="check_updates" (
-    if defined NO_UPDATE_CHECK exit /b
-
-    if exist "%~dp0utils\check_updates.enabled" (
-        if not "%~2"=="soft" (
-            start /b service check_updates soft
-        ) else (
-            call :service_check_updates soft
-        )
-    )
-
-    exit /b
-)
-
 if "%~1"=="load_game_filter" (
     call :game_switch_status
     exit /b
@@ -103,15 +89,8 @@ goto menu
 :load_user_lists
 set "LISTS_PATH=%~dp0lists\"
 
-if not exist "%LISTS_PATH%ipset-exclude-user.txt" (
-    echo 203.0.113.113/32>"%LISTS_PATH%ipset-exclude-user.txt"
-)
-if not exist "%LISTS_PATH%list-general-user.txt" (
-    echo # Never leave this file empty>"%LISTS_PATH%list-general-user.txt"
-    echo domain.example.abc>>"%LISTS_PATH%list-general-user.txt"
-)
-if not exist "%LISTS_PATH%list-exclude-user.txt" (
-    echo domain.example.abc>"%LISTS_PATH%list-exclude-user.txt"
+if not exist "%LISTS_PATH%ipset-white-user.txt" (
+    echo 203.0.113.113/32>"%LISTS_PATH%ipset-white-user.txt"
 )
 
 exit /b
@@ -358,9 +337,9 @@ chcp 437 > nul
 cls
 
 :: Set current version and URLs
-set "GITHUB_VERSION_URL=https://raw.githubusercontent.com/Flowseal/zapret-discord-youtube/main/.service/version.txt"
-set "GITHUB_RELEASE_URL=https://github.com/Flowseal/zapret-discord-youtube/releases/tag/"
-set "GITHUB_DOWNLOAD_URL=https://github.com/Flowseal/zapret-discord-youtube/releases/latest"
+set "GITHUB_VERSION_URL=https://zapret-launcher.ru/updater/docs/zapret_version.txt"
+set "GITHUB_RELEASE_URL=https://zapret-launcher.ru/updater/zapret_core.zip"
+set "GITHUB_DOWNLOAD_URL=https://zapret-launcher.ru/updater/zapret_core.zip"
 
 :: Get the latest version from GitHub
 for /f "delims=" %%A in ('powershell -NoProfile -Command "(Invoke-WebRequest -Uri \"%GITHUB_VERSION_URL%\" -Headers @{\"Cache-Control\"=\"no-cache\"} -UseBasicParsing -TimeoutSec 5).Content.Trim()" 2^>nul') do set "GITHUB_VERSION=%%A"
