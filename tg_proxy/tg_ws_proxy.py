@@ -667,7 +667,7 @@ def main():
     ap.add_argument('--secret', type=str, default=None,
                     help='MTProto proxy secret (32 hex chars). '
                          'Auto-generated if not provided.')
-    ap.add_argument('--dc-ip', metavar='DC:IP', action='append',
+    ap.add_argument('--dc-ip', metavar='DC:IP', nargs='?', action='append', const=None,
                     help='Target IP for a DC, e.g. --dc-ip 2:149.154.167.220')
     ap.add_argument('-v', '--verbose', action='store_true',
                     help='Debug logging')
@@ -707,8 +707,13 @@ def main():
                          '(for use behind nginx/haproxy with proxy_protocol on)')
     args = ap.parse_args()
 
-    if not args.dc_ip:
-        args.dc_ip = ['2:149.154.167.220', '4:149.154.167.220']
+    if args.dc_ip is None:
+        args.dc_ip = [
+            '2:149.154.167.220',
+            '4:149.154.167.220',
+        ]
+    elif None in args.dc_ip:
+        args.dc_ip = []
 
     try:
         dc_redirects = parse_dc_ip_list(args.dc_ip)
@@ -751,6 +756,7 @@ def main():
 
     console = logging.StreamHandler()
     console.setFormatter(log_fmt)
+    console.addFilter(DomainCensorFilter())
     root.addHandler(console)
 
     #if args.log_file:
