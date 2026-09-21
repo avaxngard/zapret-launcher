@@ -27,3 +27,4 @@ scorecardresearch.com
 clifl.com
 ttvnw.net
 www.gstatic.com
+fonts.googleapis.com
