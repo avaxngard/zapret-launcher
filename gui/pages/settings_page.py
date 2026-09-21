@@ -407,6 +407,7 @@ class SettingsPage:
             ("zapret_core/bin/quic_initial_tencent_com.bin", "quic_initial_tencent_com.bin"),
             ("zapret_core/bin/tls_clienthello_max_ru.bin", "tls_clienthello_max_ru.bin"),
             ("zapret_core/bin/tls_clienthello_www_google_com.bin", "tls_clienthello_www_google_com.bin"),
+            ("zapret_core/bin/tls_clienthello_www_sferum_ru.bin", "tls_clienthello_www_sferum_ru.bin"),
             ("zapret_core/bin/cygwin1.dll", "cygwin1.dll"),
 
             ("zapret_core/service.bat", "service.bat"),
@@ -551,6 +552,7 @@ class SettingsPage:
             "zapret_core/bin/tls_clienthello_4pda_to.bin",
             "zapret_core/bin/tls_clienthello_max_ru.bin",
             "zapret_core/bin/tls_clienthello_www_google_com.bin",
+            "zapret_core/bin/tls_clienthello_www_sferum_ru.bin",
             "zapret_core/bin/cygwin1.dll",
             "zapret_core/service.bat",
             "zapret_core/general.bat",
@@ -740,29 +742,35 @@ class SettingsPage:
 
     def _restart_launcher(self):
         try:
+            try:
+                self.app.save_settings()
+            except Exception:
+                pass
+            
             winws_running = False
-            for proc in psutil.process_iter(['name']):
-                try:
-                    if proc.info['name'] and proc.info['name'].lower() == 'winws.exe':
-                        winws_running = True
-                        break
-                except:
-                    pass
+            if hasattr(self.app, 'zapret') and self.app.zapret:
+                winws_running = self.app.zapret.is_winws_running()
             
             tg_running = False
             if hasattr(self.app, 'tg_proxy') and self.app.tg_proxy:
                 tg_running = self.app.tg_proxy.is_running
             
-            if winws_running or tg_running or self.app.is_connected:
+            if winws_running or tg_running or getattr(self.app, 'is_connected', False):
                 if hasattr(self.app, 'zapret') and self.app.zapret:
-                    self.app.zapret.stop_current_strategy()
+                    try:
+                        self.app.zapret.stop_current_strategy()
+                    except Exception:
+                        pass
                 
                 if tg_running and hasattr(self.app, 'tg_proxy'):
-                    self.app.tg_proxy.stop()
+                    try:
+                        self.app.tg_proxy.stop()
+                    except Exception:
+                        pass
                 
                 try:
-                    subprocess.run(['sc', 'stop', 'WinDivert'], capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW)
-                except:
+                    subprocess.run(['sc', 'stop', 'WinDivert'], capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW, timeout=10)
+                except Exception:
                     pass
                 
                 time.sleep(1)
@@ -771,23 +779,40 @@ class SettingsPage:
                 self.app.current_strategy = None
                 
                 if hasattr(self.app, 'mode_label') and self.app.mode_label:
-                    self.app.mode_label.config(text=tr('mode_not_selected'), fg=self.app.colors['text_secondary'])
+                    try:
+                        self.app.mode_label.config(text=tr('mode_not_selected'), fg=self.app.colors['text_secondary'])
+                    except Exception:
+                        pass
+                
                 if hasattr(self.app, 'connect_btn') and self.app.connect_btn:
-                    self.app.connect_btn.set_text(tr('button_connect'))
+                    try:
+                        self.app.connect_btn.set_text(tr('button_connect'))
+                    except Exception:
+                        pass
         
         except Exception:
             pass
-        
-        self.app.save_settings()
         
         if getattr(sys, 'frozen', False):
             exe_path = sys.executable
         else:
             exe_path = sys.argv[0]
         
-        subprocess.Popen([exe_path, '--no-splash', '--from-splash'])
-        self.app.root.quit()
-        self.app.root.destroy()
+        try:
+            subprocess.Popen([exe_path, '--no-splash', '--from-splash'], creationflags=subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS, close_fds=True)
+        except Exception as e:
+            try:
+                messagebox.showerror(tr('error'), f"Не удалось перезапустить лаунчер:\n{e}")
+            except Exception:
+                pass
+            return
+        
+        try:
+            self.app.root.quit()
+            self.app.root.destroy()
+        except Exception:
+            pass
+        
         sys.exit(0)
     
     def update_secret_display(self):
