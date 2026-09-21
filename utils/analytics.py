@@ -65,7 +65,7 @@ class UserStats:
     
     def _get_os_info(self):
         try:
-            arch = "x64" if struct.calcsize("P") * 8 == 64 else "x32"
+            arch = self._get_os_arch()
             
             try:
                 with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows NT\CurrentVersion") as key:
@@ -88,10 +88,30 @@ class UserStats:
                         
             except Exception:
                 version = platform.release()
+            
             return f"Windows {version} ({arch})"
             
         except Exception:
             return "Windows Unknown"
+
+    def _get_os_arch(self):
+        try:
+            with winreg.OpenKey(
+                winreg.HKEY_LOCAL_MACHINE,
+                r"SYSTEM\CurrentControlSet\Control\Session Manager\Environment"
+            ) as key:
+                arch = winreg.QueryValueEx(key, "PROCESSOR_ARCHITECTURE")[0]
+            
+            if arch == "AMD64":
+                return "x64"
+            elif arch == "x86":
+                return "x32"
+            elif arch == "ARM64":
+                return "ARM64"
+            else:
+                return arch
+        except Exception:
+            return "x64" if struct.calcsize("P") * 8 == 64 else "x32"
 
     def _send(self, action, extra_data=None):
         if not self._enabled:
