@@ -353,15 +353,13 @@ class MainPage:
             if self.app.tg_fake_tls and self.app.tg_fake_tls_domain:
                 domain_hex = self.app.tg_fake_tls_domain.encode('ascii').hex()
                 link = f"ee{secret}{domain_hex}"
-                notification = tr('notification_copied_secret')
             else:
                 link = secret
-                notification = tr('notification_copied_secret')
                     
             self.app.root.clipboard_clear()
             self.app.root.clipboard_append(link)
             self.app.root.update()
-            self.app.show_notification(notification, 2000)
+            self.app.show_notification(tr('notification_copied_secret'), 2000)
         else:
             messagebox.showwarning(tr('error_secret_not_found'), tr('error_telegram_proxy_start'))
 
