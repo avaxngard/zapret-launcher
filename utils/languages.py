@@ -230,6 +230,7 @@ class Languages:
             'error_warning': 'Предупреждение',
             'error_occurred': 'Произошла ошибка',
             'error_timeout': 'Превышено время ожидания',
+            'error_restart_launcher': 'Не удалось перезапустить лаунчер',
             'error': 'Ошибка',
 
             'tg_secret_required_message': 'Для работы Telegram Proxy требуется секрет-ключ.\n\nСгенерировать новый секрет и продолжить?',
@@ -521,6 +522,7 @@ class Languages:
             'error_warning': 'Warning',
             'error_occurred': 'Error occurred',
             'error_timeout': 'Request timed out',
+            'error_restart_launcher': 'Failed to restart the launcher',
             'error': 'Error',
 
             'tg_secret_required_message': 'A secret-key is required for Telegram Proxy to work.\n\nGenerate a new secret and continue?',
