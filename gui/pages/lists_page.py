@@ -22,7 +22,7 @@ def check_zapret_folder():
             tr('error_zapret_folder'), 
             f"{tr('error_zapret_folder')}\n\n"
             f"Expected folder: {zapret_core_dir}\n\n"
-            "Restart the program to extract resources."
+            "Restart the program to extract resources"
         )
         return False
     return True
@@ -101,23 +101,39 @@ class ListsPage:
             btn_frame = tk.Frame(frame, bg=self.colors['bg_light'])
             btn_frame.pack(side=tk.RIGHT, padx=(scale_size(10, self.scale_factor), 0))
             
-            edit_btn = RoundedButton(btn_frame, text=tr('lists_edit'), 
-                                    command=lambda f=filename: self.edit_list_file(f),
-                                    width=btn_width, height=btn_height, bg=self.colors['button_bg'], 
-                                    font=("Inter", font_size_btn), corner_radius=btn_radius,
-                                    hover_color=self.colors['accent'], 
-                                    theme_name=self.app.current_theme)
+            edit_btn = RoundedButton(
+                btn_frame, 
+                text=tr('lists_edit'), 
+                command=lambda f=filename: self.edit_list_file(f),
+                width=btn_width, 
+                height=btn_height, 
+                bg=self.colors['button_bg'],
+                fg=self.colors['button_text'],
+                hover_fg=self.colors['button_text_hover'],
+                font=("Inter", font_size_btn), 
+                corner_radius=btn_radius,
+                hover_color=self.colors['accent'], 
+                theme_name=self.app.current_theme
+            )
             edit_btn.pack()
-        
+                    
         folder_frame = tk.Frame(self.frame, bg=self.colors['bg_dark'])
         folder_frame.pack(fill=tk.X, padx=padx, pady=(scale_size(20, self.scale_factor), scale_size(10, self.scale_factor)))
         
-        open_folder_btn = RoundedButton(folder_frame, text=tr('lists_open_folder'), 
-                                    command=open_lists_folder,
-                                    width=btn_width_folder, height=btn_height_folder, bg=self.colors['button_bg'], 
-                                    font=("Inter", scale_size(11, self.scale_factor), "bold"), corner_radius=scale_size(10, self.scale_factor),
-                                    hover_color=self.colors['accent'], 
-                                    theme_name=self.app.current_theme)
+        open_folder_btn = RoundedButton(
+            folder_frame, 
+            text=tr('lists_open_folder'), 
+            command=open_lists_folder,
+            width=btn_width_folder, 
+            height=btn_height_folder, 
+            bg=self.colors['button_bg'],
+            fg=self.colors['button_text'],
+            hover_fg=self.colors['button_text_hover'],
+            font=("Inter", scale_size(11, self.scale_factor), "bold"), 
+            corner_radius=scale_size(10, self.scale_factor),
+            hover_color=self.colors['accent'], 
+            theme_name=self.app.current_theme
+        )
         open_folder_btn.pack()
     
     def edit_list_file(self, filename):
