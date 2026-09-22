@@ -11,7 +11,6 @@ import threading
 import subprocess
 import ctypes
 import time
-from gui.widgets import RoundedButton
 from utils.languages import tr
 from utils.scaling import scale_size
 from config import ZAPRET_CORE_DIR
@@ -27,10 +26,11 @@ class ServicePage:
         
         font_size_title = scale_size(20, self.scale_factor)
         font_size_desc = scale_size(10, self.scale_factor)
-        font_size_sub = scale_size(14, self.scale_factor)
-        btn_width = scale_size(200, self.scale_factor)
-        btn_height = scale_size(35, self.scale_factor)
-        btn_radius = scale_size(8, self.scale_factor)
+        font_size_card_name = scale_size(14, self.scale_factor)
+        font_size_card_desc = scale_size(9, self.scale_factor)
+        card_padx = scale_size(15, self.scale_factor)
+        card_pady = scale_size(12, self.scale_factor)
+        grid_gap = scale_size(10, self.scale_factor)
         padx = scale_size(30, self.scale_factor)
         pady = scale_size(10, self.scale_factor)
         
@@ -54,73 +54,122 @@ class ServicePage:
         )
         desc_label.pack(anchor='w', pady=(0, scale_size(20, self.scale_factor)), padx=padx)
         
-        functions = [
-            (tr('service_filters'), [
-                (tr('service_game_filter'), "game_filter"),
-                (tr('service_ipset_filter'), "ipset_filter"),
-            ]),
-        ]
+        grid_frame = tk.Frame(self.frame, bg=self.colors['bg_dark'])
+        grid_frame.pack(fill=tk.BOTH, expand=True, padx=padx, pady=pady)
         
-        for title, items in functions:
-            card = tk.Frame(self.frame, bg=self.colors['bg_light'])
-            card.pack(fill=tk.X, padx=padx, pady=pady, ipadx=scale_size(20, self.scale_factor), ipady=scale_size(10, self.scale_factor))
-            
-            tk.Label(card, text=title, font=("Inter", font_size_sub, "bold"),
-                    fg=self.colors['text_primary'], bg=self.colors['bg_light']).pack(anchor='w', padx=scale_size(15, self.scale_factor), pady=(scale_size(10, self.scale_factor), 5))
-            
-            for btn_text, cmd in items:
-                btn = RoundedButton(card, text=btn_text, 
-                                command=lambda c=cmd: self.app.run_service_command(c),
-                                width=btn_width, height=btn_height, bg=self.colors['button_bg'],
-                                font=self.font_primary, corner_radius=btn_radius,
-                                hover_color=self.colors['accent'], theme_name=self.app.current_theme)
-                btn.pack(anchor='w', padx=scale_size(15, self.scale_factor), pady=2)
-
-        card = tk.Frame(self.frame, bg=self.colors['bg_light'])
-        card.pack(fill=tk.X, padx=padx, pady=pady, ipadx=scale_size(20, self.scale_factor), ipady=scale_size(10, self.scale_factor))
+        grid_frame.columnconfigure(0, weight=1, uniform="cards")
+        grid_frame.columnconfigure(1, weight=1, uniform="cards")
+        grid_frame.rowconfigure(0, weight=0)
+        grid_frame.rowconfigure(1, weight=0)
+                
+        self._create_card(
+            grid_frame, row=0, col=0,
+            name=tr('service_game_filter'),
+            desc=tr('service_game_filter_desc'),
+            command=lambda: self.app.run_service_command("game_filter"),
+            padx=(0, grid_gap // 2), pady=(0, grid_gap // 2),
+            font_size_name=font_size_card_name,
+            font_size_desc=font_size_card_desc,
+            card_padx=card_padx, card_pady=card_pady
+        )
         
-        tk.Label(
-            card, 
-            text=tr('service_tools'), 
-            font=("Inter", font_size_sub, "bold"),
-            fg=self.colors['text_primary'], 
-            bg=self.colors['bg_light']
-        ).pack(anchor='w', padx=scale_size(15, self.scale_factor), pady=(scale_size(10, self.scale_factor), 5))
+        self._create_card(
+            grid_frame, row=0, col=1,
+            name=tr('service_ipset_filter'),
+            desc=tr('service_ipset_filter_desc'),
+            command=lambda: self.app.run_service_command("ipset_filter"),
+            padx=(grid_gap // 2, 0), pady=(0, grid_gap // 2),
+            font_size_name=font_size_card_name,
+            font_size_desc=font_size_card_desc,
+            card_padx=card_padx, card_pady=card_pady
+        )
         
-        diag_btn = RoundedButton(
-            card,
-            text=tr('service_run_diagnostic'),
+        self._create_card(
+            grid_frame, row=1, col=0,
+            name=tr('service_run_diagnostic'),
+            desc=tr('service_run_diagnostic_desc'),
             command=self.run_diagnostics,
-            width=btn_width, height=btn_height,
-            bg=self.colors['button_bg'],
-            font=self.font_primary,
-            corner_radius=btn_radius,
-            hover_color=self.colors['accent'],
-            theme_name=self.app.current_theme
+            padx=(0, grid_gap // 2), pady=(grid_gap // 2, 0),
+            font_size_name=font_size_card_name,
+            font_size_desc=font_size_card_desc,
+            card_padx=card_padx, card_pady=card_pady
         )
-        diag_btn.pack(anchor='w', padx=scale_size(15, self.scale_factor), pady=2)
         
-        test_btn = RoundedButton(
-            card,
-            text=tr('service_run_tests'),
+        self._create_card(
+            grid_frame, row=1, col=1,
+            name=tr('service_run_tests'),
+            desc=tr('service_run_tests_desc'),
             command=self.run_tests,
-            width=btn_width, height=btn_height,
-            bg=self.colors['button_bg'],
-            font=self.font_primary,
-            corner_radius=btn_radius,
-            hover_color=self.colors['accent'],
-            theme_name=self.app.current_theme
+            padx=(grid_gap // 2, 0), pady=(grid_gap // 2, 0),
+            font_size_name=font_size_card_name,
+            font_size_desc=font_size_card_desc,
+            card_padx=card_padx, card_pady=card_pady
         )
-        test_btn.pack(anchor='w', padx=scale_size(15, self.scale_factor), pady=2)
+    
+    def _create_card(self, parent, row, col, name, desc, command,
+                     padx, pady, font_size_name, font_size_desc,
+                     card_padx, card_pady):
+        card = tk.Frame(parent, bg=self.colors['bg_light'], cursor="hand2", height=scale_size(80, self.scale_factor))
+        card.grid(row=row, column=col, sticky='nsew', padx=padx, pady=pady)
+        card.pack_propagate(False)
+        card.grid_propagate(False)
         
-        self.game_filter_btn = None
-        self.ipset_filter_btn = None
-
+        inner = tk.Frame(card, bg=self.colors['bg_light'])
+        inner.pack(fill=tk.BOTH, expand=True, padx=card_padx, pady=card_pady)
+        
+        name_label = tk.Label(
+            inner,
+            text=name,
+            font=("Inter", font_size_name, "bold"),
+            fg=self.colors['accent'],
+            bg=self.colors['bg_light'],
+            anchor='w',
+            justify=tk.LEFT
+        )
+        name_label.pack(anchor='w', fill=tk.X)
+        
+        desc_label = tk.Label(
+            inner,
+            text=desc,
+            font=("Inter", font_size_desc),
+            fg=self.colors['text_secondary'],
+            bg=self.colors['bg_light'],
+            anchor='w',
+            justify=tk.LEFT,
+            wraplength=scale_size(300, self.scale_factor)
+        )
+        desc_label.pack(anchor='w', fill=tk.X, pady=(scale_size(6, self.scale_factor), 0))
+        
+        def on_enter(e):
+            card.configure(bg=self.colors['bg_light_hover'])
+            inner.configure(bg=self.colors['bg_light_hover'])
+            name_label.configure(bg=self.colors['bg_light_hover'])
+            desc_label.configure(bg=self.colors['bg_light_hover'])
+        
+        def on_leave(e):
+            card.configure(bg=self.colors['bg_light'])
+            inner.configure(bg=self.colors['bg_light'])
+            name_label.configure(bg=self.colors['bg_light'])
+            desc_label.configure(bg=self.colors['bg_light'])
+        
+        def on_click(e):
+            command()
+        
+        for widget in (card, inner, name_label, desc_label):
+            widget.bind("<Enter>", on_enter)
+            widget.bind("<Leave>", on_leave)
+            widget.bind("<Button-1>", on_click)
+    
     def run_diagnostics(self):
         def run():
             try:
                 service_bat = ZAPRET_CORE_DIR / "service.bat"
-                subprocess.Popen([str(service_bat)], cwd=str(ZAPRET_CORE_DIR), shell=False, creationflags=subprocess.CREATE_NEW_CONSOLE)
+                subprocess.Popen(
+                    [str(service_bat)],
+                    cwd=str(ZAPRET_CORE_DIR),
+                    shell=False,
+                    creationflags=subprocess.CREATE_NEW_CONSOLE
+                )
                 
                 time.sleep(2)
                 
@@ -128,7 +177,6 @@ class ServicePage:
                 time.sleep(0.2)
                 ctypes.windll.user32.keybd_event(0x36, 0, 2, 0)
                 time.sleep(0.2)
-                
                 ctypes.windll.user32.keybd_event(0x0D, 0, 0, 0)
                 time.sleep(0.1)
                 ctypes.windll.user32.keybd_event(0x0D, 0, 2, 0)
@@ -137,12 +185,17 @@ class ServicePage:
                 self.app.log_event("info", f"Diagnostics error: {e}")
         
         threading.Thread(target=run, daemon=True).start()
-
+    
     def run_tests(self):
         def run():
             try:
                 service_bat = ZAPRET_CORE_DIR / "service.bat"
-                subprocess.Popen([str(service_bat)], cwd=str(ZAPRET_CORE_DIR), shell=False, creationflags=subprocess.CREATE_NEW_CONSOLE)
+                subprocess.Popen(
+                    [str(service_bat)],
+                    cwd=str(ZAPRET_CORE_DIR),
+                    shell=False,
+                    creationflags=subprocess.CREATE_NEW_CONSOLE
+                )
                 
                 time.sleep(2)
                 
@@ -150,13 +203,12 @@ class ServicePage:
                 time.sleep(0.2)
                 ctypes.windll.user32.keybd_event(0x37, 0, 2, 0)
                 time.sleep(0.2)
-                
                 ctypes.windll.user32.keybd_event(0x0D, 0, 0, 0)
                 time.sleep(0.1)
                 ctypes.windll.user32.keybd_event(0x0D, 0, 2, 0)
                 
             except Exception as e:
-                self.app.log_event("info", f"Diagnostics error: {e}")
+                self.app.log_event("info", f"Tests error: {e}")
         
         threading.Thread(target=run, daemon=True).start()
     
