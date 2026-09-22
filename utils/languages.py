@@ -37,13 +37,17 @@ class Languages:
             'dev': 'В разработке',
             
             'service_title': 'Сервис',
-            'service_desc': 'Инструменты для ядра zapret',
+            'service_desc': 'Инструменты лаунчера',
             'service_filters': 'Фильтры',
             'service_tools': 'Инструменты',
             'service_game_filter': 'Game Filter',
             'service_ipset_filter': 'IPSet Filter',
             'service_run_diagnostic': 'Диагностика',
             'service_run_tests': 'Тест стратегий',
+            'service_game_filter_desc': 'Переключение режима обхода для игр',
+            'service_ipset_filter_desc': 'Переключение режима обхода сервисов',
+            'service_run_diagnostic_desc': 'Диагностика работы zapret',
+            'service_run_tests_desc': 'Тестирование всех доступных стратегий',
                 
             'lists_title': 'Редактор',
             'lists_desc': 'Редактирование списков для обхода блокировок',
@@ -238,7 +242,6 @@ class Languages:
             'tg_secret_new': 'Новый секрет:',
             'tg_paste_instruction': 'Вставьте его в Telegram для подключения',
                         
-            'status_connecting': 'Запуск...',
             'status_disconnecting': 'Отключение...',
             'status_starting': 'Подключение...',
             'status_error': 'Ошибка запуска',
@@ -332,13 +335,17 @@ class Languages:
             'dev': 'In development',
             
             'service_title': 'Service',
-            'service_desc': 'zapret-core tools',
+            'service_desc': 'Launcher tools',
             'service_filters': 'Filters',
             'service_tools': 'Tools',
             'service_game_filter': 'Game Filter',
             'service_ipset_filter': 'IPSet Filter',
             'service_run_diagnostic': 'Diagnostics',
             'service_run_tests': 'Run tests',
+            'service_game_filter_desc': 'Toggling bypass mode for games',
+            'service_ipset_filter_desc': 'Service bypass mode switching',
+            'service_run_diagnostic_desc': 'Diagnosting zapret core',
+            'service_run_tests_desc': 'Test all available strategies',
             
             'lists_title': 'Editor',
             'lists_desc': 'Edit lists for bypassing blocks',
@@ -531,7 +538,6 @@ class Languages:
             'tg_paste_instruction': 'Paste it into Telegram to connect.',
             'tg_proxy_restarted': 'Proxy restarted with new secret.',
                         
-            'status_connecting': 'Starting...',
             'status_disconnecting': 'Disconnecting...',
             'status_starting': 'Connecting...',
             'status_error': 'Startup error',
