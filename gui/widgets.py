@@ -52,24 +52,28 @@ class ModernSwitch(tk.Canvas):
 
 class RoundedButton(tk.Canvas):
     def __init__(self, parent, text, command, width=200, height=40, 
-                bg='#2D2D35', fg='#FFFFFF',
-                font=("Inter", 11, "bold"), 
-                corner_radius=8, hover_color=None,
-                animation_steps=5, theme_name='Default'):
+            bg='#2D2D35', fg='#FFFFFF',
+            font=("Inter", 11, "bold"), 
+            corner_radius=8, hover_color=None, hover_fg='#FFFFFF',
+            animation_steps=5, theme_name='Default'):
         super().__init__(parent, width=width, height=height, highlightthickness=0, bg=_get_parent_bg(parent), cursor="hand2")
         
         if hover_color is None:
-            if theme_name == 'Pink':
-                hover_color = '#DD72A9'
+            if theme_name == 'Default':
+                self.hover_color = '#9b78a8'
+            elif theme_name == 'Pink':
+                self.hover_color = '#DD72A9'
             elif theme_name == 'Old':
-                hover_color = '#60A5FA'
+                self.hover_color = '#60A5FA'
             else:
-                hover_color = '#6c5579'
+                self.hover_color = '#9b78a8'
 
         self._command = command
         self.command = command
         self.bg = bg
-        self.fg = '#FFFFFF'
+        self.normal_fg = fg
+        self.hover_fg = hover_fg
+        self.fg = fg
         self.font = font
         self.enabled = True
         self.normal_color = bg
@@ -93,7 +97,7 @@ class RoundedButton(tk.Canvas):
         points.extend([width-corner_radius, height, corner_radius, height])
         points.extend([0, height, 0, height-corner_radius, 0, corner_radius, 0, 0])
         self.rect = self.create_polygon(points, smooth=True, fill=bg, outline='')
-        self.text_id = self.create_text(width//2, height//2, text=text, fill='#FFFFFF', font=font)
+        self.text_id = self.create_text(width//2, height//2, text=text, fill=fg, font=font)
         
         for item in [self.rect, self.text_id]:
             self.tag_bind(item, "<Button-1>", self.on_click)
@@ -198,12 +202,12 @@ class RoundedButton(tk.Canvas):
     def on_enter(self, event):
         if self.enabled:
             self.itemconfig(self.rect, fill=self.hover_color)
-            self.itemconfig(self.text_id, fill='#FFFFFF')
+            self.itemconfig(self.text_id, fill=self.hover_fg)
 
     def on_leave(self, event):
         if self.enabled:
             self.itemconfig(self.rect, fill=self.normal_color)
-            self.itemconfig(self.text_id, fill='#FFFFFF')
+            self.itemconfig(self.text_id, fill=self.normal_fg)
 
     def set_text(self, text):
         self._text = text
@@ -216,18 +220,23 @@ class RoundedButton(tk.Canvas):
         self.enabled = enabled
         color = self.normal_color if enabled else '#666666'
         self.itemconfig(self.rect, fill=color)
-        self.itemconfig(self.text_id, fill='#FFFFFF')
+        self.itemconfig(self.text_id, fill=self.normal_fg if enabled else '#A0A0A0')
 
     def update_colors(self, bg_color, fg_color, hover_color):
         self.normal_color = bg_color
         self.hover_color = hover_color
+        self.normal_fg = fg_color
         self.itemconfig(self.rect, fill=bg_color)
-        self.itemconfig(self.text_id, fill='#FFFFFF')
+        self.itemconfig(self.text_id, fill=fg_color)
 
     def update_theme(self, theme_name):
-        self.theme_name = theme_name
-        
-        if theme_name == 'Pink':
-            self.hover_color = '#DD72A9'
-        else:
-            self.hover_color = '#6c5579'
+            self.theme_name = theme_name
+            
+            if theme_name == 'Default':
+                self.hover_color = '#9b78a8'
+            elif theme_name == 'Pink':
+                self.hover_color = '#DD72A9'
+            elif theme_name == 'Old':
+                self.hover_color = '#60A5FA'
+            else:
+                self.hover_color = '#9b78a8'
