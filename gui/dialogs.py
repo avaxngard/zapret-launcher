@@ -95,7 +95,7 @@ class Dialogs:
                     select_btn[0].hover_color = self.colors['accent']
                     select_btn[0].update_colors(
                         self.colors['accent'],
-                        self.colors['text_primary'],
+                        self.colors['button_text_hover'],
                         self.colors['accent']
                     )
                     select_btn[0].config(cursor="hand2")
@@ -105,7 +105,7 @@ class Dialogs:
                     select_btn[0].hover_color = self.colors['accent']
                     select_btn[0].update_colors(
                         self.colors['button_bg'],
-                        self.colors['text_secondary'],
+                        self.colors['button_text_hover'],
                         self.colors['button_bg']
                     )
                     select_btn[0].config(cursor="arrow")
@@ -118,8 +118,8 @@ class Dialogs:
                 prev_desc.configure(fg=self.colors['text_secondary'], bg=self.colors['bg_light'])
             
             frame.configure(bg=self.colors['accent'], relief=tk.RIDGE, bd=2)
-            name_label.configure(fg=self.colors['text_primary'], bg=self.colors['accent'])
-            desc_label.configure(fg=self.colors['text_secondary'], bg=self.colors['accent'])
+            name_label.configure(fg=self.colors['button_text_hover'], bg=self.colors['accent'])
+            desc_label.configure(fg=self.colors['button_text_hover'], bg=self.colors['accent'])
             
             selected_widget[0] = (frame, name_label, desc_label, index)
             selected_mode[0] = mode
@@ -185,8 +185,8 @@ class Dialogs:
                 selected_mode[0] = mode
                 selected_widget[0] = (mode_frame, name_label, desc_label, idx)
                 mode_frame.configure(bg=self.colors['accent'], relief=tk.RIDGE, bd=2)
-                name_label.configure(fg=self.colors['text_primary'], bg=self.colors['accent'])
-                desc_label.configure(fg=self.colors['text_secondary'], bg=self.colors['accent'])
+                name_label.configure(fg=self.colors['button_text_hover'], bg=self.colors['accent'])
+                desc_label.configure(fg=self.colors['button_text_hover'], bg=self.colors['accent'])
                 update_select_button()
 
             def make_on_click(m, f, nl, dl, i):
@@ -239,6 +239,8 @@ class Dialogs:
             command=on_select_click,
             width=btn_width, height=btn_height,
             bg=self.colors['accent'],
+            fg=self.colors['button_text_hover'],
+            hover_fg=self.colors['button_text_hover'],
             font=("Segoe UI Variable", font_size_btn),
             corner_radius=btn_radius
         )
@@ -254,6 +256,8 @@ class Dialogs:
             command=dialog.destroy,
             width=btn_width_cancel, height=btn_height,
             bg=self.colors['button_bg'],
+            fg=self.colors['button_text'],
+            hover_fg=self.colors['button_text_hover'],
             font=("Segoe UI Variable", font_size_btn),
             corner_radius=btn_radius
         )
@@ -507,16 +511,24 @@ class Dialogs:
                 self.app._connecting = False
                 self.app.force_tray_menu_update()
         
-        start_btn = RoundedButton(btn_frame, text=tr('button_start'), command=start_with_strategy,
-                                width=btn_width, height=btn_height, bg=self.colors['accent'],
-                                font=("Segoe UI Variable", font_size_btn), corner_radius=btn_radius,
-                                hover_color=self.colors['accent'], theme_name=self.current_theme)
+        start_btn = RoundedButton(
+            btn_frame, text=tr('button_start'), command=start_with_strategy,
+            width=btn_width, height=btn_height, bg=self.colors['accent'],
+            fg=self.colors['button_text_hover'],
+            hover_fg=self.colors['button_text_hover'],
+            font=("Segoe UI Variable", font_size_btn), corner_radius=btn_radius,
+            hover_color=self.colors['accent'], theme_name=self.current_theme
+        )
         start_btn.pack(side=tk.LEFT, padx=scale_size(5, self.scale_factor))
         
-        cancel_btn = RoundedButton(btn_frame, text=tr('mode_cancel'), command=lambda: self.app._cancel_strategy_selection(dialog),
-                                width=btn_width_cancel, height=btn_height, bg=self.colors['button_bg'],
-                                font=("Segoe UI Variable", font_size_btn), corner_radius=btn_radius,
-                                hover_color=self.colors['accent'], theme_name=self.current_theme)
+        cancel_btn = RoundedButton(
+            btn_frame, text=tr('mode_cancel'), command=lambda: self.app._cancel_strategy_selection(dialog),
+            width=btn_width_cancel, height=btn_height, bg=self.colors['button_bg'],
+            fg=self.colors['button_text'],
+            hover_fg=self.colors['button_text_hover'],
+            font=("Segoe UI Variable", font_size_btn), corner_radius=btn_radius,
+            hover_color=self.colors['accent'], theme_name=self.current_theme
+        )
         cancel_btn.pack(side=tk.LEFT, padx=scale_size(5, self.scale_factor))
         dialog.deiconify()
 
@@ -695,7 +707,8 @@ class Dialogs:
             command=lambda: self.app._cancel_tg_proxy_mode(dialog, dont_show_var.get()),
             width=btn_width, height=btn_height,
             bg=self.colors['accent'],
-            fg=self.colors['text_primary'],
+            fg=self.colors['button_text_hover'],
+            hover_fg=self.colors['button_text_hover'],
             font=("Segoe UI Variable", font_size_btn),
             corner_radius=btn_radius,
             hover_color=self.colors['accent'], 
@@ -803,7 +816,8 @@ class Dialogs:
             command=on_close,
             width=btn_width, height=btn_height,
             bg=self.colors['button_bg'],
-            fg=self.colors['text_secondary'],
+            fg=self.colors['button_text'],
+            hover_fg=self.colors['button_text_hover'],
             font=("Segoe UI Variable", font_size_btn),
             corner_radius=btn_radius,
             hover_color=self.colors['accent'],
@@ -929,7 +943,8 @@ class Dialogs:
             command=on_disable,
             width=btn_width, height=btn_height,
             bg=self.colors['accent'],
-            fg=self.colors['text_primary'],
+            fg=self.colors['button_text_hover'],
+            hover_fg=self.colors['button_text_hover'],
             font=("Segoe UI Variable", font_size_btn),
             corner_radius=btn_radius,
             hover_color=self.colors['accent'],
@@ -943,7 +958,8 @@ class Dialogs:
             command=on_ignore,
             width=btn_width_ignore, height=btn_height,
             bg=self.colors['button_bg'],
-            fg=self.colors['text_secondary'],
+            fg=self.colors['button_text'],
+            hover_fg=self.colors['button_text_hover'],
             font=("Segoe UI Variable", font_size_btn),
             corner_radius=btn_radius,
             hover_color=self.colors['accent'],
@@ -1019,6 +1035,12 @@ class Dialogs:
                 'desc': tr('hosts_template_spotify'),
                 'url': 'https://zapret-launcher.ru/updater/docs/packs/spotify.txt'
             },
+            #{
+            #    'id': 'discord',
+            #    'name': 'Discord',
+            #    'desc': tr('hosts_template_discord'),
+            #    'url': 'https://zapret-launcher.ru/updater/docs/packs/discord.txt'
+            #},
             {
                 'id': 'github',
                 'name': 'GitHub',
@@ -1041,7 +1063,7 @@ class Dialogs:
                     select_btn[0].hover_color = self.colors['accent']
                     select_btn[0].update_colors(
                         self.colors['accent'],
-                        self.colors['text_primary'],
+                        self.colors['button_text_hover'],
                         self.colors['accent']
                     )
                     select_btn[0].config(cursor="hand2")
@@ -1051,7 +1073,7 @@ class Dialogs:
                     select_btn[0].hover_color = self.colors['accent']
                     select_btn[0].update_colors(
                         self.colors['button_bg'],
-                        self.colors['text_secondary'],
+                        self.colors['button_text_hover'],
                         self.colors['button_bg']
                     )
                     select_btn[0].config(cursor="arrow")
@@ -1064,8 +1086,8 @@ class Dialogs:
                 prev_desc.configure(fg=self.colors['text_secondary'], bg=self.colors['bg_light'])
             
             frame.configure(bg=self.colors['accent'], relief=tk.RIDGE, bd=2)
-            name_label.configure(fg=self.colors['text_primary'], bg=self.colors['accent'])
-            desc_label.configure(fg=self.colors['text_secondary'], bg=self.colors['accent'])
+            name_label.configure(fg=self.colors['button_text_hover'], bg=self.colors['accent'])
+            desc_label.configure(fg=self.colors['button_text_hover'], bg=self.colors['accent'])
             
             selected_widget[0] = (frame, name_label, desc_label, index)
             selected_template[0] = template
@@ -1121,7 +1143,7 @@ class Dialogs:
                 response.encoding = 'utf-8'
                 
                 if response.status_code != 200:
-                    messagebox.showerror(tr('error'), f"{tr('error')}: HTTP {response.status_code}")
+                    messagebox.showerror(tr('error'), f"HTTP {response.status_code}")
                     return
                 
                 template_content = response.text
@@ -1238,8 +1260,8 @@ class Dialogs:
                 selected_template[0] = template
                 selected_widget[0] = (template_frame, name_label, desc_label, idx)
                 template_frame.configure(bg=self.colors['accent'], relief=tk.RIDGE, bd=2)
-                name_label.configure(fg=self.colors['text_primary'], bg=self.colors['accent'])
-                desc_label.configure(fg=self.colors['text_secondary'], bg=self.colors['accent'])
+                name_label.configure(fg=self.colors['button_text_hover'], bg=self.colors['accent'])
+                desc_label.configure(fg=self.colors['button_text_hover'], bg=self.colors['accent'])
                 update_select_button()
 
             def make_on_click(t, f, nl, dl, i):
@@ -1294,6 +1316,8 @@ class Dialogs:
             command=on_select_click,
             width=btn_width, height=btn_height,
             bg=self.colors['accent'],
+            fg=self.colors['button_text_hover'],
+            hover_fg=self.colors['button_text_hover'],
             font=("Segoe UI Variable", font_size_btn),
             corner_radius=btn_radius
         )
@@ -1309,6 +1333,8 @@ class Dialogs:
             command=dialog.destroy,
             width=btn_width_cancel, height=btn_height,
             bg=self.colors['button_bg'],
+            fg=self.colors['button_text'],
+            hover_fg=self.colors['button_text_hover'],
             font=("Segoe UI Variable", font_size_btn),
             corner_radius=btn_radius
         )
