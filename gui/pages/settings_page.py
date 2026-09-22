@@ -97,7 +97,8 @@ class SettingsPage:
                 command=lambda t=theme_name: self._change_theme(t),
                 width=btn_width_small, height=btn_height_small,
                 bg=self.colors['accent'] if theme_name == self.app.current_theme else self.colors['button_bg'],
-                fg=self.colors['text_primary'] if theme_name == self.app.current_theme else self.colors['text_secondary'],
+                fg=self.colors['button_text_hover'],
+                hover_fg=self.colors['button_text_hover'],
                 font=("Inter", font_size_btn),
                 corner_radius=btn_radius,
                 hover_color=self.colors['accent'],
@@ -124,7 +125,8 @@ class SettingsPage:
                 command=lambda l=lang_code: self._change_language(l),
                 width=btn_width_small, height=btn_height_small,
                 bg=self.colors['accent'] if lang_code == current_lang else self.colors['button_bg'],
-                fg=self.colors['text_primary'] if lang_code == current_lang else self.colors['text_secondary'],
+                fg=self.colors['button_text_hover'],
+                hover_fg=self.colors['button_text_hover'],
                 font=("Inter", font_size_btn),
                 corner_radius=btn_radius,
                 hover_color=self.colors['accent'],
@@ -142,7 +144,7 @@ class SettingsPage:
 
         secret_value = getattr(self.app, '_tg_secret', None)
         if secret_value and len(secret_value) > 16:
-            secret_text = f"{tr('settings_current_tg_secret')} {secret_value[:16]}..."
+            secret_text = f"{tr('settings_current_tg_secret')} {secret_value}"
         elif secret_value:
             secret_text = f"{tr('settings_current_tg_secret')} {secret_value}"
         else:
@@ -160,7 +162,8 @@ class SettingsPage:
             command=self._regenerate_secret,
             width=btn_width_large, height=btn_height_large,
             bg=self.colors['accent'],
-            fg=self.colors['text_primary'],
+            fg=self.colors['button_text_hover'],
+            hover_fg=self.colors['button_text_hover'],
             font=("Inter", font_size_btn_small),
             corner_radius=btn_radius_large,
             hover_color=self.colors['accent'],
@@ -174,7 +177,8 @@ class SettingsPage:
             command=self._show_instruction,
             width=btn_width_large, height=btn_height_large,
             bg=self.colors['button_bg'],
-            fg=self.colors['text_secondary'],
+            fg=self.colors['button_text'],
+            hover_fg=self.colors['button_text_hover'],
             font=("Inter", font_size_btn_small),
             corner_radius=btn_radius_large,
             hover_color=self.colors['accent'],
@@ -199,7 +203,8 @@ class SettingsPage:
             command=self._show_integrity_placeholder,
             width=btn_width_medium, height=btn_height_medium,
             bg=self.colors['button_bg'],
-            fg=self.colors['text_secondary'],
+            fg=self.colors['button_text'],
+            hover_fg=self.colors['button_text_hover'],
             font=("Inter", font_size_btn),
             corner_radius=btn_radius,
             hover_color=self.colors['accent'],
@@ -213,7 +218,8 @@ class SettingsPage:
             command=self._reinstall_files,
             width=btn_width_medium, height=btn_height_medium,
             bg=self.colors['button_bg'],
-            fg=self.colors['text_secondary'],
+            fg=self.colors['button_text'],
+            hover_fg=self.colors['button_text_hover'],
             font=("Inter", font_size_btn),
             corner_radius=btn_radius,
             hover_color=self.colors['accent'],
@@ -230,7 +236,8 @@ class SettingsPage:
             command=self._toggle_auto_update,
             width=btn_width_medium, height=btn_height_medium,
             bg=self.colors['button_bg'],
-            fg=self.colors['text_secondary'],
+            fg=self.colors['button_text'],
+            hover_fg=self.colors['button_text_hover'],
             font=("Inter", font_size_btn),
             corner_radius=btn_radius,
             hover_color=self.colors['accent'],
@@ -244,7 +251,8 @@ class SettingsPage:
             command=self._toggle_analytics,
             width=btn_width_medium, height=btn_height_medium,
             bg=self.colors['button_bg'],
-            fg=self.colors['text_secondary'],
+            fg=self.colors['button_text'],
+            hover_fg=self.colors['button_text_hover'],
             font=("Inter", font_size_btn),
             corner_radius=btn_radius,
             hover_color=self.colors['accent'],
@@ -261,7 +269,8 @@ class SettingsPage:
             command=self.app.toggle_vpn_detection,
             width=btn_width_medium, height=btn_height_medium,
             bg=self.colors['button_bg'],
-            fg=self.colors['text_secondary'],
+            fg=self.colors['button_text'],
+            hover_fg=self.colors['button_text_hover'],
             font=("Inter", font_size_btn),
             corner_radius=btn_radius,
             hover_color=self.colors['accent'],
@@ -275,7 +284,8 @@ class SettingsPage:
             command=self.app.toggle_hide_duplicates_warning,
             width=btn_width_medium, height=btn_height_medium,
             bg=self.colors['button_bg'],
-            fg=self.colors['text_secondary'],
+            fg=self.colors['button_text'],
+            hover_fg=self.colors['button_text_hover'],
             font=("Inter", font_size_btn),
             corner_radius=btn_radius,
             hover_color=self.colors['accent'],
@@ -292,7 +302,8 @@ class SettingsPage:
             command=self.app.open_appdata_folder,
             width=btn_width_medium, height=btn_height_medium,
             bg=self.colors['button_bg'],
-            fg=self.colors['text_secondary'],
+            fg=self.colors['button_text'],
+            hover_fg=self.colors['button_text_hover'],
             font=("Inter", font_size_btn),
             corner_radius=btn_radius,
             hover_color=self.colors['accent'],
@@ -306,7 +317,8 @@ class SettingsPage:
             command=self.app.toggle_autostart,
             width=btn_width_medium, height=btn_height_medium,
             bg=self.colors['button_bg'],
-            fg=self.colors['text_secondary'],
+            fg=self.colors['button_text'],
+            hover_fg=self.colors['button_text_hover'],
             font=("Inter", font_size_btn),
             corner_radius=btn_radius,
             hover_color=self.colors['accent'],
@@ -802,7 +814,7 @@ class SettingsPage:
             subprocess.Popen([exe_path, '--no-splash', '--from-splash'], creationflags=subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS, close_fds=True)
         except Exception as e:
             try:
-                messagebox.showerror(tr('error'), f"Не удалось перезапустить лаунчер:\n{e}")
+                messagebox.showerror(tr('error'), f"{tr('error_restart_launcher')}:\n{e}")
             except Exception:
                 pass
             return
