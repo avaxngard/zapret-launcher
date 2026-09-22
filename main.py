@@ -692,8 +692,8 @@ class ZapretLauncher:
         self.setup_ui()
         self.update_check_timer_id = None
         
-        self.root.after(200, self.check_lists_for_duplicates)
-        self.root.after(200, self.check_initial_status)
+        self.root.after(500, self.check_lists_for_duplicates)
+        self.root.after(500, self.check_initial_status)
         self.show_main_page()
         
         self.tray_icon = ModernSystemTray(self)
@@ -890,10 +890,12 @@ class ZapretLauncher:
         try:
             if self.current_theme == 'Default':
                 header_color = "#0F0F12"
+            elif self.current_theme == 'Pink':
+                header_color = "#1E1B2E"
             elif self.current_theme == 'Old':
                 header_color = "#0F172A"
             else:
-                header_color = "#1E1B2E"
+                header_color = "#F0F0F2"
             
             pywinstyles.change_header_color(self.root, header_color)
             
@@ -1115,7 +1117,8 @@ class ZapretLauncher:
                 command=command,
                 width=btn_width, height=btn_height,
                 bg=self.colors['bg_light'],
-                fg=self.colors['text_secondary'],
+                fg=self.colors['button_text'],
+                hover_fg=self.colors['button_text_hover'],
                 font=("Segoe UI Variable", btn_font_size),
                 corner_radius=btn_radius,
                 theme_name=self.current_theme
