@@ -25,6 +25,8 @@ def get_theme(theme_name='Default'):
             
             'button_bg': '#2D2D35',
             'button_hover': '#3D3D45',
+            'button_text': '#FFFFFF',
+            'button_text_hover': '#FFFFFF',
             
             'separator': "#2D2D35",
         },
@@ -45,6 +47,8 @@ def get_theme(theme_name='Default'):
             
             'button_bg': '#4D4A6B',
             'button_hover': '#5D5A7B',
+            'button_text': '#FFFFFF',
+            'button_text_hover': '#FFFFFF',
             
             'separator': "#46435A",
         },
@@ -65,11 +69,35 @@ def get_theme(theme_name='Default'):
             
             'button_bg': '#475569',
             'button_hover': '#64748B',
+            'button_text': '#FFFFFF',
+            'button_text_hover': '#FFFFFF',
             
             'separator': "#3E4C63",
+        },
+        'Light': {
+            'accent': '#7c5a8a',
+            'accent_hover': '#9b78a8',
+            'accent_green': '#059669',
+            'accent_darkgreen': '#047857',
+            'accent_red': '#DC2626',
+            
+            'bg_dark': '#F0F0F2',
+            'bg_medium': '#E4E4E8',
+            'bg_light': '#FFFFFF',
+            'bg_light_hover': '#DADAE0',
+            
+            'text_primary': '#1A1A1F',
+            'text_secondary': '#5A5A66',
+            
+            'button_bg': "#D3D0D0",
+            'button_hover': '#E8E8EE',
+            'button_text': '#1A1A1F',
+            'button_text_hover': '#FFFFFF',
+            
+            'separator': '#D0D0D8',
         }
     }
     return themes.get(theme_name, themes['Default'])
 
 def get_theme_names():
-    return ['Default', 'Pink']#, 'Old']
+    return ['Default', 'Pink', 'Old', 'Light']
