@@ -325,7 +325,8 @@ class MainPage:
             command=self.save_tg_proxy_settings,
             width=scale_size(200, self.scale_factor), height=scale_size(32, self.scale_factor),
             bg=self.colors['accent'],
-            fg=self.colors['text_secondary'],
+            fg=self.colors['button_text_hover'],
+            hover_fg=self.colors['button_text_hover'],
             font=("Inter", scale_size(10, self.scale_factor)),
             corner_radius=scale_size(8, self.scale_factor),
             hover_color=self.colors['accent'],
@@ -339,7 +340,8 @@ class MainPage:
             command=self.copy_current_link,
             width=scale_size(200, self.scale_factor), height=scale_size(32, self.scale_factor),
             bg=self.colors['button_bg'],
-            fg=self.colors['text_secondary'],
+            fg=self.colors['button_text'],
+            hover_fg=self.colors['button_text_hover'],
             font=("Inter", scale_size(10, self.scale_factor)),
             corner_radius=scale_size(8, self.scale_factor),
             hover_color=self.colors['accent'],
@@ -385,34 +387,18 @@ class MainPage:
                 img = img.resize(icon_size_tuple, Image.Resampling.LANCZOS)
                 img = img.convert('RGBA')
                 
-                dark_img = img.copy()
-                pixels = dark_img.load()
-                for y in range(dark_img.size[1]):
-                    for x in range(dark_img.size[0]):
-                        r, g, b, a = pixels[x, y]
-                        dark_r = int(r * 61 / 255)
-                        dark_g = int(g * 61 / 255)
-                        dark_b = int(b * 69 / 255)
-                        pixels[x, y] = (dark_r, dark_g, dark_b, a)
-                dark_photo = ImageTk.PhotoImage(dark_img)
+                if icon_file == "star.png":
+                    enhancer = ImageEnhance.Brightness(img)
+                    img = enhancer.enhance(0.6)
                 
-                light_img = self._lighten_image(img)
-                light_photo = ImageTk.PhotoImage(light_img)
+                photo = ImageTk.PhotoImage(img)
                 
-                btn = tk.Label(self.icons_frame, image=dark_photo, bg=self.colors['bg_dark'], cursor="hand2")
-                btn.image = dark_photo
-                btn.light_image = light_photo
-                btn.dark_image = dark_photo
+                btn = tk.Label(self.icons_frame, image=photo, bg=self.colors['bg_dark'], cursor="hand2")
+                btn.image = photo
                 btn.url = url
                 
-                btn.bind("<Enter>", lambda e, b=btn: b.config(image=b.light_image))
-                btn.bind("<Leave>", lambda e, b=btn: b.config(image=b.dark_image))
                 btn.bind("<Button-1>", lambda e, u=url: webbrowser.open(u))
                 btn.pack(side=tk.RIGHT, padx=scale_size(5, self.scale_factor))
-
-    def _lighten_image(self, img):
-        enhancer = ImageEnhance.Brightness(img)
-        return enhancer.enhance(1.3)
     
     def get_frame(self):
         return self.frame
