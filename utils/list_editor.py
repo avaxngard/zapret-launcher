@@ -119,10 +119,11 @@ class ListEditor:
         if app:
             self.search_next_btn.configure(
                 bg=app.colors['accent'],
-                fg=app.colors['text_primary'],
+                fg=app.colors['button_text_hover'],
                 relief=tk.FLAT,
                 cursor='hand2',
-                activebackground=app.colors['accent']
+                activebackground=app.colors['accent'],
+                activeforeground=app.colors['button_text']
             )
         self.search_next_btn.pack(side=tk.LEFT, padx=(0, 5))
         
@@ -130,10 +131,11 @@ class ListEditor:
         if app:
             self.search_close_btn.configure(
                 bg=app.colors['button_bg'],
-                fg=app.colors['text_primary'],
+                fg=app.colors['button_text'],
                 relief=tk.FLAT,
                 cursor='hand2',
-                activebackground=app.colors['accent']
+                activebackground=app.colors['accent'],
+                activeforeground=app.colors['button_text_hover']
             )
         self.search_close_btn.pack(side=tk.LEFT)
         
@@ -169,9 +171,9 @@ class ListEditor:
         if app:
             button_style = {
                 'bg': app.colors['accent'],
-                'fg': app.colors['text_primary'],
+                'fg': app.colors['button_text_hover'],
                 'activebackground': app.colors['accent'],
-                'activeforeground': app.colors['text_primary'],
+                'activeforeground': app.colors['button_text'],
                 'relief': tk.FLAT,
                 'bd': 0,
                 'cursor': 'hand2'
@@ -184,9 +186,9 @@ class ListEditor:
         if app:
             cancel_style = {
                 'bg': app.colors['button_bg'],
-                'fg': app.colors['text_primary'],
+                'fg': app.colors['button_text'],
                 'activebackground': app.colors['accent'],
-                'activeforeground': app.colors['text_primary'],
+                'activeforeground': app.colors['button_text_hover'],
                 'relief': tk.FLAT,
                 'bd': 0,
                 'cursor': 'hand2'
