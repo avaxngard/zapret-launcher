@@ -49,7 +49,7 @@ class MainPage:
         title_label = tk.Label(
             header_frame, 
             text=tr('main_title'), 
-            font=("Inter", font_size_title, "bold"),
+            font=("Segoe UI Variable", font_size_title, "bold"),
             fg=self.colors['text_primary'], 
             bg=self.colors['bg_dark']
         )
@@ -58,7 +58,7 @@ class MainPage:
         desc_label = tk.Label(
             header_frame,
             text=tr('main_desc'),
-            font=("Inter", font_size_desc),
+            font=("Segoe UI Variable", font_size_desc),
             fg=self.colors['text_secondary'],
             bg=self.colors['bg_dark']
         )
@@ -97,23 +97,23 @@ class MainPage:
         self.app.stats_frame = tk.Frame(left_column, bg=self.colors['bg_light'])
         self.app.stats_frame.pack(fill=tk.X, pady=(0, scale_size(15, self.scale_factor)), ipadx=scale_size(20, self.scale_factor), ipady=scale_size(15, self.scale_factor))
         
-        tk.Label(self.app.stats_frame, text=tr('stats_session'), font=("Inter", scale_size(14, self.scale_factor), "bold"),
+        tk.Label(self.app.stats_frame, text=tr('stats_session'), font=("Segoe UI Variable", scale_size(14, self.scale_factor), "bold"),
             fg=self.colors['text_primary'], bg=self.colors['bg_light']).pack(anchor='w', padx=scale_size(15, self.scale_factor), pady=(scale_size(8, self.scale_factor), 5))
         
         stats_row1 = tk.Frame(self.app.stats_frame, bg=self.colors['bg_light'])
         stats_row1.pack(fill=tk.X, padx=scale_size(15, self.scale_factor), pady=2)
         
-        self.app.stats_time_label = tk.Label(stats_row1, text="00:00:00", font=("Inter", font_size_stats, "bold"),
+        self.app.stats_time_label = tk.Label(stats_row1, text="00:00:00", font=("Segoe UI Variable", font_size_stats, "bold"),
                                             fg=self.colors['accent'], bg=self.colors['bg_light'])
         self.app.stats_time_label.pack(side=tk.LEFT)
         
         tk.Label(stats_row1, text=tr('stats_time'), font=self.font_primary,
                 fg=self.colors['text_secondary'], bg=self.colors['bg_light']).pack(side=tk.LEFT, padx=(5, scale_size(20, self.scale_factor)))
         
-        self.app.stats_traffic_label = tk.Label(stats_row1, text="⬇ 0 B  |  ⬆ 0 B", font=("Inter", font_size_small),
+        self.app.stats_traffic_label = tk.Label(stats_row1, text="⬇ 0 B  |  ⬆ 0 B", font=("Segoe UI Variable", font_size_small),
                                                 fg=self.colors['text_primary'], bg=self.colors['bg_light'])
         self.app.stats_traffic_label.pack(side=tk.LEFT, padx=(0, scale_size(20, self.scale_factor)))
-        self.app.stats_total_label = tk.Label(stats_row1, text="0 B", font=("Inter", font_size_small),
+        self.app.stats_total_label = tk.Label(stats_row1, text="0 B", font=("Segoe UI Variable", font_size_small),
                                             fg=self.colors['text_secondary'], bg=self.colors['bg_light'])
         self.app.stats_total_label.pack(side=tk.LEFT)
         
@@ -144,7 +144,7 @@ class MainPage:
         tk.Label(rtt_frame, text=tr('stats_rtt'), font=self.font_bold,
                 fg=self.colors['text_primary'], bg=self.colors['bg_light']).pack(anchor='w')
         
-        self.app.stats_rtt_label = tk.Label(rtt_frame, text="-- ms", font=("Inter", font_size_rtt, "bold"),
+        self.app.stats_rtt_label = tk.Label(rtt_frame, text="-- ms", font=("Segoe UI Variable", font_size_rtt, "bold"),
                                             fg=self.colors['accent'], bg=self.colors['bg_light'])
         self.app.stats_rtt_label.pack(anchor='w', pady=(scale_size(5, self.scale_factor), 0))
         
@@ -153,7 +153,7 @@ class MainPage:
         
         self.app.connect_btn = RoundedButton(button_frame, text=tr('button_connect'), command=self.app.toggle_connection,
                                     width=btn_width, height=btn_height, bg=self.colors['accent'], 
-                                    font=("Inter", font_size_btn, "bold"), corner_radius=btn_radius,
+                                    font=("Segoe UI Variable", font_size_btn, "bold"), corner_radius=btn_radius,
                                     theme_name=self.app.current_theme)
         self.app.connect_btn.hover_color = '#3D3D45'
         self.app.connect_btn.pack()
@@ -239,7 +239,7 @@ class MainPage:
         title_frame = tk.Frame(inner, bg=self.colors['bg_light'])
         title_frame.pack(fill=tk.X, pady=(0, scale_size(8, self.scale_factor)))
         
-        tk.Label(title_frame, text="Telegram Proxy", font=("Inter", scale_size(13, self.scale_factor), "bold"),
+        tk.Label(title_frame, text="Telegram Proxy", font=("Segoe UI Variable", scale_size(13, self.scale_factor), "bold"),
                 fg=self.colors['accent'], bg=self.colors['bg_light']).pack(side=tk.LEFT)
         
         tk.Frame(inner, bg=self.colors['separator'], height=1).pack(fill=tk.X, pady=(0, scale_size(10, self.scale_factor)))
@@ -250,10 +250,10 @@ class MainPage:
         host_frame = tk.Frame(row1, bg=self.colors['bg_light'])
         host_frame.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, scale_size(10, self.scale_factor)))
         
-        tk.Label(host_frame, text=tr('main_page_tg_proxy_host'), font=("Inter", scale_size(9, self.scale_factor)),
+        tk.Label(host_frame, text=tr('main_page_tg_proxy_host'), font=("Segoe UI Variable", scale_size(9, self.scale_factor)),
                 fg=self.colors['text_secondary'], bg=self.colors['bg_light'], anchor='w').pack(anchor='w')
         
-        self.tg_host_entry = tk.Entry(host_frame, font=("Inter", scale_size(10, self.scale_factor)),
+        self.tg_host_entry = tk.Entry(host_frame, font=("Segoe UI Variable", scale_size(10, self.scale_factor)),
                                     bg=self.colors['bg_light'], fg=self.colors['text_primary'],
                                     relief=tk.FLAT, highlightthickness=1,
                                     highlightcolor=self.colors['accent'],
@@ -264,10 +264,10 @@ class MainPage:
         port_frame = tk.Frame(row1, bg=self.colors['bg_light'])
         port_frame.pack(side=tk.RIGHT)
         
-        tk.Label(port_frame, text=tr('main_page_tg_proxy_port'), font=("Inter", scale_size(9, self.scale_factor)),
+        tk.Label(port_frame, text=tr('main_page_tg_proxy_port'), font=("Segoe UI Variable", scale_size(9, self.scale_factor)),
                 fg=self.colors['text_secondary'], bg=self.colors['bg_light'], anchor='w').pack(anchor='w')
         
-        self.tg_port_entry = tk.Entry(port_frame, font=("Inter", scale_size(10, self.scale_factor)),
+        self.tg_port_entry = tk.Entry(port_frame, font=("Segoe UI Variable", scale_size(10, self.scale_factor)),
                                     bg=self.colors['bg_light'], fg=self.colors['text_primary'],
                                     relief=tk.FLAT, highlightthickness=1,
                                     highlightcolor=self.colors['accent'],
@@ -279,11 +279,11 @@ class MainPage:
         row2 = tk.Frame(inner, bg=self.colors['bg_light'])
         row2.pack(fill=tk.X, pady=(0, scale_size(8, self.scale_factor)))
 
-        tk.Label(row2, text="Fake TLS", font=("Inter", scale_size(9, self.scale_factor)),
+        tk.Label(row2, text="Fake TLS", font=("Segoe UI Variable", scale_size(9, self.scale_factor)),
                 fg=self.colors['text_secondary'], bg=self.colors['bg_light'], width=scale_size(8, self.scale_factor), anchor='w').pack(side=tk.LEFT)
 
         self.fake_tls_var = tk.BooleanVar(value=True)
-        self.fake_tls_text = tk.Label(row2, text=tr('status_enabled'), font=("Inter", scale_size(9, self.scale_factor)),
+        self.fake_tls_text = tk.Label(row2, text=tr('status_enabled'), font=("Segoe UI Variable", scale_size(9, self.scale_factor)),
                                     fg=self.colors['accent_green'], bg=self.colors['bg_light'])
 
         def on_fake_tls_toggle():
@@ -308,10 +308,10 @@ class MainPage:
         row3 = tk.Frame(inner, bg=self.colors['bg_light'])
         row3.pack(fill=tk.X, pady=(0, scale_size(10, self.scale_factor)))
         
-        tk.Label(row3, text=tr('main_page_tg_proxy_domain'), font=("Inter", scale_size(9, self.scale_factor)),
+        tk.Label(row3, text=tr('main_page_tg_proxy_domain'), font=("Segoe UI Variable", scale_size(9, self.scale_factor)),
                 fg=self.colors['text_secondary'], bg=self.colors['bg_light'], width=scale_size(8, self.scale_factor), anchor='w').pack(side=tk.LEFT)
         
-        self.tg_domain_entry = tk.Entry(row3, font=("Inter", scale_size(10, self.scale_factor)),
+        self.tg_domain_entry = tk.Entry(row3, font=("Segoe UI Variable", scale_size(10, self.scale_factor)),
                                         bg=self.colors['bg_light'], fg=self.colors['text_primary'],
                                         relief=tk.FLAT, highlightthickness=1,
                                         highlightcolor=self.colors['accent'],
@@ -327,7 +327,7 @@ class MainPage:
             bg=self.colors['accent'],
             fg=self.colors['button_text_hover'],
             hover_fg=self.colors['button_text_hover'],
-            font=("Inter", scale_size(10, self.scale_factor)),
+            font=("Segoe UI Variable", scale_size(10, self.scale_factor)),
             corner_radius=scale_size(8, self.scale_factor),
             hover_color=self.colors['accent'],
             theme_name=self.app.current_theme
@@ -342,7 +342,7 @@ class MainPage:
             bg=self.colors['button_bg'],
             fg=self.colors['button_text'],
             hover_fg=self.colors['button_text_hover'],
-            font=("Inter", scale_size(10, self.scale_factor)),
+            font=("Segoe UI Variable", scale_size(10, self.scale_factor)),
             corner_radius=scale_size(8, self.scale_factor),
             hover_color=self.colors['accent'],
             theme_name=self.app.current_theme
