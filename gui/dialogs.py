@@ -10,6 +10,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from typing import Dict
 from gui.widgets import RoundedButton
+from gui.theme import get_theme_names
 from utils.scaling import scale_size
 from utils.languages import tr
 import requests
@@ -1342,4 +1343,158 @@ class Dialogs:
         cancel_btn.hover_color = self.colors['accent']
         cancel_btn.config(cursor="hand2")
         cancel_btn.pack(side=tk.RIGHT)
+        dialog.deiconify()
+
+    def show_theme_selector(self):
+        dialog = tk.Toplevel(self.app.root)
+        dialog.title(tr('dialog_settings_choosetheme'))
+        dialog.resizable(False, False)
+        dialog.configure(bg=self.colors['bg_medium'])
+        dialog.transient(self.app.root)
+        dialog.grab_set()
+        dialog.focus_force()
+
+        w, h = scale_size(400, self.scale_factor), scale_size(250, self.scale_factor)
+        x = self.app.root.winfo_x() + (self.app.root.winfo_width() // 2) - w // 2
+        y = self.app.root.winfo_y() + (self.app.root.winfo_height() // 2) - h // 2
+        dialog.geometry(f"{w}x{h}+{x}+{y}")
+        dialog.withdraw()
+        self.app.set_dialog_header_color(dialog)
+        dialog.update_idletasks()
+
+        tk.Label(dialog, text=tr('settings_theme'), font=("Segoe UI Variable", scale_size(16, self.scale_factor), "bold"),
+                 fg=self.colors['text_primary'],
+                 bg=self.colors['bg_medium']).pack(pady=(scale_size(15, self.scale_factor), scale_size(3, self.scale_factor)))
+
+        list_frame = tk.Frame(dialog, bg=self.colors['bg_medium'])
+        list_frame.pack(fill=tk.BOTH, expand=True, padx=scale_size(30, self.scale_factor), pady=scale_size(10, self.scale_factor))
+
+        for theme_name in get_theme_names():
+            is_active = (theme_name == self.app.current_theme)
+            btn = RoundedButton(
+                list_frame,
+                text=theme_name.capitalize(),
+                command=lambda t=theme_name, d=dialog: (d.destroy(), self.app.pages.settings_page_obj._change_theme(t)),
+                width=scale_size(340, self.scale_factor),
+                height=scale_size(35, self.scale_factor),
+                bg=self.colors['accent'] if is_active else self.colors['bg_light'],
+                fg=self.colors['button_text_hover'] if is_active else self.colors['text_secondary'],
+                hover_fg=self.colors['button_text_hover'],
+                font=("Segoe UI Variable", scale_size(11, self.scale_factor)),
+                corner_radius=scale_size(8, self.scale_factor),
+                hover_color=self.colors['accent'],
+                theme_name=self.current_theme
+            )
+            btn.pack(pady=scale_size(3, self.scale_factor))
+        dialog.protocol("WM_DELETE_WINDOW", dialog.destroy)
+        dialog.bind('<Escape>', lambda e: dialog.destroy())
+        dialog.deiconify()
+
+    def show_language_selector(self):
+        dialog = tk.Toplevel(self.app.root)
+        dialog.title(tr('dialog_settings_chooselang'))
+        dialog.resizable(False, False)
+        dialog.configure(bg=self.colors['bg_medium'])
+        dialog.transient(self.app.root)
+        dialog.grab_set()
+        dialog.focus_force()
+
+        w, h = scale_size(400, self.scale_factor), scale_size(170, self.scale_factor)
+        x = self.app.root.winfo_x() + (self.app.root.winfo_width() // 2) - w // 2
+        y = self.app.root.winfo_y() + (self.app.root.winfo_height() // 2) - h // 2
+        dialog.geometry(f"{w}x{h}+{x}+{y}")
+        dialog.withdraw()
+        self.app.set_dialog_header_color(dialog)
+        dialog.update_idletasks()
+
+        tk.Label(dialog, text=tr('settings_language'), font=("Segoe UI Variable", scale_size(16, self.scale_factor), "bold"),
+                 fg=self.colors['text_primary'],
+                 bg=self.colors['bg_medium']).pack(pady=(scale_size(15, self.scale_factor), scale_size(3, self.scale_factor)))
+
+        list_frame = tk.Frame(dialog, bg=self.colors['bg_medium'])
+        list_frame.pack(fill=tk.BOTH, expand=True, padx=scale_size(30, self.scale_factor), pady=scale_size(10, self.scale_factor))
+
+        current_lang = self.app.languages.get_current_language()
+        for lang_code, lang_name in self.app.languages.LANGUAGES.items():
+            is_active = (lang_code == current_lang)
+            btn = RoundedButton(
+                list_frame,
+                text=lang_name,
+                command=lambda lc=lang_code, d=dialog: (d.destroy(), self.app.pages.settings_page_obj._change_language(lc)),
+                width=scale_size(340, self.scale_factor),
+                height=scale_size(35, self.scale_factor),
+                bg=self.colors['accent'] if is_active else self.colors['bg_light'],
+                fg=self.colors['button_text_hover'] if is_active else self.colors['text_secondary'],
+                hover_fg=self.colors['button_text_hover'],
+                font=("Segoe UI Variable", scale_size(11, self.scale_factor)),
+                corner_radius=scale_size(8, self.scale_factor),
+                hover_color=self.colors['accent'],
+                theme_name=self.current_theme
+            )
+            btn.pack(pady=scale_size(3, self.scale_factor))
+        dialog.protocol("WM_DELETE_WINDOW", dialog.destroy)
+        dialog.bind('<Escape>', lambda e: dialog.destroy())
+        dialog.deiconify()
+
+    def show_tgproxy_settings(self):
+        dialog = tk.Toplevel(self.app.root)
+        dialog.title(tr('dialog_settings_tgproxy'))
+        dialog.resizable(False, False)
+        dialog.configure(bg=self.colors['bg_medium'])
+        dialog.transient(self.app.root)
+        dialog.grab_set()
+        dialog.focus_force()
+
+        w, h = scale_size(450, self.scale_factor), scale_size(200, self.scale_factor)
+        x = self.app.root.winfo_x() + (self.app.root.winfo_width() // 2) - w // 2
+        y = self.app.root.winfo_y() + (self.app.root.winfo_height() // 2) - h // 2
+        dialog.geometry(f"{w}x{h}+{x}+{y}")
+        dialog.withdraw()
+        self.app.set_dialog_header_color(dialog)
+        dialog.update_idletasks()
+
+        tk.Label(dialog, text="Telegram Proxy", font=("Segoe UI Variable", scale_size(16, self.scale_factor), "bold"),
+                 fg=self.colors['text_primary'], bg=self.colors['bg_medium']).pack(pady=(scale_size(15, self.scale_factor), scale_size(3, self.scale_factor)))
+
+        secret_value = getattr(self.app, '_tg_secret', None) or ''
+        secret_text = f"{tr('settings_current_tg_secret')} {secret_value}"
+
+        tk.Label(dialog, text=secret_text, font=("Segoe UI Variable", scale_size(9, self.scale_factor)),
+                 fg=self.colors['text_secondary'], bg=self.colors['bg_medium'],
+                 wraplength=scale_size(400, self.scale_factor)).pack(pady=(scale_size(2, self.scale_factor), scale_size(8, self.scale_factor)))
+
+        regen_btn = RoundedButton(
+            dialog,
+            text=tr('tg_generate_secret'),
+            command=lambda d=dialog: (d.destroy(), self.app.regenerate_tg_secret()),
+            width=scale_size(300, self.scale_factor),
+            height=scale_size(35, self.scale_factor),
+            bg=self.colors['accent'],
+            fg=self.colors['button_text_hover'],
+            hover_fg=self.colors['button_text_hover'],
+            font=("Segoe UI Variable", scale_size(10, self.scale_factor)),
+            corner_radius=scale_size(8, self.scale_factor),
+            hover_color=self.colors['accent'],
+            theme_name=self.current_theme
+        )
+        regen_btn.pack(pady=(scale_size(5, self.scale_factor), scale_size(2, self.scale_factor)))
+
+        instruction_text = self.app.pages.settings_page_obj._get_instruction_button_text()
+        instr_btn = RoundedButton(
+            dialog,
+            text=instruction_text,
+            command=lambda d=dialog: (d.destroy(), self.app.pages.settings_page_obj._show_instruction()),
+            width=scale_size(300, self.scale_factor),
+            height=scale_size(35, self.scale_factor),
+            bg=self.colors['bg_light'],
+            fg=self.colors['text_primary'],
+            hover_fg=self.colors['button_text_hover'],
+            font=("Segoe UI Variable", scale_size(10, self.scale_factor)),
+            corner_radius=scale_size(8, self.scale_factor),
+            hover_color=self.colors['accent'],
+            theme_name=self.current_theme
+        )
+        instr_btn.pack(pady=(scale_size(2, self.scale_factor), scale_size(5, self.scale_factor)))
+        dialog.protocol("WM_DELETE_WINDOW", dialog.destroy)
+        dialog.bind('<Escape>', lambda e: dialog.destroy())
         dialog.deiconify()
