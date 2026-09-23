@@ -1504,7 +1504,7 @@ class ZapretLauncher:
         self.root.clipboard_clear()
         self.root.clipboard_append(link)
         self.root.update()
-        self.show_notification('notification_copied_secret', 3000)
+        self.show_notification(tr('notification_copied_secret'), 3000)
         
     def _do_start_tg_proxy(self):
         self._reset_traffic_history()
@@ -2259,22 +2259,12 @@ class ZapretLauncher:
         new_state = not current
         self._show_vpn_detection = new_state
         self.save_settings()
-        
-        if new_state:
-            self.show_notification(tr('dialog_enabled'), 2000)
-        else:
-            self.show_notification(tr('dialog_disabled'), 2000)
 
     def toggle_hide_duplicates_warning(self):
         current = getattr(self, '_hide_duplicates_warning', False)
         new_state = not current
         self._hide_duplicates_warning = new_state
         self.save_settings()
-        
-        if new_state:
-            self.show_notification(tr('dialog_disabled'), 2000)
-        else:
-            self.show_notification(tr('dialog_enabled'), 2000)
 
     def _stop_windivert_service(self):
         try:
