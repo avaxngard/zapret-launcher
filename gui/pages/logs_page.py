@@ -44,7 +44,7 @@ class LogsPage:
         title_label = tk.Label(
             self.frame,
             text=tr('logs_title'),
-            font=("Inter", font_size_title, "bold"),
+            font=("Segoe UI Variable", font_size_title, "bold"),
             fg=self.colors['text_primary'],
             bg=self.colors['bg_dark']
         )
@@ -53,7 +53,7 @@ class LogsPage:
         desc_label = tk.Label(
             self.frame,
             text=tr('logs_desc'),
-            font=("Inter", font_size_desc),
+            font=("Segoe UI Variable", font_size_desc),
             fg=self.colors['text_secondary'],
             bg=self.colors['bg_dark']
         )
@@ -70,7 +70,7 @@ class LogsPage:
             bg=self.colors['button_bg'],
             fg=self.colors['button_text'],
             hover_fg=self.colors['button_text_hover'],
-            font=("Inter", font_size_btn),
+            font=("Segoe UI Variable", font_size_btn),
             corner_radius=btn_radius,
             hover_color=self.colors['accent'], 
             theme_name=self.app.current_theme
@@ -85,7 +85,7 @@ class LogsPage:
             bg=self.colors['button_bg'],
             fg=self.colors['button_text'],
             hover_fg=self.colors['button_text_hover'],
-            font=("Inter", font_size_btn),
+            font=("Segoe UI Variable", font_size_btn),
             corner_radius=btn_radius,
             hover_color=self.colors['accent'], 
             theme_name=self.app.current_theme
