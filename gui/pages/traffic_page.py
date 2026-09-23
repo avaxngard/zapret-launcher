@@ -34,7 +34,7 @@ class TrafficPage:
         title_label = tk.Label(
             self.frame,
             text=tr('traffic_title'),
-            font=("Inter", font_size_title, "bold"),
+            font=("Segoe UI Variable", font_size_title, "bold"),
             fg=self.colors['text_primary'],
             bg=self.colors['bg_dark']
         )
@@ -43,7 +43,7 @@ class TrafficPage:
         desc_label = tk.Label(
             self.frame,
             text=tr('traffic_desc'),
-            font=("Inter", font_size_desc),
+            font=("Segoe UI Variable", font_size_desc),
             fg=self.colors['text_secondary'],
             bg=self.colors['bg_dark']
         )
@@ -52,7 +52,7 @@ class TrafficPage:
         warning_label = tk.Label(
             self.frame,
             text=tr('traffic_warning'),
-            font=("Inter", font_size_warning),
+            font=("Segoe UI Variable", font_size_warning),
             fg=self.colors['accent'],
             bg=self.colors['bg_dark']
         )
@@ -69,7 +69,7 @@ class TrafficPage:
         style.configure("Treeview.Heading",
                         background=self.colors['bg_medium'],
                         foreground=self.colors['text_primary'],
-                        font=("Inter", font_size_heading, "bold"),
+                        font=("Segoe UI Variable", font_size_heading, "bold"),
                         relief="flat")
         
         style.map("Treeview.Heading",
@@ -81,7 +81,7 @@ class TrafficPage:
             foreground=self.colors['text_primary'],
             rowheight=row_height,
             fieldbackground=self.colors['bg_light'],
-            font=("Inter", font_size_tree))
+            font=("Segoe UI Variable", font_size_tree))
         
         style.map("Treeview", background=[('selected', self.colors['accent'])], foreground=[('selected', 'white')])
         
