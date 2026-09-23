@@ -92,12 +92,12 @@ class ListEditor:
         if app:
             self.search_frame.configure(bg=app.colors['bg_medium'])
         
-        self.search_label = tk.Label(self.search_frame, text=tr('editor_find'), font=("Segoe UI", font_size_label))
+        self.search_label = tk.Label(self.search_frame, text=tr('editor_find'), font=("Segoe UI Variable", font_size_label))
         if app:
             self.search_label.configure(bg=app.colors['bg_medium'], fg=app.colors['text_secondary'])
         self.search_label.pack(side=tk.LEFT, padx=(0, 5))
         
-        self.search_entry = tk.Entry(self.search_frame, font=("Segoe UI", font_size_info), width=30)
+        self.search_entry = tk.Entry(self.search_frame, font=("Segoe UI Variable", font_size_info), width=30)
         if app:
             self.search_entry.configure(
                 bg=app.colors['bg_light'],
@@ -139,7 +139,7 @@ class ListEditor:
             )
         self.search_close_btn.pack(side=tk.LEFT)
         
-        self.search_info = tk.Label(self.search_frame, text="", font=("Segoe UI", 8))
+        self.search_info = tk.Label(self.search_frame, text="", font=("Segoe UI Variable", 8))
         if app:
             self.search_info.configure(bg=app.colors['bg_medium'], fg=app.colors['accent'])
         self.search_info.pack(side=tk.LEFT, padx=(10, 0))
@@ -203,7 +203,7 @@ class ListEditor:
             info_frame.configure(bg=app.colors['bg_medium'])
         info_frame.pack(side=tk.LEFT)
         
-        info_label = tk.Label(info_frame, text=tr('editor_tooltip'), font=("Segoe UI", 8))
+        info_label = tk.Label(info_frame, text=tr('editor_tooltip'), font=("Segoe UI Variable", 8))
         if app:
             info_label.configure(bg=app.colors['bg_medium'], fg=app.colors['text_secondary'])
         info_label.pack(side=tk.LEFT, padx=10)
