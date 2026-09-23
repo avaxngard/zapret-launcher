@@ -29,7 +29,7 @@ class BasePage(tk.Frame):
         title = tk.Label(
             self,
             text=self.get_title(),
-            font=("Inter", font_size_title, "bold"),
+            font=("Segoe UI Variable", font_size_title, "bold"),
             fg=self.colors['text_primary'],
             bg=self.colors['bg_dark']
         )
@@ -38,7 +38,7 @@ class BasePage(tk.Frame):
         desc = tk.Label(
             self,
             text=self.get_description(),
-            font=("Inter", font_size_desc),
+            font=("Segoe UI Variable", font_size_desc),
             fg=self.colors['text_secondary'],
             bg=self.colors['bg_dark']
         )
