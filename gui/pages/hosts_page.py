@@ -11,6 +11,7 @@ from tkinter import ttk, messagebox
 import os
 from utils.languages import tr
 from utils.scaling import scale_size
+from gui.widgets import RoundedButton
 from config import HOSTS_PATH
 
 class HostsPage:
@@ -24,7 +25,7 @@ class HostsPage:
         self.search_visible = False
         self.search_start_pos = "1.0"
         self.initial_content = ""
-        
+
         font_size_title = scale_size(20, self.scale_factor)
         font_size_desc = scale_size(10, self.scale_factor)
         font_size_text = scale_size(10, self.scale_factor)
@@ -32,24 +33,12 @@ class HostsPage:
         font_size_info = scale_size(8, self.scale_factor)
         padx_main = scale_size(30, self.scale_factor)
         pady_main = scale_size(20, self.scale_factor)
-        btn_padx = scale_size(20, self.scale_factor)
-        btn_pady = scale_size(5, self.scale_factor)
-        btn_width_search = scale_size(10, self.scale_factor)
-        btn_width_close = scale_size(8, self.scale_factor)
         entry_width = scale_size(30, self.scale_factor)
-        
-        self._build_ui(font_size_title, font_size_desc, font_size_text, font_size_label, 
-                       font_size_info, padx_main, pady_main, btn_padx, btn_pady,
-                       btn_width_search, btn_width_close, entry_width)
-        self.load_hosts()
-    
-    def _build_ui(self, font_size_title, font_size_desc, font_size_text, font_size_label, 
-                  font_size_info, padx_main, pady_main, btn_padx, btn_pady,
-                  btn_width_search, btn_width_close, entry_width):
+
         title = tk.Label(
             self.frame,
             text=tr('hosts_title'),
-            font=("Inter", font_size_title, "bold"),
+            font=("Segoe UI Variable", font_size_title, "bold"),
             fg=self.colors['text_primary'],
             bg=self.colors['bg_dark']
         )
@@ -58,7 +47,7 @@ class HostsPage:
         desc = tk.Label(
             self.frame,
             text=tr('hosts_desc'),
-            font=("Inter", font_size_desc),
+            font=("Segoe UI Variable", font_size_desc),
             fg=self.colors['text_secondary'],
             bg=self.colors['bg_dark']
         )
@@ -102,7 +91,7 @@ class HostsPage:
         self.search_label = tk.Label(
             self.search_frame,
             text=tr('editor_find'),
-            font=("Segoe UI", font_size_label),
+            font=("Segoe UI Variable", font_size_label),
             bg=self.colors['bg_medium'],
             fg=self.colors['text_secondary']
         )
@@ -110,7 +99,7 @@ class HostsPage:
         
         self.search_entry = tk.Entry(
             self.search_frame,
-            font=("Segoe UI", font_size_label),
+            font=("Segoe UI Variable", font_size_label),
             width=entry_width,
             bg=self.colors['bg_light'],
             fg=self.colors['button_text'],
@@ -123,36 +112,45 @@ class HostsPage:
         self.search_entry.bind('<Return>', self.search_next)
         self.search_entry.bind('<Escape>', self.on_escape_search)
         
-        self.search_next_btn = tk.Button(
+        search_btn_width = scale_size(110, self.scale_factor)
+        search_btn_height = scale_size(26, self.scale_factor)
+
+        self.search_next_btn = RoundedButton(
             self.search_frame,
             text=tr('editor_find_next'),
             command=self.search_next,
-            width=btn_width_search,
+            width=search_btn_width,
+            height=search_btn_height,
             bg=self.colors['accent'],
-            fg=self.colors['button_text'],
-            relief=tk.FLAT,
-            cursor='hand2',
-            activebackground=self.colors['accent']
+            fg=self.colors['button_text_hover'],
+            hover_fg=self.colors['button_text_hover'],
+            font=("Segoe UI Variable", scale_size(9, self.scale_factor)),
+            corner_radius=scale_size(6, self.scale_factor),
+            hover_color=self.colors['accent'],
+            theme_name=self.app.current_theme
         )
         self.search_next_btn.pack(side=tk.LEFT, padx=(0, 5))
-        
-        self.search_close_btn = tk.Button(
+
+        self.search_close_btn = RoundedButton(
             self.search_frame,
             text=tr('editor_close'),
             command=self.toggle_search,
-            width=btn_width_close,
+            width=scale_size(80, self.scale_factor),
+            height=search_btn_height,
             bg=self.colors['button_bg'],
             fg=self.colors['button_text'],
-            relief=tk.FLAT,
-            cursor='hand2',
-            activebackground=self.colors['accent']
+            hover_fg=self.colors['button_text_hover'],
+            font=("Segoe UI Variable", scale_size(9, self.scale_factor)),
+            corner_radius=scale_size(6, self.scale_factor),
+            hover_color=self.colors['accent'],
+            theme_name=self.app.current_theme
         )
         self.search_close_btn.pack(side=tk.LEFT)
         
         self.search_info = tk.Label(
             self.search_frame,
             text="",
-            font=("Segoe UI", font_size_info),
+            font=("Segoe UI Variable", font_size_info),
             bg=self.colors['bg_medium'],
             fg=self.colors['accent']
         )
@@ -171,69 +169,70 @@ class HostsPage:
         
         button_frame = tk.Frame(main_frame, bg=self.colors['bg_medium'])
         button_frame.pack(fill=tk.X, pady=(0, scale_size(10, self.scale_factor)))
-        
-        self.save_btn = tk.Button(
+
+        btn_width = scale_size(120, self.scale_factor)
+        btn_height = scale_size(32, self.scale_factor)
+
+        self.save_btn = RoundedButton(
             button_frame,
             text=tr('editor_save'),
             command=self.save_hosts,
-            padx=btn_padx,
-            pady=btn_pady,
-            takefocus=True,
+            width=btn_width,
+            height=btn_height,
             bg=self.colors['accent'],
             fg=self.colors['button_text_hover'],
-            activebackground=self.colors['accent'],
-            activeforeground=self.colors['button_text_hover'],
-            relief=tk.FLAT,
-            bd=0,
-            cursor='hand2'
+            hover_fg=self.colors['button_text_hover'],
+            font=("Segoe UI Variable", scale_size(10, self.scale_factor)),
+            corner_radius=scale_size(8, self.scale_factor),
+            hover_color=self.colors['accent'],
+            theme_name=self.app.current_theme
         )
         self.save_btn.pack(side=tk.RIGHT, padx=(5, scale_size(15, self.scale_factor)))
-        
-        self.reload_btn = tk.Button(
+
+        self.reload_btn = RoundedButton(
             button_frame,
             text=tr('hosts_reload'),
             command=self.reload_data,
-            padx=btn_padx,
-            pady=btn_pady,
-            takefocus=True,
+            width=btn_width,
+            height=btn_height,
             bg=self.colors['button_bg'],
             fg=self.colors['button_text'],
-            activebackground=self.colors['accent'],
-            activeforeground=self.colors['button_text_hover'],
-            relief=tk.FLAT,
-            bd=0,
-            cursor='hand2'
+            hover_fg=self.colors['button_text_hover'],
+            font=("Segoe UI Variable", scale_size(10, self.scale_factor)),
+            corner_radius=scale_size(8, self.scale_factor),
+            hover_color=self.colors['accent'],
+            theme_name=self.app.current_theme
         )
         self.reload_btn.pack(side=tk.RIGHT, padx=(5, 0))
 
-        self.download_btn = tk.Button(
+        self.download_btn = RoundedButton(
             button_frame,
             text=tr('hosts_download'),
             command=self.check_templates,
-            padx=btn_padx,
-            pady=btn_pady,
-            takefocus=True,
+            width=btn_width,
+            height=btn_height,
             bg=self.colors['button_bg'],
             fg=self.colors['button_text'],
-            activebackground=self.colors['accent'],
-            activeforeground=self.colors['button_text_hover'],
-            relief=tk.FLAT,
-            bd=0,
-            cursor='hand2'
-            )
+            hover_fg=self.colors['button_text_hover'],
+            font=("Segoe UI Variable", scale_size(10, self.scale_factor)),
+            corner_radius=scale_size(8, self.scale_factor),
+            hover_color=self.colors['accent'],
+            theme_name=self.app.current_theme
+        )
         self.download_btn.pack(side=tk.RIGHT)
-        
+
         info_frame = tk.Frame(button_frame, bg=self.colors['bg_medium'])
         info_frame.pack(side=tk.LEFT)
-        
+
         info_label = tk.Label(
             info_frame,
             text=tr('editor_tooltip'),
-            font=("Segoe UI", font_size_info),
+            font=("Segoe UI Variable", font_size_info),
             bg=self.colors['bg_medium'],
             fg=self.colors['text_secondary']
         )
         info_label.pack(side=tk.LEFT, padx=10)
+        self.load_hosts()
 
     def on_escape_search(self, event=None):
         if self.search_visible:
