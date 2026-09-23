@@ -19,8 +19,6 @@ import urllib.request
 from config import APPDATA_DIR, ZAPRET_CORE_URL
 from pathlib import Path
 from tkinter import messagebox
-from gui.theme import get_theme_names
-from gui.widgets import RoundedButton
 from utils.languages import tr
 from utils.scaling import scale_size
 
@@ -32,351 +30,332 @@ class SettingsPage:
         self.font_medium = app.font_medium
         self.font_bold = app.font_bold
         self.scale_factor = getattr(app, 'scale_factor', 1.0)
-        
+
         font_size_title = scale_size(20, self.scale_factor)
         font_size_desc = scale_size(10, self.scale_factor)
-        font_size_sub = scale_size(12, self.scale_factor)
-        font_size_btn = scale_size(9, self.scale_factor)
-        font_size_btn_small = scale_size(10, self.scale_factor)
-        btn_width_small = scale_size(80, self.scale_factor)
-        btn_height_small = scale_size(28, self.scale_factor)
-        btn_width_medium = scale_size(180, self.scale_factor)
-        btn_height_medium = scale_size(32, self.scale_factor)
-        btn_width_large = scale_size(200, self.scale_factor)
-        btn_height_large = scale_size(30, self.scale_factor)
-        btn_radius = scale_size(6, self.scale_factor)
-        btn_radius_large = scale_size(8, self.scale_factor)
+        font_size_card_name = scale_size(14, self.scale_factor)
+        font_size_card_desc = scale_size(9, self.scale_factor)
+        card_padx = scale_size(15, self.scale_factor)
+        card_pady = scale_size(12, self.scale_factor)
+        grid_gap = scale_size(10, self.scale_factor)
         padx = scale_size(30, self.scale_factor)
-        pady = scale_size(4, self.scale_factor)
-        
+        pady = scale_size(10, self.scale_factor)
+
         self.frame = tk.Frame(parent, bg=self.colors['bg_dark'])
-        
+
         title_label = tk.Label(
             self.frame,
             text=tr('settings_title'),
-            font=("Inter", font_size_title, "bold"),
+            font=("Segoe UI Variable", font_size_title, "bold"),
             fg=self.colors['text_primary'],
             bg=self.colors['bg_dark']
         )
         title_label.pack(anchor='w', pady=(scale_size(30, self.scale_factor), 5), padx=padx)
-        
+
         desc_label = tk.Label(
             self.frame,
             text=tr('settings_desc'),
-            font=("Inter", font_size_desc),
+            font=("Segoe UI Variable", font_size_desc),
             fg=self.colors['text_secondary'],
             bg=self.colors['bg_dark']
         )
         desc_label.pack(anchor='w', pady=(0, scale_size(20, self.scale_factor)), padx=padx)
-        
-        main_container = tk.Frame(self.frame, bg=self.colors['bg_dark'])
-        main_container.pack(fill=tk.BOTH, expand=True, padx=padx, pady=scale_size(4, self.scale_factor))
-        cards_frame = tk.Frame(main_container, bg=self.colors['bg_dark'])
-        cards_frame.pack(fill=tk.BOTH, expand=True)
-        left_column = tk.Frame(cards_frame, bg=self.colors['bg_dark'])
-        left_column.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, scale_size(12, self.scale_factor)))
-        right_column = tk.Frame(cards_frame, bg=self.colors['bg_dark'])
-        right_column.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=(scale_size(12, self.scale_factor), 0))
 
-        theme_card = tk.Frame(left_column, bg=self.colors['bg_light'], relief=tk.FLAT, bd=0)
-        theme_card.pack(fill=tk.X, pady=scale_size(6, self.scale_factor))
-        theme_inner = tk.Frame(theme_card, bg=self.colors['bg_light'])
-        theme_inner.pack(fill=tk.X, padx=scale_size(10, self.scale_factor), pady=scale_size(8, self.scale_factor))
+        grid_frame = tk.Frame(self.frame, bg=self.colors['bg_dark'])
+        grid_frame.pack(fill=tk.BOTH, expand=True, padx=padx, pady=pady)
 
-        tk.Label(theme_inner, text=tr('settings_theme'), font=("Inter", font_size_sub, "bold"),
-                fg=self.colors['accent'], bg=self.colors['bg_light']).pack(anchor='w', pady=(0, 5))
+        grid_frame.columnconfigure(0, weight=1, uniform="cards")
+        grid_frame.columnconfigure(1, weight=1, uniform="cards")
+        grid_frame.rowconfigure(0, weight=0)
+        grid_frame.rowconfigure(1, weight=0)
+        grid_frame.rowconfigure(2, weight=0)
+        grid_frame.rowconfigure(3, weight=0)
+        grid_frame.rowconfigure(4, weight=0)
 
-        theme_buttons_frame = tk.Frame(theme_inner, bg=self.colors['bg_light'])
-        theme_buttons_frame.pack(anchor='w', pady=5)
+        self.autoupdate_card = None
+        self.autoupdate_name_label = None
+        self.autoupdate_desc_label = None
+        self.analytics_card = None
+        self.analytics_name_label = None
+        self.analytics_desc_label = None
+        self.vpn_detect_card = None
+        self.vpn_detect_name_label = None
+        self.vpn_detect_desc_label = None
+        self.duplicate_detect_card = None
+        self.duplicate_detect_name_label = None
+        self.duplicate_detect_desc_label = None
 
-        theme_names = get_theme_names()
-        for theme_name in theme_names:
-            theme_btn = RoundedButton(
-                theme_buttons_frame,
-                text=theme_name.capitalize(),
-                command=lambda t=theme_name: self._change_theme(t),
-                width=btn_width_small, height=btn_height_small,
-                bg=self.colors['accent'] if theme_name == self.app.current_theme else self.colors['button_bg'],
-                fg=self.colors['button_text_hover'],
-                hover_fg=self.colors['button_text_hover'],
-                font=("Inter", font_size_btn),
-                corner_radius=btn_radius,
-                hover_color=self.colors['accent'],
-                theme_name=self.app.current_theme
-            )
-            theme_btn.pack(side=tk.LEFT, padx=(0, 5))
-        
-        lang_card = tk.Frame(left_column, bg=self.colors['bg_light'], relief=tk.FLAT, bd=0)
-        lang_card.pack(fill=tk.X, pady=scale_size(6, self.scale_factor))
-        lang_inner = tk.Frame(lang_card, bg=self.colors['bg_light'])
-        lang_inner.pack(fill=tk.X, padx=scale_size(10, self.scale_factor), pady=scale_size(8, self.scale_factor))
-
-        tk.Label(lang_inner, text=tr('settings_language'), font=("Inter", font_size_sub, "bold"),
-            fg=self.colors['accent'], bg=self.colors['bg_light']).pack(anchor='w', pady=(0, 5))
-
-        lang_buttons_frame = tk.Frame(lang_inner, bg=self.colors['bg_light'])
-        lang_buttons_frame.pack(anchor='w', pady=5)
-
-        current_lang = self.app.languages.get_current_language()
-        for lang_code, lang_name in self.app.languages.LANGUAGES.items():
-            lang_btn = RoundedButton(
-                lang_buttons_frame,
-                text=lang_name,
-                command=lambda l=lang_code: self._change_language(l),
-                width=btn_width_small, height=btn_height_small,
-                bg=self.colors['accent'] if lang_code == current_lang else self.colors['button_bg'],
-                fg=self.colors['button_text_hover'],
-                hover_fg=self.colors['button_text_hover'],
-                font=("Inter", font_size_btn),
-                corner_radius=btn_radius,
-                hover_color=self.colors['accent'],
-                theme_name=self.app.current_theme
-            )
-            lang_btn.pack(side=tk.LEFT, padx=(0, 5))
-        
-        tg_card = tk.Frame(right_column, bg=self.colors['bg_light'], relief=tk.FLAT, bd=0)
-        tg_card.pack(fill=tk.X, pady=scale_size(6, self.scale_factor))
-        tg_inner = tk.Frame(tg_card, bg=self.colors['bg_light'])
-        tg_inner.pack(fill=tk.X, padx=scale_size(10, self.scale_factor), pady=scale_size(8, self.scale_factor))
-
-        tk.Label(tg_inner, text="Telegram Proxy", font=("Inter", font_size_sub, "bold"),
-                fg=self.colors['accent'], bg=self.colors['bg_light']).pack(anchor='w', pady=(0, 5))
-
-        secret_value = getattr(self.app, '_tg_secret', None)
-        if secret_value and len(secret_value) > 16:
-            secret_text = f"{tr('settings_current_tg_secret')} {secret_value}"
-        elif secret_value:
-            secret_text = f"{tr('settings_current_tg_secret')} {secret_value}"
-        else:
-            secret_text = tr('settings_current_tg_secret')
-
-        self.secret_label = tk.Label(tg_inner, text=secret_text,
-                            font=("Inter", font_size_btn), fg=self.colors['text_secondary'], bg=self.colors['bg_light'])
-        self.secret_label.pack(anchor='w', pady=(0, 5))
-
-        self.secret_value_label = self.secret_label
-
-        regenerate_btn = RoundedButton(
-            tg_inner,
-            text=tr('tg_generate_secret'),
-            command=self._regenerate_secret,
-            width=btn_width_large, height=btn_height_large,
-            bg=self.colors['accent'],
-            fg=self.colors['button_text_hover'],
-            hover_fg=self.colors['button_text_hover'],
-            font=("Inter", font_size_btn_small),
-            corner_radius=btn_radius_large,
-            hover_color=self.colors['accent'],
-            theme_name=self.app.current_theme
+        self._create_card(
+            grid_frame, row=0, col=0,
+            name=tr('settings_theme'),
+            desc=tr('settings_theme_desc'),
+            command=self._show_theme_selector,
+            padx=(0, grid_gap // 2), pady=(0, grid_gap // 2),
+            font_size_name=font_size_card_name,
+            font_size_desc=font_size_card_desc,
+            card_padx=card_padx, card_pady=card_pady
         )
-        regenerate_btn.pack(anchor='w', pady=2)
 
-        self.tg_instruction_btn = RoundedButton(
-            tg_inner,
-            text=self._get_instruction_button_text(),
-            command=self._show_instruction,
-            width=btn_width_large, height=btn_height_large,
-            bg=self.colors['button_bg'],
-            fg=self.colors['button_text'],
-            hover_fg=self.colors['button_text_hover'],
-            font=("Inter", font_size_btn_small),
-            corner_radius=btn_radius_large,
-            hover_color=self.colors['accent'],
-            theme_name=self.app.current_theme
+        self._create_card(
+            grid_frame, row=0, col=1,
+            name=tr('settings_language'),
+            desc=tr('settings_language_desc'),
+            command=self._show_language_selector,
+            padx=(grid_gap // 2, 0), pady=(0, grid_gap // 2),
+            font_size_name=font_size_card_name,
+            font_size_desc=font_size_card_desc,
+            card_padx=card_padx, card_pady=card_pady
         )
-        self.tg_instruction_btn.pack(anchor='w', pady=2)
 
-        maintenance_card = tk.Frame(left_column, bg=self.colors['bg_light'], relief=tk.FLAT, bd=0)
-        maintenance_card.pack(fill=tk.X, pady=scale_size(6, self.scale_factor))
-        maintenance_inner = tk.Frame(maintenance_card, bg=self.colors['bg_light'])
-        maintenance_inner.pack(fill=tk.X, padx=scale_size(10, self.scale_factor), pady=scale_size(8, self.scale_factor))
-
-        tk.Label(maintenance_inner, text=tr('settings_recovery'), font=("Inter", font_size_sub, "bold"), 
-            fg=self.colors['accent'], bg=self.colors['bg_light']).pack(anchor='w', pady=(0, 5))
-
-        buttons_frame = tk.Frame(maintenance_inner, bg=self.colors['bg_light'])
-        buttons_frame.pack(fill=tk.X, pady=(0, 3))
-
-        integrity_btn = RoundedButton(
-            buttons_frame,
-            text=tr('settings_integrity'),
-            command=self._show_integrity_placeholder,
-            width=btn_width_medium, height=btn_height_medium,
-            bg=self.colors['button_bg'],
-            fg=self.colors['button_text'],
-            hover_fg=self.colors['button_text_hover'],
-            font=("Inter", font_size_btn),
-            corner_radius=btn_radius,
-            hover_color=self.colors['accent'],
-            theme_name=self.app.current_theme
+        self._create_card(
+            grid_frame, row=1, col=0,
+            name="Telegram Proxy",
+            desc=tr('settings_tgproxy_desc'),
+            command=self._show_tgproxy_settings,
+            padx=(0, grid_gap // 2), pady=(0, grid_gap // 2),
+            font_size_name=font_size_card_name,
+            font_size_desc=font_size_card_desc,
+            card_padx=card_padx, card_pady=card_pady
         )
-        integrity_btn.pack(side=tk.LEFT, padx=(0, scale_size(10, self.scale_factor)))
 
-        reinstall_btn = RoundedButton(
-            buttons_frame,
-            text=tr('settings_reinstall'),
-            command=self._reinstall_files,
-            width=btn_width_medium, height=btn_height_medium,
-            bg=self.colors['button_bg'],
-            fg=self.colors['button_text'],
-            hover_fg=self.colors['button_text_hover'],
-            font=("Inter", font_size_btn),
-            corner_radius=btn_radius,
-            hover_color=self.colors['accent'],
-            theme_name=self.app.current_theme
-        )
-        reinstall_btn.pack(side=tk.LEFT)
-
-        buttons_frame2 = tk.Frame(maintenance_inner, bg=self.colors['bg_light'])
-        buttons_frame2.pack(fill=tk.X, pady=(0, 3))
-
-        self.autoupdate_btn = RoundedButton(
-            buttons_frame2,
-            text=self._get_autoupdate_button_text(),
+        self.autoupdate_card, self.autoupdate_name_label, self.autoupdate_desc_label = self._create_card(
+            grid_frame, row=2, col=0,
+            name=self._get_autoupdate_card_name(),
+            desc=self._get_autoupdate_card_desc(),
             command=self._toggle_auto_update,
-            width=btn_width_medium, height=btn_height_medium,
-            bg=self.colors['button_bg'],
-            fg=self.colors['button_text'],
-            hover_fg=self.colors['button_text_hover'],
-            font=("Inter", font_size_btn),
-            corner_radius=btn_radius,
-            hover_color=self.colors['accent'],
-            theme_name=self.app.current_theme
+            padx=(0, grid_gap // 2), pady=(0, grid_gap // 2),
+            font_size_name=font_size_card_name,
+            font_size_desc=font_size_card_desc,
+            card_padx=card_padx, card_pady=card_pady,
+            return_widgets=True
         )
-        self.autoupdate_btn.pack(side=tk.LEFT, padx=(0, scale_size(10, self.scale_factor)))
 
-        self.analytics_btn = RoundedButton(
-            buttons_frame2,
-            text=self._get_analytics_button_text(),
+        self.analytics_card, self.analytics_name_label, self.analytics_desc_label = self._create_card(
+            grid_frame, row=1, col=1,
+            name=self._get_analytics_card_name(),
+            desc=self._get_analytics_card_desc(),
             command=self._toggle_analytics,
-            width=btn_width_medium, height=btn_height_medium,
-            bg=self.colors['button_bg'],
-            fg=self.colors['button_text'],
-            hover_fg=self.colors['button_text_hover'],
-            font=("Inter", font_size_btn),
-            corner_radius=btn_radius,
-            hover_color=self.colors['accent'],
-            theme_name=self.app.current_theme
+            padx=(grid_gap // 2, 0), pady=(0, grid_gap // 2),
+            font_size_name=font_size_card_name,
+            font_size_desc=font_size_card_desc,
+            card_padx=card_padx, card_pady=card_pady,
+            return_widgets=True
         )
-        self.analytics_btn.pack(side=tk.LEFT, padx=(0, scale_size(10, self.scale_factor)))
 
-        buttons_frame3 = tk.Frame(maintenance_inner, bg=self.colors['bg_light'])
-        buttons_frame3.pack(fill=tk.X, pady=(0, 3))
-
-        show_vpndetect_btn = RoundedButton(
-            buttons_frame3,
-            text=tr('settings_search_vpn'),
-            command=self.app.toggle_vpn_detection,
-            width=btn_width_medium, height=btn_height_medium,
-            bg=self.colors['button_bg'],
-            fg=self.colors['button_text'],
-            hover_fg=self.colors['button_text_hover'],
-            font=("Inter", font_size_btn),
-            corner_radius=btn_radius,
-            hover_color=self.colors['accent'],
-            theme_name=self.app.current_theme
+        self._create_card(
+            grid_frame, row=3, col=0,
+            name=tr('settings_integrity'),
+            desc=tr('settings_integrity_desc'),
+            command=self._show_integrity_placeholder,
+            padx=(0, grid_gap // 2), pady=(0, grid_gap // 2),
+            font_size_name=font_size_card_name,
+            font_size_desc=font_size_card_desc,
+            card_padx=card_padx, card_pady=card_pady
         )
-        show_vpndetect_btn.pack(side=tk.LEFT, padx=(0, scale_size(10, self.scale_factor)))
 
-        show_dublicatedetect_btn = RoundedButton(
-            buttons_frame3,
-            text=tr('settings_search_dublicate'),
-            command=self.app.toggle_hide_duplicates_warning,
-            width=btn_width_medium, height=btn_height_medium,
-            bg=self.colors['button_bg'],
-            fg=self.colors['button_text'],
-            hover_fg=self.colors['button_text_hover'],
-            font=("Inter", font_size_btn),
-            corner_radius=btn_radius,
-            hover_color=self.colors['accent'],
-            theme_name=self.app.current_theme
+        self._create_card(
+            grid_frame, row=2, col=1,
+            name=tr('settings_reinstall'),
+            desc=tr('settings_reinstall_desc'),
+            command=self._reinstall_files,
+            padx=(grid_gap // 2, 0), pady=(0, grid_gap // 2),
+            font_size_name=font_size_card_name,
+            font_size_desc=font_size_card_desc,
+            card_padx=card_padx, card_pady=card_pady
         )
-        show_dublicatedetect_btn.pack(side=tk.LEFT, padx=(0, scale_size(10, self.scale_factor)))
 
-        buttons_frame4 = tk.Frame(maintenance_inner, bg=self.colors['bg_light'])
-        buttons_frame4.pack(fill=tk.X)
-
-        appdata_btn = RoundedButton(
-            buttons_frame4,
-            text=tr('settings_open_folder'),
-            command=self.app.open_appdata_folder,
-            width=btn_width_medium, height=btn_height_medium,
-            bg=self.colors['button_bg'],
-            fg=self.colors['button_text'],
-            hover_fg=self.colors['button_text_hover'],
-            font=("Inter", font_size_btn),
-            corner_radius=btn_radius,
-            hover_color=self.colors['accent'],
-            theme_name=self.app.current_theme
-        )
-        appdata_btn.pack(side=tk.LEFT, padx=(0, scale_size(10, self.scale_factor)))
-
-        autostart_btn = RoundedButton(
-            buttons_frame4,
-            text=tr('settings_autostart'),
+        self._create_card(
+            grid_frame, row=3, col=1,
+            name=tr('settings_autostart'),
+            desc=tr('settings_autostart_desc'),
             command=self.app.toggle_autostart,
-            width=btn_width_medium, height=btn_height_medium,
-            bg=self.colors['button_bg'],
-            fg=self.colors['button_text'],
-            hover_fg=self.colors['button_text_hover'],
-            font=("Inter", font_size_btn),
-            corner_radius=btn_radius,
-            hover_color=self.colors['accent'],
-            theme_name=self.app.current_theme
+            padx=(grid_gap // 2, 0), pady=(0, grid_gap // 2),
+            font_size_name=font_size_card_name,
+            font_size_desc=font_size_card_desc,
+            card_padx=card_padx, card_pady=card_pady
         )
-        autostart_btn.pack(side=tk.LEFT, padx=(0, scale_size(10, self.scale_factor)))
 
-    def _update_autoupdate_button(self):
-        if hasattr(self, 'autoupdate_btn') and self.autoupdate_btn:
-            try:
-                self.autoupdate_btn.set_text(self._get_autoupdate_button_text())
-            except:
-                pass
+        self.vpn_detect_card, self.vpn_detect_name_label, self.vpn_detect_desc_label = self._create_card(
+            grid_frame, row=4, col=1,
+            name=self._get_vpn_detect_card_name(),
+            desc=self._get_vpn_detect_card_desc(),
+            command=self._toggle_vpn_detection,
+            padx=(grid_gap // 2, 0), pady=(0, grid_gap // 2),
+            font_size_name=font_size_card_name,
+            font_size_desc=font_size_card_desc,
+            card_padx=card_padx, card_pady=card_pady,
+            return_widgets=True
+        )
 
-    def _update_analytics_button(self):
-        if hasattr(self, 'analytics_btn') and self.analytics_btn:
-            try:
-                self.analytics_btn.set_text(self._get_analytics_button_text())
-            except:
-                pass
+        self.duplicate_detect_card, self.duplicate_detect_name_label, self.duplicate_detect_desc_label = self._create_card(
+            grid_frame, row=4, col=0,
+            name=self._get_duplicate_detect_card_name(),
+            desc=self._get_duplicate_detect_card_desc(),
+            command=self._toggle_duplicate_detection,
+            padx=(0, grid_gap // 2), pady=(0, grid_gap // 2),
+            font_size_name=font_size_card_name,
+            font_size_desc=font_size_card_desc,
+            card_padx=card_padx, card_pady=card_pady,
+            return_widgets=True
+        )
+
+    def _create_card(self, parent, row, col, name, desc, command,
+                     padx, pady, font_size_name, font_size_desc,
+                     card_padx, card_pady, return_widgets=False):
+
+        card = tk.Frame(parent, bg=self.colors['bg_light'], cursor="hand2",
+                        height=scale_size(80, self.scale_factor))
+        card.grid(row=row, column=col, sticky='nsew', padx=padx, pady=pady)
+        card.pack_propagate(False)
+        card.grid_propagate(False)
+
+        inner = tk.Frame(card, bg=self.colors['bg_light'])
+        inner.pack(fill=tk.BOTH, expand=True, padx=card_padx, pady=card_pady)
+
+        name_label = tk.Label(
+            inner,
+            text=name,
+            font=("Segoe UI Variable", font_size_name, "bold"),
+            fg=self.colors['accent'],
+            bg=self.colors['bg_light'],
+            anchor='w',
+            justify=tk.LEFT
+        )
+        name_label.pack(anchor='w', fill=tk.X)
+
+        desc_label = tk.Label(
+            inner,
+            text=desc,
+            font=("Segoe UI Variable", font_size_desc),
+            fg=self.colors['text_secondary'],
+            bg=self.colors['bg_light'],
+            anchor='w',
+            justify=tk.LEFT,
+            wraplength=scale_size(300, self.scale_factor)
+        )
+        desc_label.pack(anchor='w', fill=tk.X, pady=(scale_size(4, self.scale_factor), 0))
+
+        def on_enter(e):
+            card.configure(bg=self.colors['bg_light_hover'])
+            inner.configure(bg=self.colors['bg_light_hover'])
+            name_label.configure(bg=self.colors['bg_light_hover'])
+            desc_label.configure(bg=self.colors['bg_light_hover'])
+
+        def on_leave(e):
+            card.configure(bg=self.colors['bg_light'])
+            inner.configure(bg=self.colors['bg_light'])
+            name_label.configure(bg=self.colors['bg_light'])
+            desc_label.configure(bg=self.colors['bg_light'])
+
+        def on_click(e):
+            command()
+
+        for widget in (card, inner, name_label, desc_label):
+            widget.bind("<Enter>", on_enter)
+            widget.bind("<Leave>", on_leave)
+            widget.bind("<Button-1>", on_click)
+
+        if return_widgets:
+            return card, name_label, desc_label
+        return card
+
+    def _get_autoupdate_card_name(self):
+        return tr('settings_autoupdate')
+
+    def _get_autoupdate_card_desc(self):
+        if getattr(self.app, '_auto_update_enabled', True):
+            return tr('settings_button_on')
+        else:
+            return tr('settings_button_off')
+
+    def _get_analytics_card_name(self):
+        return tr('settings_analytics')
+
+    def _get_analytics_card_desc(self):
+        if getattr(self.app, '_analytics_enabled', True):
+            return tr('settings_button_on')
+        else:
+            return tr('settings_button_off')
+
+    def _get_vpn_detect_card_name(self):
+        return tr('settings_search_vpn')
+
+    def _get_vpn_detect_card_desc(self):
+        if getattr(self.app, '_show_vpn_detection', False):
+            return tr('settings_button_on')
+        else:
+            return tr('settings_button_off')
+
+    def _get_duplicate_detect_card_name(self):
+        return tr('settings_search_dublicate')
+
+    def _get_duplicate_detect_card_desc(self):
+        if getattr(self.app, '_hide_duplicates_warning', False):
+            return tr('settings_button_off')
+        else:
+            return tr('settings_button_on')
+
+    def _refresh_autoupdate_card(self):
+        if self.autoupdate_desc_label and self.autoupdate_desc_label.winfo_exists():
+            self.autoupdate_desc_label.config(text=self._get_autoupdate_card_desc())
+
+    def _refresh_analytics_card(self):
+        if self.analytics_desc_label and self.analytics_desc_label.winfo_exists():
+            self.analytics_desc_label.config(text=self._get_analytics_card_desc())
+
+    def _refresh_vpn_detect_card(self):
+        if self.vpn_detect_desc_label and self.vpn_detect_desc_label.winfo_exists():
+            self.vpn_detect_desc_label.config(text=self._get_vpn_detect_card_desc())
+
+    def _refresh_duplicate_detect_card(self):
+        if self.duplicate_detect_desc_label and self.duplicate_detect_desc_label.winfo_exists():
+            self.duplicate_detect_desc_label.config(text=self._get_duplicate_detect_card_desc())
 
     def update_buttons(self):
-        self._update_autoupdate_button()
-        self._update_analytics_button()
+        self._refresh_autoupdate_card()
+        self._refresh_analytics_card()
+        self._refresh_vpn_detect_card()
+        self._refresh_duplicate_detect_card()
 
-    def _get_autoupdate_button_text(self):
-        if getattr(self.app, '_auto_update_enabled', True):
-            return tr('settings_toggle_off_autoupdate')
-        else:
-            return tr('settings_toggle_on_autoupdate')
+    def _update_autoupdate_button(self):
+        self._refresh_autoupdate_card()
 
-    def _get_analytics_button_text(self):
-        if getattr(self.app, '_analytics_enabled', True):
-            return tr('settings_toggle_off_analytics')
-        else:
-            return tr('settings_toggle_on_analytics')
+    def _update_analytics_button(self):
+        self._refresh_analytics_card()
 
-    def _get_instruction_button_text(self):
-        if getattr(self.app, '_tg_instruction', False):
-            return tr('tg_instruction_settings_show')
-        else:
-            return tr('tg_instruction_settings_hide')
-        
     def _toggle_auto_update(self):
         self.app.toggle_auto_update()
+        self._refresh_autoupdate_card()
 
     def _toggle_analytics(self):
         self.app.toggle_analytics()
+        self._refresh_analytics_card()
+
+    def _toggle_vpn_detection(self):
+        self.app.toggle_vpn_detection()
+        self._refresh_vpn_detect_card()
+
+    def _toggle_duplicate_detection(self):
+        self.app.toggle_hide_duplicates_warning()
+        self._refresh_duplicate_detect_card()
+
+    def _show_theme_selector(self):
+        self.app.dialogs.show_theme_selector()
+
+    def _show_language_selector(self):
+        self.app.dialogs.show_language_selector()
+
+    def _show_tgproxy_settings(self):
+        self.app.dialogs.show_tgproxy_settings()
 
     def _change_theme(self, new_theme):
         current_theme = self.app.current_theme
-        
         if new_theme != current_theme:
-            restart_msg = tr('restart_manual_message')
-            restart_title = tr('restart_manual_title')
-            
-            result = messagebox.showwarning(restart_title, restart_msg + "\n\n", type=messagebox.OKCANCEL)
-            
+            result = messagebox.showwarning(
+                tr('restart_manual_title'),
+                tr('restart_manual_message') + "\n\n",
+                type=messagebox.OKCANCEL
+            )
             if result == 'ok':
                 self.app.show_notification(tr('please_wait'), 1500)
                 self.app.current_theme = new_theme
@@ -385,13 +364,12 @@ class SettingsPage:
 
     def _change_language(self, new_lang):
         current_lang = self.app.languages.get_current_language()
-        
         if new_lang != current_lang:
-            restart_msg = tr('restart_manual_message')
-            restart_title = tr('restart_manual_title')
-            
-            result = messagebox.showwarning(restart_title, restart_msg + "\n\n", type=messagebox.OKCANCEL)
-            
+            result = messagebox.showwarning(
+                tr('restart_manual_title'),
+                tr('restart_manual_message') + "\n\n",
+                type=messagebox.OKCANCEL
+            )
             if result == 'ok':
                 self.app.show_notification(tr('please_wait'), 1500)
                 self.app.languages.set_language(new_lang)
@@ -497,13 +475,15 @@ class SettingsPage:
             result_text = f"{tr('settings_integrity_success')}"
             messagebox.showinfo(tr('settings_integrity_title'), result_text)
 
+    def _get_instruction_button_text(self):
+        if getattr(self.app, '_tg_instruction', False):
+            return tr('tg_instruction_settings_show')
+        return tr('tg_instruction_settings_hide')
+
     def _show_instruction(self):
         self.app._tg_instruction = not self.app._tg_instruction
         self.app.save_settings()
-        
-        if hasattr(self, 'tg_instruction_btn'):
-            self.tg_instruction_btn.set_text(self._get_instruction_button_text())
-        
+
         if self.app._tg_instruction:
             self.app.show_notification(tr('tg_instruction_hidden'), 1500)
         else:
@@ -511,7 +491,9 @@ class SettingsPage:
 
     def _regenerate_secret(self):
         self.app.regenerate_tg_secret()
-        self.update_secret_display()
+
+    def update_secret_display(self):
+        pass
 
     def _reinstall_files(self):
         all_files_exist = self._check_all_files_exist()
@@ -749,9 +731,6 @@ class SettingsPage:
                 self.app.root.after_idle(lambda: messagebox.showerror("Error", f"Unable to reinstall kernel: {str(e)}"))
         threading.Thread(target=install_thread, daemon=True).start()
 
-    def _show_success_and_restart(self):
-        self.app.root.after(1500, self._restart_launcher)
-
     def _restart_launcher(self):
         try:
             try:
@@ -826,82 +805,6 @@ class SettingsPage:
             pass
         
         sys.exit(0)
-    
-    def update_secret_display(self):
-        if not hasattr(self, 'secret_label') or not self.secret_label:
-            return
-        
-        try:
-            if not self.secret_label.winfo_exists():
-                return
-        except:
-            return
 
-        if hasattr(self, 'secret_label') and self.secret_label:
-            new_secret = getattr(self.app, '_tg_secret', None)
-            if new_secret and len(new_secret) > 16:
-                self.secret_label.config(text=f"{tr('settings_current_tg_secret')} {new_secret[:16]}...")
-            elif new_secret:
-                self.secret_label.config(text=f"{tr('settings_current_tg_secret')} {new_secret}")
-            else:
-                self.secret_label.config(text=tr('settings_current_tg_secret'))
-
-        self.secret_label.update_idletasks()
-    
-    def _create_settings_card(self, parent, title, options):
-        font_size_sub = self.font_size_sub if hasattr(self, 'font_size_sub') else scale_size(12, self.scale_factor)
-        font_size_btn = self.font_size_btn if hasattr(self, 'font_size_btn') else scale_size(9, self.scale_factor)
-        btn_width_medium = self.btn_width_medium if hasattr(self, 'btn_width_medium') else scale_size(180, self.scale_factor)
-        btn_height_medium = self.btn_height_medium if hasattr(self, 'btn_height_medium') else scale_size(32, self.scale_factor)
-        btn_radius = self.btn_radius if hasattr(self, 'btn_radius') else scale_size(6, self.scale_factor)
-        
-        card = tk.Frame(parent, bg=self.colors['bg_light'], relief=tk.FLAT, bd=0)
-        card.pack(fill=tk.X, pady=scale_size(4, self.scale_factor))
-        
-        inner = tk.Frame(card, bg=self.colors['bg_light'])
-        inner.pack(fill=tk.X, padx=scale_size(8, self.scale_factor), pady=scale_size(6, self.scale_factor))
-        
-        title_frame = tk.Frame(inner, bg=self.colors['bg_light'])
-        title_frame.pack(fill=tk.X, pady=(0, scale_size(4, self.scale_factor)))
-        
-        title_label = tk.Label(title_frame, text=title, font=("Inter", font_size_sub, "bold"),
-                            fg=self.colors['accent'], bg=self.colors['bg_light'])
-        title_label.pack(side=tk.LEFT)
-        
-        title_sep = tk.Frame(inner, bg=self.colors['separator'], height=1)
-        title_sep.pack(fill=tk.X, pady=(0, scale_size(4, self.scale_factor)))
-        
-        options_container = tk.Frame(inner, bg=self.colors['bg_light'])
-        options_container.pack(fill=tk.X)
-        
-        for i in range(0, len(options), 2):
-            row = tk.Frame(options_container, bg=self.colors['bg_light'])
-            row.pack(fill=tk.X, pady=1)
-            
-            opt1_text, opt1_cmd = options[i]
-            if opt1_cmd:
-                btn1 = RoundedButton(row, text=opt1_text, command=opt1_cmd,
-                    width=btn_width_medium, height=btn_height_medium,
-                    bg=self.colors['button_bg'],
-                    fg=self.colors['text_secondary'],
-                    font=("Inter", font_size_btn),
-                    corner_radius=btn_radius,
-                    hover_color=self.colors['accent'],
-                    theme_name=self.app.current_theme)
-                btn1.pack(side=tk.LEFT, padx=(0, scale_size(6, self.scale_factor)))
-            
-            if i + 1 < len(options):
-                opt2_text, opt2_cmd = options[i + 1]
-                if opt2_cmd:
-                    btn2 = RoundedButton(row, text=opt2_text, command=opt2_cmd,
-                        width=btn_width_medium, height=btn_height_medium,
-                        bg=self.colors['button_bg'],
-                        fg=self.colors['text_secondary'],
-                        font=("Inter", font_size_btn),
-                        corner_radius=btn_radius,
-                        hover_color=self.colors['accent'],
-                        theme_name=self.app.current_theme)
-                    btn2.pack(side=tk.LEFT, padx=(scale_size(6, self.scale_factor), 0))
-    
     def get_frame(self):
         return self.frame
