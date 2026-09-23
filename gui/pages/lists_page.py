@@ -60,7 +60,7 @@ class ListsPage:
         title_label = tk.Label(
             self.frame,
             text=tr('lists_title'),
-            font=("Inter", font_size_title, "bold"),
+            font=("Segoe UI Variable", font_size_title, "bold"),
             fg=self.colors['text_primary'],
             bg=self.colors['bg_dark']
         )
@@ -69,7 +69,7 @@ class ListsPage:
         desc_label = tk.Label(
             self.frame,
             text=tr('lists_desc'),
-            font=("Inter", font_size_desc),
+            font=("Segoe UI Variable", font_size_desc),
             fg=self.colors['text_secondary'],
             bg=self.colors['bg_dark']
         )
@@ -93,9 +93,9 @@ class ListsPage:
             text_frame = tk.Frame(frame, bg=self.colors['bg_light'])
             text_frame.pack(side=tk.LEFT, fill=tk.X, expand=True)
             
-            tk.Label(text_frame, text=label, font=("Inter", font_size_name, "bold"), 
+            tk.Label(text_frame, text=label, font=("Segoe UI Variable", font_size_name, "bold"), 
                     fg=self.colors['text_primary'], bg=self.colors['bg_light'], anchor='w').pack(anchor='w')
-            tk.Label(text_frame, text=filename, font=("Inter", font_size_filename), 
+            tk.Label(text_frame, text=filename, font=("Segoe UI Variable", font_size_filename), 
                     fg=self.colors['text_secondary'], bg=self.colors['bg_light'], anchor='w').pack(anchor='w', pady=(scale_size(5, self.scale_factor), 0))
             
             btn_frame = tk.Frame(frame, bg=self.colors['bg_light'])
@@ -110,7 +110,7 @@ class ListsPage:
                 bg=self.colors['button_bg'],
                 fg=self.colors['button_text'],
                 hover_fg=self.colors['button_text_hover'],
-                font=("Inter", font_size_btn), 
+                font=("Segoe UI Variable", font_size_btn), 
                 corner_radius=btn_radius,
                 hover_color=self.colors['accent'], 
                 theme_name=self.app.current_theme
@@ -129,7 +129,7 @@ class ListsPage:
             bg=self.colors['button_bg'],
             fg=self.colors['button_text'],
             hover_fg=self.colors['button_text_hover'],
-            font=("Inter", scale_size(11, self.scale_factor), "bold"), 
+            font=("Segoe UI Variable", scale_size(11, self.scale_factor), "bold"), 
             corner_radius=scale_size(10, self.scale_factor),
             hover_color=self.colors['accent'], 
             theme_name=self.app.current_theme
