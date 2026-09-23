@@ -39,7 +39,7 @@ class ServicePage:
         title_label = tk.Label(
             self.frame,
             text=tr('service_title'),
-            font=("Inter", font_size_title, "bold"),
+            font=("Segoe UI Variable", font_size_title, "bold"),
             fg=self.colors['text_primary'],
             bg=self.colors['bg_dark']
         )
@@ -48,7 +48,7 @@ class ServicePage:
         desc_label = tk.Label(
             self.frame,
             text=tr('service_desc'),
-            font=("Inter", font_size_desc),
+            font=("Segoe UI Variable", font_size_desc),
             fg=self.colors['text_secondary'],
             bg=self.colors['bg_dark']
         )
@@ -120,7 +120,7 @@ class ServicePage:
         name_label = tk.Label(
             inner,
             text=name,
-            font=("Inter", font_size_name, "bold"),
+            font=("Segoe UI Variable", font_size_name, "bold"),
             fg=self.colors['accent'],
             bg=self.colors['bg_light'],
             anchor='w',
@@ -131,7 +131,7 @@ class ServicePage:
         desc_label = tk.Label(
             inner,
             text=desc,
-            font=("Inter", font_size_desc),
+            font=("Segoe UI Variable", font_size_desc),
             fg=self.colors['text_secondary'],
             bg=self.colors['bg_light'],
             anchor='w',
