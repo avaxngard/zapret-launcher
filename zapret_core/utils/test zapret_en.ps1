@@ -1,4 +1,4 @@
-﻿$hasErrors = $false
+$hasErrors = $false
 
 $rootDir = Split-Path $PSScriptRoot
 $listsDir = Join-Path $rootDir "lists"
@@ -53,7 +53,7 @@ function Set-IpsetMode {
 # Tests run for minutes, so any key pressed meanwhile stays in the console
 # input buffer and would be swallowed instantly by a bare ReadKey.
 function Wait-AnyKey {
-    param([string]$message = "Нажмите любую клавишу, чтобы закрыть...")
+    param([string]$message = "Press any key to close...")
     Write-Host $message -ForegroundColor Yellow
     try {
         while ([System.Console]::KeyAvailable) { [void][System.Console]::ReadKey($true) }
@@ -65,7 +65,7 @@ function Wait-AnyKey {
 }
 
 trap {
-    Write-Host "[ERROR] Выполнение скрипта прервано. Восстановление ipset..." -ForegroundColor Red
+    Write-Host "[ERROR] Script interrupted. Restoring ipset..." -ForegroundColor Red
     if ($originalIpsetStatus -and $originalIpsetStatus -ne "any") {
         Set-IpsetMode -mode "restore"
     }
@@ -131,7 +131,7 @@ function Get-DpiSuite {
                 @{n='Host';     e={$_.host}}
     }
     catch {
-        Write-Host "[WARNING] Не удалось получить набор DPI." -ForegroundColor Yellow
+        Write-Host "[WARN] Fetch dpi suite failed." -ForegroundColor Yellow
         @()
     }
 }
@@ -172,8 +172,8 @@ function Invoke-DpiSuite {
     $rangeSpec = "0-$($RangeBytes - 1)"
     $warnDetected = $false
 
-    Write-Host "[INFO] Цели: $($Targets.Count) (пользовательский URL переопределяет набор). Диапазон: $rangeSpec байт; Тайм-аут: $($TimeoutSeconds) секунд" -ForegroundColor Cyan
-    Write-Host "[INFO] Запуск проверок DPI TCP 16–20 (параллельно: $MaxParallel)..." -ForegroundColor DarkGray
+    Write-Host "[INFO] Targets: $($Targets.Count) (custom URL overrides suite). Range: $rangeSpec bytes; Timeout: $($TimeoutSeconds)s" -ForegroundColor Cyan
+    Write-Host "[INFO] Starting DPI TCP 16-20 checks (parallel: $MaxParallel)..." -ForegroundColor DarkGray
 
     $runspacePool = [runspacefactory]::CreateRunspacePool(1, $MaxParallel)
     $runspacePool.Open()
@@ -290,7 +290,7 @@ function Invoke-DpiSuite {
             if ($handle -and $handle.AsyncWaitHandle) {
                 $completed = $handle.AsyncWaitHandle.WaitOne($waitMs)
                 if (-not $completed) {
-                    Write-Host "[WARNING] Время ожидания для Runspace [$($rs.TargetId)] истекло через $waitMs мс; остановка Runspace..." -ForegroundColor Yellow
+                    Write-Host "[WARN] Runspace for [$($rs.TargetId)] timed out after $waitMs ms; stopping runspace..." -ForegroundColor Yellow
                     try { $rs.Powershell.Stop() } catch {}
                 }
             }
@@ -307,17 +307,17 @@ function Invoke-DpiSuite {
                 $msg = "[{0}] code={1} buf_up={2} bytes ({3} KB) buf_down={4} bytes ({5} KB) time={6}s status={7}" -f $line.TestLabel, $line.Code, $line.UpBytes, $line.UpKB, $line.DownBytes, $line.DownKB, $line.Time, $line.Status
                 Write-Host $msg -ForegroundColor $line.Color
                 if ($line.Status -eq "LIKELY_BLOCKED") {
-                    Write-Host "  Сопоставление шаблонов вызывает зависание при объеме данных 16–20 КБ; цензор, вероятно, исключит эту стратегию." -ForegroundColor Yellow
+                    Write-Host "  Pattern matches 16-20KB freeze; censor likely cutting this strategy." -ForegroundColor Yellow
                 }
             }
 
             if ($res.Warned) {
                 $warnDetected = $true
             } else {
-                Write-Host "  Для этой цели не наблюдается характерного зависания в диапазоне 16–20 КБ." -ForegroundColor Green
+                Write-Host "  No 16-20KB freeze pattern for this target." -ForegroundColor Green
             }
         } catch {
-            Write-Host "[WARNING] Сбой EndInvoke для пространства выполнения; рассматривается как ошибка." -ForegroundColor Yellow
+            Write-Host "[WARN] EndInvoke failed for a runspace; treating as failure." -ForegroundColor Yellow
             $failedLine = [PSCustomObject]@{
                 TestLabel  = 'RUNSPACE'
                 Code       = 'ERR'
@@ -337,10 +337,10 @@ function Invoke-DpiSuite {
 
     if ($warnDetected) {
         Write-Host ""
-        Write-Host "[WARNING] Обнаружена возможная блокировка TCP-пакетов (размером 16–20 байт) с использованием DPI для одного или нескольких целевых адресов. Рекомендуется сменить стратегию, SNI или IP-адрес." -ForegroundColor Red
+        Write-Host "[WARNING] Detected possible DPI TCP 16-20 blocking on one or more targets. Consider changing strategy/SNI/IP." -ForegroundColor Red
     } else {
         Write-Host ""
-        Write-Host "[OK] На целевых объектах не обнаружено характерных зависаний, связанных с блоками данных размером 16–20 КБ." -ForegroundColor Green
+        Write-Host "[OK] No 16-20KB freeze pattern detected across targets." -ForegroundColor Green
     }
 
     return $results
@@ -353,25 +353,25 @@ function Test-ZapretServiceConflict {
 # Check Admin
 $currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
 if (-not $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-    Write-Host "[ERROR] Запустите от имени администратора для выполнения тестов" -ForegroundColor Red
+    Write-Host "[ERROR] Run as Administrator to execute tests" -ForegroundColor Red
     $hasErrors = $true
 } else {
-    Write-Host "[OK] Обнаружены права администратора" -ForegroundColor Green
+    Write-Host "[OK] Administrator rights detected" -ForegroundColor Green
 }
 
 # Check curl
 if (-not (Get-Command "curl.exe" -ErrorAction SilentlyContinue)) {
-    Write-Host "[ERROR] curl.exe не найден" -ForegroundColor Red
-    Write-Host "Установите curl или добавьте его в путь" -ForegroundColor Yellow
+    Write-Host "[ERROR] curl.exe not found" -ForegroundColor Red
+    Write-Host "Install curl or add it to PATH" -ForegroundColor Yellow
     $hasErrors = $true
 } else {
-    Write-Host "[OK] curl.exe найден" -ForegroundColor Green
+    Write-Host "[OK] curl.exe found" -ForegroundColor Green
 }
 
 # Check for leftover ipset flag from previous interrupted run
 $ipsetFlagFile = Join-Path $rootDir "ipset_switched.flag"
 if (Test-Path $ipsetFlagFile) {
-    Write-Host "[INFO] Обнаружен оставшийся флаг переключения ipset. Восстановление ipset..." -ForegroundColor Yellow
+    Write-Host "[INFO] Detected leftover ipset switch flag. Restoring ipset..." -ForegroundColor Yellow
     Set-IpsetMode -mode "restore"
     Remove-Item -Path $ipsetFlagFile -ErrorAction SilentlyContinue
 }
@@ -381,24 +381,24 @@ $originalIpsetStatus = Get-IpsetStatus
 
 # Warn about ipset switching and X button behavior
 if ($originalIpsetStatus -ne "any") {
-    Write-Host "[INFO] Текущий статус ipset: $originalIpsetStatus" -ForegroundColor Cyan
-    Write-Host "[WARNING] Для точного тестирования DPI параметр ipset будет установлен в значение «any»." -ForegroundColor Yellow
-    Write-Host "[WARNING] Если закрыть окно кнопкой «X», ipset НЕ восстановится немедленно." -ForegroundColor Yellow
-    Write-Host "[WARNING] Он будет автоматически восстановлен при следующем запуске скрипта." -ForegroundColor Yellow
+    Write-Host "[INFO] Current ipset status: $originalIpsetStatus" -ForegroundColor Cyan
+    Write-Host "[WARNING] Ipset will be switched to 'any' for accurate DPI tests." -ForegroundColor Yellow
+    Write-Host "[WARNING] If you close the window with the X button, ipset will NOT restore immediately." -ForegroundColor Yellow
+    Write-Host "[WARNING] It will be restored automatically on the next script run." -ForegroundColor Yellow
 }
 
 # Check if zapret service installed
 if (Test-ZapretServiceConflict) {
-    Write-Host "[ERROR] Служба Windows (zapret) уже установлена" -ForegroundColor Red
-    Write-Host "         Удалите сервис перед запуском тестов." -ForegroundColor Yellow
-    Write-Host "         Откройте service.bat и выберите «Remove Services»." -ForegroundColor Yellow
+    Write-Host "[ERROR] Windows service 'zapret' is installed" -ForegroundColor Red
+    Write-Host "         Remove the service before running tests" -ForegroundColor Yellow
+    Write-Host "         Open service.bat and choose 'Remove Services'" -ForegroundColor Yellow
     $hasErrors = $true
 }
 
 if ($hasErrors) {
     Write-Host ""
-    Write-Host "Исправьте ошибки, указанные выше, и запустите снова." -ForegroundColor Yellow
-    Wait-AnyKey -message "Нажмите любую клавишу для выхода..."
+    Write-Host "Fix the errors above and rerun." -ForegroundColor Yellow
+    Wait-AnyKey -message "Press any key to exit..."
     exit 1
 }
 
@@ -415,14 +415,14 @@ $globalResults = @()
 function Read-TestType {
     while ($true) {
         Write-Host ""
-        Write-Host "Выберите тип теста:" -ForegroundColor Cyan
-        Write-Host "  [1] Стандартные тесты (HTTP/ping)" -ForegroundColor Gray
-        Write-Host "  [2] Проверки DPI (зависание на TCP-сегментах 16–20)" -ForegroundColor Gray
-        $choice = Read-Host "Введите 1 или 2"
+        Write-Host "Select test type:" -ForegroundColor Cyan
+        Write-Host "  [1] Standard tests (HTTP/ping)" -ForegroundColor Gray
+        Write-Host "  [2] DPI checkers (TCP 16-20 freeze)" -ForegroundColor Gray
+        $choice = Read-Host "Enter 1 or 2"
         switch ($choice) {
             '1' { return 'standard' }
             '2' { return 'dpi' }
-            default { Write-Host "Неверный ввод. Пожалуйста, попробуйте еще раз." -ForegroundColor Yellow }
+            default { Write-Host "Incorrect input. Please try again." -ForegroundColor Yellow }
         }
     }
 }
@@ -431,14 +431,14 @@ function Read-TestType {
 function Read-ModeSelection {
     while ($true) {
         Write-Host ""
-        Write-Host "Выберите режим тестового запуска:" -ForegroundColor Cyan
-        Write-Host "  [1] Все конфигурации" -ForegroundColor Gray
-        Write-Host "  [2] Выбранные конфигурации" -ForegroundColor Gray
-        $choice = Read-Host "Введите 1 или 2"
+        Write-Host "Select test run mode:" -ForegroundColor Cyan
+        Write-Host "  [1] All configs" -ForegroundColor Gray
+        Write-Host "  [2] Selected configs" -ForegroundColor Gray
+        $choice = Read-Host "Enter 1 or 2"
         switch ($choice) {
             '1' { return 'all' }
             '2' { return 'select' }
-            default { Write-Host "Неверный ввод. Пожалуйста, попробуйте еще раз." -ForegroundColor Yellow }
+            default { Write-Host "Incorrect input. Please try again." -ForegroundColor Yellow }
         }
     }
 }
@@ -448,13 +448,13 @@ function Read-ConfigSelection {
 
     while ($true) {
         Write-Host "" 
-        Write-Host "Доступные конфигурации:" -ForegroundColor Cyan
+        Write-Host "Available configs:" -ForegroundColor Cyan
         for ($i = 0; $i -lt $allFiles.Count; $i++) {
             $idx = $i + 1
             Write-Host "  [$idx] $($allFiles[$i].Name)" -ForegroundColor Gray
         }
 
-        $selectionInput = Read-Host "Введите числа (например, 1, 3, 5), диапазоны (например, 2–7) или их комбинацию (например, 1, 5–10, 12). «0» — для всех."
+        $selectionInput = Read-Host "Enter numbers (e.g. 1,3,5) , ranges (e.g. 2-7), or mixed (e.g. 1,5-10,12). '0' for all"
         $trimmed = $selectionInput.Trim()
         
         if ($trimmed -eq '0') {
@@ -464,7 +464,7 @@ function Read-ConfigSelection {
         $parts = $selectionInput -split '[,\s]+' | Where-Object { $_ -match '^\d+(-\d+)?$' }
         if ($parts.Count -eq 0) {
             Write-Host ""
-            Write-Host "Неверный формат ввода. Используйте числа, диапазоны (1–5) или комбинации (1, 3–7, 10). Попробуйте еще раз." -ForegroundColor Yellow
+            Write-Host "Invalid input format. Use numbers, ranges (1-5), or combinations (1,3-7,10). Try again." -ForegroundColor Yellow
             continue
         }
         $selectedIndices = @()
@@ -476,13 +476,13 @@ function Read-ConfigSelection {
                 $end = [int]$matches[2]
                 
                 if ($start -gt $end) {
-                    Write-Host "  [WARN] Недопустимый диапазон «$part» (начало > конец). Пропуск." -ForegroundColor Yellow
+                    Write-Host "  [WARN] Invalid range '$part' (start > end). Skipping." -ForegroundColor Yellow
                     $hasErrors = $true
                     continue
                 }
                 
                 if ($start -lt 1 -or $end -gt $allFiles.Count) {
-                    Write-Host "  [WARN] Диапазон «$part» выходит за допустимые пределы (допустимый диапазон: 1–$($allFiles.Count)). Пропуск недопустимых частей." -ForegroundColor Yellow
+                    Write-Host "  [WARN] Range '$part' out of bounds (valid: 1-$($allFiles.Count)). Skipping invalid parts." -ForegroundColor Yellow
                     $hasErrors = $true
                     $start = [Math]::Max($start, 1)
                     $end = [Math]::Min($end, $allFiles.Count)
@@ -496,7 +496,7 @@ function Read-ConfigSelection {
                 if ($num -ge 1 -and $num -le $allFiles.Count) {
                     $selectedIndices += $num
                 } else {
-                    Write-Host "  [WARN] Число «$num» выходит за допустимые пределы (диапазон: 1–$($allFiles.Count)). Пропуск." -ForegroundColor Yellow
+                    Write-Host "  [WARN] Number '$num' out of bounds (valid: 1-$($allFiles.Count)). Skipping." -ForegroundColor Yellow
                     $hasErrors = $true
                 }
             }
@@ -504,14 +504,14 @@ function Read-ConfigSelection {
         $valid = $selectedIndices | Sort-Object -Unique | Where-Object { $_ -ge 1 -and $_ -le $allFiles.Count }
         if ($valid.Count -eq 0) {
             Write-Host ""
-            Write-Host "Не выбрано ни одной подходящей конфигурации. Попробуйте еще раз." -ForegroundColor Yellow
+            Write-Host "No valid configs selected. Try again." -ForegroundColor Yellow
             continue
         }
 
         # Checker
-         Write-Host "Выбранные конфигурации: $($valid -join ', ')" -ForegroundColor Green
+         Write-Host "Selected configs: $($valid -join ', ')" -ForegroundColor Green
         if ($hasErrors) {
-            Write-Host "Некоторые записи были пропущены из-за ошибок (см. предупреждения выше)." -ForegroundColor Yellow
+            Write-Host "Some entries were skipped due to errors (see warnings above)." -ForegroundColor Yellow
         }
         
         return $valid | ForEach-Object { $allFiles[$_ - 1] }
@@ -546,7 +546,7 @@ if ($testType -eq 'standard') {
     }
 
     if ($rawTargets.Count -eq 0) {
-        Write-Host "[INFO] Файл targets.txt отсутствует или пуст. Используются значения по умолчанию." -ForegroundColor Gray
+        Write-Host "[INFO] targets.txt missing or empty. Using defaults." -ForegroundColor Gray
         Add-OrSet $rawTargets "Discord Main"           "https://discord.com"
         Add-OrSet $rawTargets "Discord Gateway"        "https://gateway.discord.gg"
         Add-OrSet $rawTargets "Discord CDN"            "https://cdn.discordapp.com"
@@ -566,8 +566,8 @@ if ($testType -eq 'standard') {
         Add-OrSet $rawTargets "Quad9 DNS 9.9.9.9"      "PING:9.9.9.9"
     } else {
         Write-Host ""
-        Write-Host "[INFO] Загружены цели из targets.txt" -ForegroundColor Gray
-        Write-Host "[INFO] Цели загружены: $($rawTargets.Count)" -ForegroundColor Gray
+        Write-Host "[INFO] Loaded targets from targets.txt" -ForegroundColor Gray
+        Write-Host "[INFO] Targets loaded: $($rawTargets.Count)" -ForegroundColor Gray
     }
 
     foreach ($key in $rawTargets.Keys) {
@@ -580,8 +580,8 @@ if ($testType -eq 'standard') {
 
 # Ensure we have configs to run
 if (-not $batFiles -or $batFiles.Count -eq 0) {
-    Write-Host "[ERROR] Файлы general*.bat не найдены" -ForegroundColor Red
-    Wait-AnyKey -message "Нажмите любую клавишу для выхода..."
+    Write-Host "[ERROR] No general*.bat files found" -ForegroundColor Red
+    Wait-AnyKey -message "Press any key to exit..."
     exit 1
 }
 
@@ -608,7 +608,7 @@ function Restore-WinwsSnapshot {
     $current = @()
     try { $current = (Get-WinwsSnapshot).CommandLine } catch { $current = @() }
 
-    Write-Host "[INFO] Восстановление ранее запущенных экземпляров Windows..." -ForegroundColor DarkGray
+    Write-Host "[INFO] Restoring previously running winws instances..." -ForegroundColor DarkGray
     foreach ($p in $snapshot) {
         if (-not $p.ExecutablePath) { continue }
 
@@ -630,14 +630,14 @@ function Restore-WinwsSnapshot {
         }
 
         if (-not $processArgs) {
-            Write-Host "[WARN] Не удалось прочитать аргументы предыдущего экземпляра WinWS ($exe); восстановление пропущено." -ForegroundColor Yellow
+            Write-Host "[WARN] Could not read arguments of previous winws instance ($exe); skipping restore." -ForegroundColor Yellow
             continue
         }
 
         try {
             Start-Process -FilePath $exe -ArgumentList $processArgs -WorkingDirectory (Split-Path $exe -Parent) -WindowStyle Minimized | Out-Null
         } catch {
-            Write-Host "[WARN] Не удалось восстановить предыдущий экземпляр WinWS. ($exe): $_" -ForegroundColor Yellow
+            Write-Host "[WARN] Failed to restore previous winws instance ($exe): $_" -ForegroundColor Yellow
         }
     }
 }
@@ -647,20 +647,20 @@ $originalWinws = Get-WinwsSnapshot
 
 Write-Host ""
 Write-Host "============================================================" -ForegroundColor Cyan
-Write-Host "                 Тесты конфигурации zapret" -ForegroundColor Cyan
-Write-Host "                 Режим: $($testType.ToUpper())" -ForegroundColor Cyan
-Write-Host "                 Всего конфигураций: $($batFiles.Count.ToString().PadLeft(2))" -ForegroundColor Cyan
+Write-Host "                 ZAPRET CONFIG TESTS" -ForegroundColor Cyan
+Write-Host "                 Mode: $($testType.ToUpper())" -ForegroundColor Cyan
+Write-Host "                 Total configs: $($batFiles.Count.ToString().PadLeft(2))" -ForegroundColor Cyan
 Write-Host "============================================================" -ForegroundColor Cyan
 
 try {
     # Save original ipset status and switch to 'any' for accurate DPI tests
     if (($originalIpsetStatus -ne "any") -and ($testType -eq 'dpi')) {
-        Write-Host "[WARNING] Ipset находится в режиме «$originalIpsetStatus». Переключение на режим «any» для точного тестирования DPI..." -ForegroundColor Yellow
+        Write-Host "[WARNING] Ipset is in '$originalIpsetStatus' mode. Switching to 'any' for accurate DPI tests..." -ForegroundColor Yellow
         Set-IpsetMode -mode "any"
         # Create flag file to indicate ipset was switched
         "" | Out-File -FilePath $ipsetFlagFile -Encoding UTF8
     }
-    Write-Host "[WARNING] Выполнение тестов может занять несколько минут. Пожалуйста, подождите..." -ForegroundColor Yellow
+    Write-Host "[WARNING] Tests may take several minutes to complete. Please wait..." -ForegroundColor Yellow
 
     $configNum = 0
     foreach ($file in $batFiles) {
@@ -674,12 +674,12 @@ try {
     Stop-Zapret
     
     # Start config
-    Write-Host "  > Запуск конфигурации..." -ForegroundColor Cyan
+    Write-Host "  > Starting config..." -ForegroundColor Cyan
     $proc = Start-Process -FilePath "cmd.exe" -ArgumentList "/c `"$($file.FullName)`"" -WorkingDirectory $targetDir -PassThru -WindowStyle Minimized
     
     # Wait init
     if (-not (Wait-WinwsReady)) {
-        Write-Host "  > Не удалось запустить стратегию (процесс winws не найден). Пропуск..." -ForegroundColor Red
+        Write-Host "  > Strategy failed to start (winws process not found). Skipping..." -ForegroundColor Red
         if (-not $proc.HasExited) { Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue }
         continue
     }
@@ -781,7 +781,7 @@ try {
             }
         }
 
-        $script:currentLine = "  > Запуск тестов..."
+        $script:currentLine = "  > Running tests..."
         Write-Host $script:currentLine -ForegroundColor DarkGray
 
         $targetResults = @()
@@ -792,7 +792,7 @@ try {
                 if ($handle -and $handle.AsyncWaitHandle) {
                     $completed = $handle.AsyncWaitHandle.WaitOne($waitMs)
                     if (-not $completed) {
-                        Write-Host "[WARN] Время ожидания для целевого Runspace истекло через $waitMs мс; остановка Runspace..." -ForegroundColor Yellow
+                        Write-Host "[WARN] Runspace for target timed out after $waitMs ms; stopping runspace..." -ForegroundColor Yellow
                         try { $rs.Powershell.Stop() } catch {}
                     }
                 }
@@ -803,7 +803,7 @@ try {
             try {
                 $targetResults += $rs.Powershell.EndInvoke($rs.Handle)
             } catch {
-                Write-Host "[WARN] Сбой EndInvoke для пространства выполнения; ситуация рассматривается как ошибка." -ForegroundColor Yellow
+                Write-Host "[WARN] EndInvoke failed for a runspace; treating as failure." -ForegroundColor Yellow
                 $targetResults += [PSCustomObject]@{ Name = 'UNKNOWN'; HttpTokens = @('HTTP:ERROR'); PingResult = 'Timeout'; IsUrl = $true }
             }
             $rs.Powershell.Dispose()
@@ -852,7 +852,7 @@ try {
 
         $globalResults += @{ Config = $file.Name; Type = 'standard'; Results = $targetResults }
     } else {
-        Write-Host "  > Запуск проверок DPI..." -ForegroundColor DarkGray
+        Write-Host "  > Running DPI checkers..." -ForegroundColor DarkGray
         $dpiResults = Invoke-DpiSuite -Targets $dpiTargets -TimeoutSeconds $dpiTimeoutSeconds -RangeBytes $dpiRangeBytes -MaxParallel $dpiMaxParallel
         $globalResults += @{ Config = $file.Name; Type = 'dpi'; Results = $dpiResults }
     }
@@ -863,7 +863,7 @@ try {
 }
 
     Write-Host ""
-    Write-Host "Все тесты завершены." -ForegroundColor Green
+    Write-Host "All tests finished." -ForegroundColor Green
 
     # Analytics
     $analytics = @{}
@@ -897,7 +897,7 @@ try {
     }
 
     Write-Host ""
-    Write-Host "=== Аналитика ===" -ForegroundColor Cyan
+    Write-Host "=== ANALYTICS ===" -ForegroundColor Cyan
     $maxConfigLen = ($analytics.Keys | ForEach-Object { $_.Length } | Measure-Object -Maximum).Maximum
     foreach ($config in $analytics.Keys) {
         $a = $analytics[$config]
@@ -935,7 +935,7 @@ try {
         }
     }
     Write-Host ""
-    Write-Host "Подходящая конфигурация: $bestConfig" -ForegroundColor Green
+    Write-Host "Best config: $bestConfig" -ForegroundColor Green
     Write-Host ""
 
     # Save to file
@@ -946,7 +946,7 @@ try {
         $config = $res.Config
         $type = $res.Type
         $results = $res.Results
-        [void]$resultLines.Add("Конфигурация: $config (Тип: $type)")
+        [void]$resultLines.Add("Config: $config (Type: $type)")
         if ($type -eq 'standard') {
             foreach ($targetRes in $results) {
                 $name = $targetRes.Name
@@ -960,9 +960,9 @@ try {
                 $provider = $targetRes.Provider
                 $country = $targetRes.Country
                 if ($country) {
-                    [void]$resultLines.Add("  Цель: [$country] $id ($provider)")
+                    [void]$resultLines.Add("  Target: [$country] $id ($provider)")
                 } else {
-                    [void]$resultLines.Add("  Цель: $id ($provider)")
+                    [void]$resultLines.Add("  Target: $id ($provider)")
                 }
                 foreach ($line in $targetRes.Lines) {
                     $test = $line.TestLabel
@@ -979,7 +979,7 @@ try {
     }
 
     # Add analytics
-    [void]$resultLines.Add("=== Аналитика ===")
+    [void]$resultLines.Add("=== ANALYTICS ===")
     $maxConfigLen = ($analytics.Keys | ForEach-Object { $_.Length } | Measure-Object -Maximum).Maximum
     foreach ($config in $analytics.Keys) {
         $a = $analytics[$config]
@@ -994,13 +994,13 @@ try {
         [void]$resultLines.Add($line)
     }
 
-    [void]$resultLines.Add("Подходящая стратегия: $bestConfig")
+    [void]$resultLines.Add("Best strategy: $bestConfig")
     $resultLines | Set-Content $resultFile -Encoding UTF8
 
-    Write-Host "Результаты сохранены в $resultFile" -ForegroundColor Green
+    Write-Host "Results saved to $resultFile" -ForegroundColor Green
 
 } catch {
-    Write-Host "[ERROR] Во время тестов произошла ошибка. Восстановление ipset..." -ForegroundColor Red
+    Write-Host "[ERROR] An error occurred during tests. Restoring ipset..." -ForegroundColor Red
     if ($originalIpsetStatus -and $originalIpsetStatus -ne "any") {
         Set-IpsetMode -mode "restore"
     }
@@ -1009,7 +1009,7 @@ try {
     Stop-Zapret
     Restore-WinwsSnapshot -snapshot $originalWinws
     if ($originalIpsetStatus -ne "any") {
-        Write-Host "[INFO] Восстановление исходного режима ipset..." -ForegroundColor DarkGray
+        Write-Host "[INFO] Restoring original ipset mode..." -ForegroundColor DarkGray
         Set-IpsetMode -mode "restore"
     }
     Remove-Item -Path $ipsetFlagFile -ErrorAction SilentlyContinue
