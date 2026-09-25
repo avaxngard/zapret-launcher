@@ -11,9 +11,10 @@ import threading
 import subprocess
 import ctypes
 import time
+import json
 from utils.languages import tr
 from utils.scaling import scale_size
-from config import ZAPRET_CORE_DIR
+from config import ZAPRET_CORE_DIR, CONFIG_FILE
 
 class ServicePage:
     def __init__(self, parent, app):
@@ -26,7 +27,7 @@ class ServicePage:
         
         font_size_title = scale_size(20, self.scale_factor)
         font_size_desc = scale_size(10, self.scale_factor)
-        font_size_card_name = scale_size(14, self.scale_factor)
+        font_size_card_name = scale_size(13, self.scale_factor)
         font_size_card_desc = scale_size(9, self.scale_factor)
         card_padx = scale_size(15, self.scale_factor)
         card_pady = scale_size(12, self.scale_factor)
@@ -109,14 +110,27 @@ class ServicePage:
     def _create_card(self, parent, row, col, name, desc, command,
                      padx, pady, font_size_name, font_size_desc,
                      card_padx, card_pady):
-        card = tk.Frame(parent, bg=self.colors['bg_light'], cursor="hand2", height=scale_size(80, self.scale_factor))
-        card.grid(row=row, column=col, sticky='nsew', padx=padx, pady=pady)
-        card.pack_propagate(False)
-        card.grid_propagate(False)
-        
+
+        card_wrapper = tk.Frame(parent, bg=self.colors['bg_dark'],
+                                height=scale_size(80, self.scale_factor))
+        card_wrapper.grid(row=row, column=col, sticky='nsew', padx=padx, pady=pady)
+        card_wrapper.pack_propagate(False)
+        card_wrapper.grid_propagate(False)
+
+        card_canvas = tk.Canvas(card_wrapper, bg=self.colors['bg_dark'],
+                                highlightthickness=0, bd=0, cursor="hand2")
+        card_canvas.pack(fill=tk.BOTH, expand=True)
+
+        card = tk.Frame(card_canvas, bg=self.colors['bg_light'], cursor="hand2")
+        card_window = card_canvas.create_window(
+            (card_padx, card_pady),
+            window=card,
+            anchor='nw'
+        )
+
         inner = tk.Frame(card, bg=self.colors['bg_light'])
-        inner.pack(fill=tk.BOTH, expand=True, padx=card_padx, pady=card_pady)
-        
+        inner.pack(fill=tk.BOTH, expand=True)
+
         name_label = tk.Label(
             inner,
             text=name,
@@ -127,7 +141,7 @@ class ServicePage:
             justify=tk.LEFT
         )
         name_label.pack(anchor='w', fill=tk.X)
-        
+
         desc_label = tk.Label(
             inner,
             text=desc,
@@ -139,23 +153,61 @@ class ServicePage:
             wraplength=scale_size(300, self.scale_factor)
         )
         desc_label.pack(anchor='w', fill=tk.X, pady=(scale_size(6, self.scale_factor), 0))
-        
+
+        corner_radius = scale_size(10, self.scale_factor)
+
+        def draw_rounded_bg(color):
+            card_canvas.delete("bg")
+            w = card_canvas.winfo_width()
+            h = card_canvas.winfo_height()
+
+            if w <= 1 or h <= 1:
+                return
+
+            r = corner_radius
+            points = [
+                r, 0,
+                w - r, 0,
+                w, 0, w, r,
+                w, h - r,
+                w, h, w - r, h,
+                r, h,
+                0, h, 0, h - r,
+                0, r,
+                0, 0
+            ]
+            card_canvas.create_polygon(points, smooth=True, fill=color,
+                                        outline='', tags="bg")
+            card_canvas.tag_lower("bg")
+
+        def on_canvas_resize(event):
+            card_canvas.itemconfig(
+                card_window,
+                width=event.width - card_padx * 2,
+                height=event.height - card_pady * 2
+            )
+            draw_rounded_bg(self.colors['bg_light'])
+
+        card_canvas.bind("<Configure>", on_canvas_resize)
+
         def on_enter(e):
+            draw_rounded_bg(self.colors['bg_light_hover'])
             card.configure(bg=self.colors['bg_light_hover'])
             inner.configure(bg=self.colors['bg_light_hover'])
             name_label.configure(bg=self.colors['bg_light_hover'])
             desc_label.configure(bg=self.colors['bg_light_hover'])
-        
+
         def on_leave(e):
+            draw_rounded_bg(self.colors['bg_light'])
             card.configure(bg=self.colors['bg_light'])
             inner.configure(bg=self.colors['bg_light'])
             name_label.configure(bg=self.colors['bg_light'])
             desc_label.configure(bg=self.colors['bg_light'])
-        
+
         def on_click(e):
             command()
-        
-        for widget in (card, inner, name_label, desc_label):
+
+        for widget in (card_canvas, card, inner, name_label, desc_label):
             widget.bind("<Enter>", on_enter)
             widget.bind("<Leave>", on_leave)
             widget.bind("<Button-1>", on_click)
@@ -163,7 +215,22 @@ class ServicePage:
     def run_diagnostics(self):
         def run():
             try:
-                service_bat = ZAPRET_CORE_DIR / "service.bat"
+                lang = 'Russian'
+                try:
+                    if CONFIG_FILE.exists():
+                        with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
+                            data = json.load(f)
+                            lang = data.get('language', 'Russian')
+                except Exception:
+                    pass
+
+                if lang == 'English':
+                    bat_name = "service_en.bat"
+                else:
+                    bat_name = "service.bat"
+
+                service_bat = ZAPRET_CORE_DIR / bat_name
+
                 subprocess.Popen(
                     [str(service_bat)],
                     cwd=str(ZAPRET_CORE_DIR),
@@ -189,7 +256,22 @@ class ServicePage:
     def run_tests(self):
         def run():
             try:
-                service_bat = ZAPRET_CORE_DIR / "service.bat"
+                lang = 'Russian'
+                try:
+                    if CONFIG_FILE.exists():
+                        with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
+                            data = json.load(f)
+                            lang = data.get('language', 'Russian')
+                except Exception:
+                    pass
+
+                if lang == 'English':
+                    bat_name = "service_en.bat"
+                else:
+                    bat_name = "service.bat"
+
+                service_bat = ZAPRET_CORE_DIR / bat_name
+
                 subprocess.Popen(
                     [str(service_bat)],
                     cwd=str(ZAPRET_CORE_DIR),
