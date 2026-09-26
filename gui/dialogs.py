@@ -27,7 +27,7 @@ class Dialogs:
         
     def show_mode_selector(self):
         dialog_width = scale_size(500, self.scale_factor)
-        dialog_height = scale_size(550, self.scale_factor)
+        dialog_height = scale_size(420, self.scale_factor)
         font_size_title = scale_size(16, self.scale_factor)
         font_size_name = scale_size(12, self.scale_factor)
         font_size_desc = scale_size(9, self.scale_factor)
@@ -79,14 +79,39 @@ class Dialogs:
             {"name": "Telegram Proxy", "desc": tr('mode_tgproxy_desc'), 
             "zapret": False, "tgproxy": True},
             {"name": tr('mode_zapret_tgproxy'), "desc": tr('mode_zapret_tgproxy_desc'), 
-            "zapret": True, "tgproxy": True},
+            "zapret": True, "tgproxy": True}
         ]
         
-        selected_index = [0]
+        selected_index = [-1]
         selected_mode = [None]
         selected_widget = [None]
         mode_frames = []
         select_btn = [None]
+        
+        corner_radius = scale_size(10, self.scale_factor)
+        card_padx = scale_size(15, self.scale_factor)
+        card_pady = scale_size(8, self.scale_factor)
+        
+        def draw_rounded_bg(canvas_widget, color):
+            canvas_widget.delete("bg")
+            w = canvas_widget.winfo_width()
+            h = canvas_widget.winfo_height()
+            if w <= 1 or h <= 1:
+                return
+            r = corner_radius
+            points = [
+                r, 0,
+                w - r, 0,
+                w, 0, w, r,
+                w, h - r,
+                w, h, w - r, h,
+                r, h,
+                0, h, 0, h - r,
+                0, r,
+                0, 0
+            ]
+            canvas_widget.create_polygon(points, smooth=True, fill=color, outline='', tags="bg")
+            canvas_widget.tag_lower("bg")
         
         def update_select_button():
             if select_btn[0]:
@@ -111,19 +136,25 @@ class Dialogs:
                     )
                     select_btn[0].config(cursor="arrow")
         
-        def on_single_click(mode, frame, name_label, desc_label, index):
+        def select_mode_by_index(index):
+            if not (0 <= index < len(mode_frames)):
+                return
+            
             if selected_widget[0]:
-                prev_frame, prev_name, prev_desc, _ = selected_widget[0]
-                prev_frame.configure(bg=self.colors['bg_light'], relief=tk.FLAT, bd=0)
+                prev_canvas, prev_card, prev_name, prev_desc, prev_idx = selected_widget[0]
+                draw_rounded_bg(prev_canvas, self.colors['bg_light'])
+                prev_card.configure(bg=self.colors['bg_light'])
                 prev_name.configure(fg=self.colors['accent'], bg=self.colors['bg_light'])
                 prev_desc.configure(fg=self.colors['text_secondary'], bg=self.colors['bg_light'])
             
-            frame.configure(bg=self.colors['accent'], relief=tk.RIDGE, bd=2)
+            canvas_widget, card, name_label, desc_label = mode_frames[index]
+            draw_rounded_bg(canvas_widget, self.colors['accent'])
+            card.configure(bg=self.colors['accent'])
             name_label.configure(fg=self.colors['button_text_hover'], bg=self.colors['accent'])
             desc_label.configure(fg=self.colors['button_text_hover'], bg=self.colors['accent'])
             
-            selected_widget[0] = (frame, name_label, desc_label, index)
-            selected_mode[0] = mode
+            selected_widget[0] = (canvas_widget, card, name_label, desc_label, index)
+            selected_mode[0] = modes[index]
             selected_index[0] = index
             update_select_button()
             canvas.yview_moveto(index / len(modes) if len(modes) > 0 else 0)
@@ -141,10 +172,7 @@ class Dialogs:
         def move_selection(delta):
             new_index = selected_index[0] + delta
             if 0 <= new_index < len(modes):
-                selected_index[0] = new_index
-                mode = modes[new_index]
-                frame, name_label, desc_label = mode_frames[new_index]
-                on_single_click(mode, frame, name_label, desc_label, new_index)
+                select_mode_by_index(new_index)
         
         def on_key_press(event):
             if event.keysym == 'Up':
@@ -168,68 +196,92 @@ class Dialogs:
         dialog.bind('<Escape>', on_key_press)
         
         for idx, mode in enumerate(modes):
-            mode_frame = tk.Frame(scrollable_frame, bg=self.colors['bg_light'], relief=tk.FLAT, bd=0, cursor="hand2")
-            mode_frame.pack(fill=tk.X, padx=scale_size(10, self.scale_factor), pady=scale_size(5, self.scale_factor), ipady=scale_size(8, self.scale_factor))
+            card_height = scale_size(70, self.scale_factor)
+            
+            card_canvas = tk.Canvas(
+                scrollable_frame,
+                bg=self.colors['bg_medium'],
+                highlightthickness=0,
+                bd=0,
+                cursor="hand2",
+                height=card_height
+            )
+            card_canvas.pack(fill=tk.X, padx=scale_size(10, self.scale_factor), pady=scale_size(5, self.scale_factor))
+            
+            card = tk.Frame(card_canvas, bg=self.colors['bg_light'], cursor="hand2")
+            card_window = card_canvas.create_window(
+                (card_padx, card_pady),
+                window=card,
+                anchor='nw'
+            )
             
             original_bg = self.colors['bg_light']
-            name_label = tk.Label(mode_frame, text=mode["name"], font=("Segoe UI Variable", font_size_name, "bold"),
-                                fg=self.colors['accent'], bg=original_bg)
-            name_label.pack(anchor='w', padx=scale_size(15, self.scale_factor), pady=(scale_size(8, self.scale_factor), scale_size(2, self.scale_factor)))
-            desc_label = tk.Label(mode_frame, text=mode["desc"], font=("Segoe UI Variable", font_size_desc),
-                                fg=self.colors['text_secondary'], bg=original_bg)
-            desc_label.pack(anchor='w', padx=scale_size(15, self.scale_factor), pady=(0, scale_size(8, self.scale_factor)))
             
-            mode_frames.append((mode_frame, name_label, desc_label))
+            name_label = tk.Label(card, text=mode["name"],
+                                font=("Segoe UI Variable", font_size_name, "bold"),
+                                fg=self.colors['accent'], bg=original_bg, anchor='w')
+            name_label.pack(anchor='w', fill=tk.X)
             
-            if idx == 0:
-                selected_index[0] = 0
-                selected_mode[0] = mode
-                selected_widget[0] = (mode_frame, name_label, desc_label, idx)
-                mode_frame.configure(bg=self.colors['accent'], relief=tk.RIDGE, bd=2)
-                name_label.configure(fg=self.colors['button_text_hover'], bg=self.colors['accent'])
-                desc_label.configure(fg=self.colors['button_text_hover'], bg=self.colors['accent'])
-                update_select_button()
-
-            def make_on_click(m, f, nl, dl, i):
-                return lambda e: on_single_click(m, f, nl, dl, i)
+            desc_label = tk.Label(card, text=mode["desc"],
+                                font=("Segoe UI Variable", font_size_desc),
+                                fg=self.colors['text_secondary'], bg=original_bg,
+                                anchor='w', justify=tk.LEFT)
+            desc_label.pack(anchor='w', fill=tk.X, pady=(scale_size(2, self.scale_factor), 0))
             
-            def make_on_double(m):
-                return lambda e: on_double_click(m)
+            mode_frames.append((card_canvas, card, name_label, desc_label))
             
-            click_handler = make_on_click(mode, mode_frame, name_label, desc_label, idx)
-            double_handler = make_on_double(mode)
+            def make_on_canvas_resize(canvas_widget, window, pad_x, pad_y, orig_bg):
+                def on_canvas_resize(event):
+                    canvas_widget.itemconfig(
+                        window,
+                        width=event.width - pad_x * 2,
+                        height=event.height - pad_y * 2
+                    )
+                    draw_rounded_bg(canvas_widget, orig_bg)
+                return on_canvas_resize
             
-            mode_frame.bind("<Button-1>", click_handler)
-            mode_frame.bind("<Double-Button-1>", double_handler)
-            name_label.bind("<Button-1>", click_handler)
-            name_label.bind("<Double-Button-1>", double_handler)
-            desc_label.bind("<Button-1>", click_handler)
-            desc_label.bind("<Double-Button-1>", double_handler)
+            card_canvas.bind("<Configure>", make_on_canvas_resize(
+                card_canvas, card_window, card_padx, card_pady, original_bg
+            ))
             
-            def make_on_enter(frame, nl, dl, orig_bg, idx_local):
+            def make_on_enter(canvas_widget, card, nl, dl, idx_local):
                 def on_enter_func(e):
-                    if selected_widget[0] and selected_widget[0][3] == idx_local:
+                    if selected_widget[0] and selected_widget[0][4] == idx_local:
                         return
-                    frame.configure(bg=self.colors['bg_light_hover'])
+                    draw_rounded_bg(canvas_widget, self.colors['bg_light_hover'])
+                    card.configure(bg=self.colors['bg_light_hover'])
                     nl.configure(bg=self.colors['bg_light_hover'])
                     dl.configure(bg=self.colors['bg_light_hover'])
                 return on_enter_func
             
-            def make_on_leave(frame, nl, dl, orig_bg, idx_local):
+            def make_on_leave(canvas_widget, card, nl, dl, orig_bg, idx_local):
                 def on_leave_func(e):
-                    if selected_widget[0] and selected_widget[0][3] == idx_local:
+                    if selected_widget[0] and selected_widget[0][4] == idx_local:
                         return
-                    frame.configure(bg=orig_bg)
+                    draw_rounded_bg(canvas_widget, orig_bg)
+                    card.configure(bg=orig_bg)
                     nl.configure(bg=orig_bg)
                     dl.configure(bg=orig_bg)
                 return on_leave_func
             
-            mode_frame.bind("<Enter>", make_on_enter(mode_frame, name_label, desc_label, original_bg, idx))
-            mode_frame.bind("<Leave>", make_on_leave(mode_frame, name_label, desc_label, original_bg, idx))
-            name_label.bind("<Enter>", make_on_enter(mode_frame, name_label, desc_label, original_bg, idx))
-            name_label.bind("<Leave>", make_on_leave(mode_frame, name_label, desc_label, original_bg, idx))
-            desc_label.bind("<Enter>", make_on_enter(mode_frame, name_label, desc_label, original_bg, idx))
-            desc_label.bind("<Leave>", make_on_leave(mode_frame, name_label, desc_label, original_bg, idx))
+            def make_on_click(idx_local):
+                def on_click(e):
+                    select_mode_by_index(idx_local)
+                return on_click
+            
+            def make_on_double(m):
+                return lambda e: on_double_click(m)
+            
+            on_enter_h = make_on_enter(card_canvas, card, name_label, desc_label, idx)
+            on_leave_h = make_on_leave(card_canvas, card, name_label, desc_label, original_bg, idx)
+            on_click_h = make_on_click(idx)
+            on_double_h = make_on_double(mode)
+            
+            for widget in (card_canvas, card, name_label, desc_label):
+                widget.bind("<Enter>", on_enter_h)
+                widget.bind("<Leave>", on_leave_h)
+                widget.bind("<Button-1>", on_click_h)
+                widget.bind("<Double-Button-1>", on_double_h)
         
         bottom_frame = tk.Frame(dialog, bg=self.colors['bg_medium'])
         bottom_frame.pack(fill=tk.X, padx=padx, pady=scale_size(15, self.scale_factor))
@@ -1036,25 +1088,50 @@ class Dialogs:
                 'desc': tr('hosts_template_spotify'),
                 'url': 'https://zapret-launcher.ru/updater/docs/packs/spotify.txt'
             },
-            #{
-            #    'id': 'discord',
-            #    'name': 'Discord',
-            #    'desc': tr('hosts_template_discord'),
-            #    'url': 'https://zapret-launcher.ru/updater/docs/packs/discord.txt'
-            #},
             {
                 'id': 'github',
                 'name': 'GitHub',
                 'desc': tr('hosts_template_github'),
                 'url': 'https://zapret-launcher.ru/updater/docs/packs/github.txt'
+            },
+            {
+                'id': 'discord',
+                'name': 'Discord',
+                'desc': tr('hosts_template_discord'),
+                'url': 'https://zapret-launcher.ru/updater/docs/packs/discord.txt'
             }
         ]
         
-        selected_index = [0]
+        selected_index = [-1]
         selected_template = [None]
         selected_widget = [None]
         template_frames = []
         select_btn = [None]
+        
+        corner_radius = scale_size(10, self.scale_factor)
+        card_padx = scale_size(15, self.scale_factor)
+        card_pady = scale_size(8, self.scale_factor)
+        
+        def draw_rounded_bg(canvas_widget, color):
+            canvas_widget.delete("bg")
+            w = canvas_widget.winfo_width()
+            h = canvas_widget.winfo_height()
+            if w <= 1 or h <= 1:
+                return
+            r = corner_radius
+            points = [
+                r, 0,
+                w - r, 0,
+                w, 0, w, r,
+                w, h - r,
+                w, h, w - r, h,
+                r, h,
+                0, h, 0, h - r,
+                0, r,
+                0, 0
+            ]
+            canvas_widget.create_polygon(points, smooth=True, fill=color, outline='', tags="bg")
+            canvas_widget.tag_lower("bg")
         
         def update_select_button():
             if select_btn[0]:
@@ -1079,19 +1156,25 @@ class Dialogs:
                     )
                     select_btn[0].config(cursor="arrow")
         
-        def on_single_click(template, frame, name_label, desc_label, index):
+        def select_template_by_index(index):
+            if not (0 <= index < len(template_frames)):
+                return
+            
             if selected_widget[0]:
-                prev_frame, prev_name, prev_desc, _ = selected_widget[0]
-                prev_frame.configure(bg=self.colors['bg_light'], relief=tk.FLAT, bd=0)
+                prev_canvas, prev_card, prev_name, prev_desc, prev_idx = selected_widget[0]
+                draw_rounded_bg(prev_canvas, self.colors['bg_light'])
+                prev_card.configure(bg=self.colors['bg_light'])
                 prev_name.configure(fg=self.colors['accent'], bg=self.colors['bg_light'])
                 prev_desc.configure(fg=self.colors['text_secondary'], bg=self.colors['bg_light'])
             
-            frame.configure(bg=self.colors['accent'], relief=tk.RIDGE, bd=2)
+            canvas_widget, card, name_label, desc_label = template_frames[index]
+            draw_rounded_bg(canvas_widget, self.colors['accent'])
+            card.configure(bg=self.colors['accent'])
             name_label.configure(fg=self.colors['button_text_hover'], bg=self.colors['accent'])
             desc_label.configure(fg=self.colors['button_text_hover'], bg=self.colors['accent'])
             
-            selected_widget[0] = (frame, name_label, desc_label, index)
-            selected_template[0] = template
+            selected_widget[0] = (canvas_widget, card, name_label, desc_label, index)
+            selected_template[0] = templates[index]
             selected_index[0] = index
             update_select_button()
             canvas.yview_moveto(index / len(templates) if len(templates) > 0 else 0)
@@ -1109,10 +1192,7 @@ class Dialogs:
         def move_selection(delta):
             new_index = selected_index[0] + delta
             if 0 <= new_index < len(templates):
-                selected_index[0] = new_index
-                template = templates[new_index]
-                frame, name_label, desc_label = template_frames[new_index]
-                on_single_click(template, frame, name_label, desc_label, new_index)
+                select_template_by_index(new_index)
         
         def on_key_press(event):
             if event.keysym == 'Up':
@@ -1243,70 +1323,94 @@ class Dialogs:
                 self.app.log_event("error", f"Error downloading template: {e}")
         
         for idx, template in enumerate(templates):
-            template_frame = tk.Frame(scrollable_frame, bg=self.colors['bg_light'], relief=tk.FLAT, bd=0, cursor="hand2")
-            template_frame.pack(fill=tk.X, padx=scale_size(10, self.scale_factor), pady=scale_size(5, self.scale_factor), ipady=scale_size(8, self.scale_factor))
+            card_canvas = tk.Canvas(
+                scrollable_frame,
+                bg=self.colors['bg_medium'],
+                highlightthickness=0,
+                bd=0,
+                cursor="hand2",
+                height=scale_size(70, self.scale_factor)
+            )
+            card_canvas.pack(fill=tk.X, padx=scale_size(10, self.scale_factor), pady=scale_size(5, self.scale_factor))
+            
+            card = tk.Frame(card_canvas, bg=self.colors['bg_light'], cursor="hand2")
+            card_window = card_canvas.create_window(
+                (card_padx, card_pady),
+                window=card,
+                anchor='nw'
+            )
             
             original_bg = self.colors['bg_light']
-            name_label = tk.Label(template_frame, text=template["name"], font=("Segoe UI Variable", font_size_name, "bold"),
-                                fg=self.colors['accent'], bg=original_bg)
-            name_label.pack(anchor='w', padx=scale_size(15, self.scale_factor), pady=(scale_size(8, self.scale_factor), scale_size(2, self.scale_factor)))
-            desc_label = tk.Label(template_frame, text=template["desc"], font=("Segoe UI Variable", font_size_desc),
-                                fg=self.colors['text_secondary'], bg=original_bg)
-            desc_label.pack(anchor='w', padx=scale_size(15, self.scale_factor), pady=(0, scale_size(8, self.scale_factor)))
             
-            template_frames.append((template_frame, name_label, desc_label))
+            name_label = tk.Label(
+                card, text=template["name"],
+                font=("Segoe UI Variable", font_size_name, "bold"),
+                fg=self.colors['accent'], bg=original_bg, anchor='w'
+            )
+            name_label.pack(anchor='w', fill=tk.X)
             
-            if idx == 0:
-                selected_index[0] = 0
-                selected_template[0] = template
-                selected_widget[0] = (template_frame, name_label, desc_label, idx)
-                template_frame.configure(bg=self.colors['accent'], relief=tk.RIDGE, bd=2)
-                name_label.configure(fg=self.colors['button_text_hover'], bg=self.colors['accent'])
-                desc_label.configure(fg=self.colors['button_text_hover'], bg=self.colors['accent'])
-                update_select_button()
-
-            def make_on_click(t, f, nl, dl, i):
-                return lambda e: on_single_click(t, f, nl, dl, i)
+            desc_label = tk.Label(
+                card, text=template["desc"],
+                font=("Segoe UI Variable", font_size_desc),
+                fg=self.colors['text_secondary'], bg=original_bg,
+                anchor='w', justify=tk.LEFT
+            )
+            desc_label.pack(anchor='w', fill=tk.X, pady=(scale_size(2, self.scale_factor), 0))
             
-            def make_on_double(t):
-                return lambda e: on_double_click(t)
+            template_frames.append((card_canvas, card, name_label, desc_label))
             
-            click_handler = make_on_click(template, template_frame, name_label, desc_label, idx)
-            double_handler = make_on_double(template)
+            def make_on_canvas_resize(canvas_widget, window, pad_x, pad_y, orig_bg):
+                def on_canvas_resize(event):
+                    canvas_widget.itemconfig(
+                        window,
+                        width=event.width - pad_x * 2,
+                        height=event.height - pad_y * 2
+                    )
+                    draw_rounded_bg(canvas_widget, orig_bg)
+                return on_canvas_resize
             
-            template_frame.bind("<Button-1>", click_handler)
-            template_frame.bind("<Double-Button-1>", double_handler)
-            name_label.bind("<Button-1>", click_handler)
-            name_label.bind("<Double-Button-1>", double_handler)
-            desc_label.bind("<Button-1>", click_handler)
-            desc_label.bind("<Double-Button-1>", double_handler)
+            card_canvas.bind("<Configure>", make_on_canvas_resize(
+                card_canvas, card_window, card_padx, card_pady, original_bg
+            ))
             
-            def make_on_enter(frame, nl, dl, orig_bg, idx_local):
+            def make_on_enter(canvas_widget, card, nl, dl, idx_local):
                 def on_enter_func(e):
-                    if selected_widget[0] and selected_widget[0][3] == idx_local:
+                    if selected_widget[0] and selected_widget[0][4] == idx_local:
                         return
-                    
-                    frame.configure(bg=self.colors['bg_light_hover'])
+                    draw_rounded_bg(canvas_widget, self.colors['bg_light_hover'])
+                    card.configure(bg=self.colors['bg_light_hover'])
                     nl.configure(bg=self.colors['bg_light_hover'])
                     dl.configure(bg=self.colors['bg_light_hover'])
                 return on_enter_func
             
-            def make_on_leave(frame, nl, dl, orig_bg, idx_local):
+            def make_on_leave(canvas_widget, card, nl, dl, orig_bg, idx_local):
                 def on_leave_func(e):
-                    if selected_widget[0] and selected_widget[0][3] == idx_local:
+                    if selected_widget[0] and selected_widget[0][4] == idx_local:
                         return
-                    
-                    frame.configure(bg=orig_bg)
+                    draw_rounded_bg(canvas_widget, orig_bg)
+                    card.configure(bg=orig_bg)
                     nl.configure(bg=orig_bg)
                     dl.configure(bg=orig_bg)
                 return on_leave_func
             
-            template_frame.bind("<Enter>", make_on_enter(template_frame, name_label, desc_label, original_bg, idx))
-            template_frame.bind("<Leave>", make_on_leave(template_frame, name_label, desc_label, original_bg, idx))
-            name_label.bind("<Enter>", make_on_enter(template_frame, name_label, desc_label, original_bg, idx))
-            name_label.bind("<Leave>", make_on_leave(template_frame, name_label, desc_label, original_bg, idx))
-            desc_label.bind("<Enter>", make_on_enter(template_frame, name_label, desc_label, original_bg, idx))
-            desc_label.bind("<Leave>", make_on_leave(template_frame, name_label, desc_label, original_bg, idx))
+            def make_on_click(idx_local):
+                def on_click(e):
+                    select_template_by_index(idx_local)
+                return on_click
+            
+            def make_on_double(t):
+                return lambda e: on_double_click(t)
+            
+            on_enter_h = make_on_enter(card_canvas, card, name_label, desc_label, idx)
+            on_leave_h = make_on_leave(card_canvas, card, name_label, desc_label, original_bg, idx)
+            on_click_h = make_on_click(idx)
+            on_double_h = make_on_double(template)
+            
+            for widget in (card_canvas, card, name_label, desc_label):
+                widget.bind("<Enter>", on_enter_h)
+                widget.bind("<Leave>", on_leave_h)
+                widget.bind("<Button-1>", on_click_h)
+                widget.bind("<Double-Button-1>", on_double_h)
         
         bottom_frame = tk.Frame(dialog, bg=self.colors['bg_medium'])
         bottom_frame.pack(fill=tk.X, padx=padx, pady=scale_size(15, self.scale_factor))
@@ -1415,7 +1519,7 @@ class Dialogs:
         list_frame.pack(fill=tk.BOTH, expand=True, padx=scale_size(30, self.scale_factor), pady=scale_size(10, self.scale_factor))
 
         current_lang = self.app.languages.get_current_language()
-        for lang_code, lang_name in self.app.languages.LANGUAGES.items():
+        for lang_code, lang_name in self.app.languages.get_available_languages().items():
             is_active = (lang_code == current_lang)
             btn = RoundedButton(
                 list_frame,
