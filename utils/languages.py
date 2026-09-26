@@ -10,13 +10,11 @@ import json
 from config import CONFIG_FILE
 
 class Languages:
-    LANGUAGES = {
-        'Russian': 'Russian',
-        'English': 'English'
-    }
-    
     TRANSLATIONS = {
         'Russian': {
+            'lang_russian': 'Русский',
+            'lang_english': 'English',
+
             'main_title': 'Главная',
             'main_desc': 'Управление подключением и мониторинг состояния',
             'status': 'Статус:',
@@ -136,6 +134,7 @@ class Languages:
                         
             'settings_title': 'Настройки',
             'settings_desc': 'Настройка интерфейса и параметров работы',
+            'settings_tip_text': 'Здесь настройки лаунчера',
             'settings_theme': 'Оформление',
             'settings_language': 'Язык / Language',
             'settings_integrity': 'Целостность файлов',
@@ -234,7 +233,6 @@ class Languages:
             'error_secret_not_generate': 'Секрет-ключ не сгенерирован',
             'error_telegram_proxy_start': 'Сначала запустите Telegram Proxy режим',
             'error_startup': 'Ошибка запуска',
-            'error_icon_not_found': 'Иконка не найдена',
             'error_unknown_command': 'Неизвестная команда',
             'error_autostart': 'Ошибка настройки автозапуска',
             'error_port_have_words': 'Порт должен содержать число',
@@ -323,6 +321,9 @@ class Languages:
         },
         
         'English': {
+            'lang_russian': 'Русский',
+            'lang_english': 'English',
+
             'main_title': 'Home',
             'main_desc': 'Connection management and monitoring',
             'status': 'Status:',
@@ -442,6 +443,7 @@ class Languages:
                         
             'settings_title': 'Settings',
             'settings_desc': 'Interface and operation settings',
+            'settings_tip_text': 'Launcher settings here',
             'settings_theme': 'Theme',
             'settings_language': 'Language',
             'settings_integrity': 'File integrity',
@@ -638,7 +640,7 @@ class Languages:
                 with open(self._config_file, 'r', encoding='utf-8') as f:
                     data = json.load(f)
                     lang = data.get('language', 'Russian')
-                    if lang in self.LANGUAGES:
+                    if lang in self.TRANSLATIONS:
                         self._current_lang = lang
         except:
             pass
@@ -659,7 +661,7 @@ class Languages:
             pass
     
     def set_language(self, lang_code: str) -> bool:
-        if lang_code in self.LANGUAGES:
+        if lang_code in self.TRANSLATIONS:
             self._current_lang = lang_code
             self.save_language()
             return True
@@ -669,10 +671,10 @@ class Languages:
         return self._current_lang
     
     def get_language_name(self) -> str:
-        return self.LANGUAGES.get(self._current_lang, 'Russian')
+        return self.tr(f'lang_{self._current_lang.lower()}')
     
     def get_available_languages(self) -> dict:
-        return self.LANGUAGES.copy()
+        return {code: self.tr(f'lang_{code.lower()}') for code in self.TRANSLATIONS}
     
     def tr(self, key: str, **kwargs) -> str:
         text = self.TRANSLATIONS.get(self._current_lang, {}).get(key, key)
