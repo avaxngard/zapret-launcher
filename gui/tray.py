@@ -12,6 +12,7 @@ import webbrowser
 from tkinter import messagebox
 import subprocess
 from utils.languages import tr
+import tkinter as tk
 import urllib.request
 import threading
 import re
@@ -101,6 +102,19 @@ class ModernSystemTray:
             
         except:
             return False
+
+    def _is_mode_selector_open(self):
+        try:
+            for w in self.app.root.winfo_children():
+                if isinstance(w, tk.Toplevel) and w.winfo_exists():
+                    try:
+                        if w.title() == tr('mode_select_title'):
+                            return True
+                    except Exception:
+                        continue
+        except Exception:
+            pass
+        return False
         
     def toggle_window_visibility(self):
         try:
@@ -329,10 +343,7 @@ class ModernSystemTray:
             
             try:
                 zapret_version_url = ZAPRET_VERSION_URL
-                req_zapret = urllib.request.Request(
-                    zapret_version_url,
-                    headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
-                )
+                req_zapret = urllib.request.Request(zapret_version_url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
                 with urllib.request.urlopen(req_zapret, timeout=10) as response:
                     latest_zapret = response.read().decode('utf-8').strip()
                 
@@ -548,6 +559,10 @@ class ModernSystemTray:
         if is_connecting or is_disconnecting:
             return
         
+        if self._is_mode_selector_open():
+            self.show_window()
+            return
+        
         if self.app.is_connected:
             self._do_toggle_connection()
         else:
@@ -567,6 +582,10 @@ class ModernSystemTray:
         self.app.toggle_connection()
 
     def _do_toggle_connection(self):
+        if self._is_mode_selector_open():
+            self.show_window()
+            return
+        
         if self.app.is_connected:
             self.app.disconnect()
         else:
