@@ -635,7 +635,7 @@ class ZapretLauncher:
 
         self.dns_cache_ttl = 240
         
-        self.colors = get_theme('Default')
+        self.colors = get_theme('Dark')
         self.setup_scrollbar_style()
         self.root.configure(bg=self.colors['bg_dark'])
 
@@ -684,7 +684,7 @@ class ZapretLauncher:
         proxy_config.secret = self._tg_secret
         
         if not hasattr(self, 'current_theme'):
-            self.current_theme = 'Default'
+            self.current_theme = 'Dark'
         self.apply_theme()
 
         self.dialogs = Dialogs(self)
@@ -888,12 +888,14 @@ class ZapretLauncher:
 
     def _update_window_title_color(self):
         try:
-            if self.current_theme == 'Default':
+            if self.current_theme == 'Dark':
                 header_color = "#0F0F12"
             elif self.current_theme == 'Pink':
                 header_color = "#1E1B2E"
             elif self.current_theme == 'Old':
                 header_color = "#0F172A"
+            elif self.current_theme == 'Contrast':
+                header_color = "#333333"
             else:
                 header_color = "#F0F0F2"
             
@@ -1080,18 +1082,16 @@ class ZapretLauncher:
                     resize_ratio = max(icon_image.width() // icon_size, icon_image.height() // icon_size)
                     if resize_ratio > 1:
                         icon_image = icon_image.subsample(resize_ratio, resize_ratio)
-                icon_label = tk.Label(logo_frame, image=icon_image, bg=self.colors['bg_medium'], cursor="hand2")
+                icon_label = tk.Label(logo_frame, image=icon_image, bg=self.colors['bg_medium'])
                 icon_label.image = icon_image
                 icon_label.pack(expand=True, pady=scale_size(10, self.scale_factor))
-                icon_label.bind("<Button-1>", lambda e: self.show_settings_page())
-                icon_label.bind("<Enter>", lambda e: icon_label.config(cursor="hand2"))
-                icon_label.bind("<Leave>", lambda e: icon_label.config(cursor=""))
             else:
-                raise Exception(tr('error_icon_not_found'))
+                raise Exception("Error: File icon not found")
         except Exception:
             pass
 
         nav_buttons = [
+            (tr('settings_title'), self.show_settings_page),
             (tr('main_title'), self.show_main_page),
             (tr('service_title'), self.show_service_page),
             (tr('lists_title'), self.show_lists_page),
@@ -2315,11 +2315,11 @@ class ZapretLauncher:
                     elif not self._analytics_enabled and self.user_stats._is_active:
                         self.user_stats.stop()
 
-                    saved_theme = data.get('theme', 'Default')
+                    saved_theme = data.get('theme', 'Dark')
                     if saved_theme in get_theme_names():
                         self.current_theme = saved_theme
                     else:
-                        self.current_theme = 'Default'
+                        self.current_theme = 'Dark'
 
                     if not self._tg_secret:
                         self._tg_secret = os.urandom(16).hex()
@@ -2328,7 +2328,7 @@ class ZapretLauncher:
         except Exception as e:
             self.log_event("info", f"Failed to load settings: {e}")
             self._tg_secret = os.urandom(16).hex()
-            self.current_theme = 'Default'
+            self.current_theme = 'Dark'
             self.tg_host = TG_HOST
             self.tg_port = TG_PORT
             self.tg_fake_tls = TG_FAKE_TLS
@@ -2847,7 +2847,7 @@ class ZapretLauncher:
             background=[
                 ('pressed', self.colors['accent']),
                 ('active', self.colors['accent_hover']),
-                ('!active', self.colors['bg_light'])
+                ('!active', self.colors['accent'])
             ],
             arrowcolor=[
                 ('pressed', self.colors['text_primary']),
@@ -3129,12 +3129,12 @@ if __name__ == "__main__":
     except Exception:
         pass
 
-    current_theme = 'Default'
+    current_theme = 'Dark'
     try:
         if CONFIG_FILE.exists():
             with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
                 data = json.load(f)
-                current_theme = data.get('theme', 'Default')
+                current_theme = data.get('theme', 'Dark')
     except Exception:
         pass
     
