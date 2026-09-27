@@ -13,6 +13,7 @@ from gui.widgets import RoundedButton
 from gui.theme import get_theme_names
 from utils.scaling import scale_size
 from utils.languages import tr
+from gui.theme import get_theme_display_name
 import requests
 import psutil
 import threading
@@ -481,7 +482,7 @@ class Dialogs:
         def start_with_strategy():
             selection = strategy_listbox.curselection()
             if not selection:
-                messagebox.showerror(tr('information_desc'), tr('error_select_strategy'))
+                messagebox.showerror(tr('error'), tr('error_select_strategy'))
                 self.app._connecting = False
                 self.app.force_tray_menu_update()
                 return
@@ -1477,7 +1478,7 @@ class Dialogs:
             is_active = (theme_name == self.app.current_theme)
             btn = RoundedButton(
                 list_frame,
-                text=theme_name.capitalize(),
+                text=get_theme_display_name(theme_name),
                 command=lambda t=theme_name, d=dialog: (d.destroy(), self.app.pages.settings_page_obj._change_theme(t)),
                 width=scale_size(340, self.scale_factor),
                 height=scale_size(35, self.scale_factor),
