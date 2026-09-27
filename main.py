@@ -593,6 +593,7 @@ class ZapretLauncher:
         self._hide_duplicates_warning = False
 
         self._auto_update_enabled = True
+        self._auto_update_lists_enabled = False
         self._analytics_enabled = True
 
         self._current_notification = None
@@ -667,6 +668,8 @@ class ZapretLauncher:
         self.languages = get_languages()
         self.load_settings()
 
+        self._initial_page = getattr(self, 'current_page', 'main')
+
         self.tg_proxy = TGProxyServer(host=self.tg_host, port=self.tg_port, fake_tls_domain=self.tg_fake_tls_domain if self.tg_fake_tls else '')
         self.tg_proxy.set_log_callback(self.log_event)
 
@@ -694,7 +697,12 @@ class ZapretLauncher:
         
         self.root.after(500, self.check_lists_for_duplicates)
         self.root.after(500, self.check_initial_status)
-        self.show_main_page()
+        saved_page = getattr(self, '_initial_page', 'main')
+        if saved_page not in ['main', 'service', 'lists', 'traffic', 'hosts', 'logs', 'settings']:
+            saved_page = 'main'
+        
+        self.pages.show_page(saved_page)
+        self.current_page = saved_page
         
         self.tray_icon = ModernSystemTray(self)
         self._updating = False
@@ -812,6 +820,7 @@ class ZapretLauncher:
 
     def on_closing(self):
         try:
+            self.save_settings()
             self.root.withdraw()
         except Exception:
             pass
@@ -2044,7 +2053,7 @@ class ZapretLauncher:
     def connect(self):
         strategy = self.strategy_var.get()
         if not strategy:
-            messagebox.showerror(tr('information_desc'), tr('error_select_strategy'))
+            messagebox.showerror(tr('error'), tr('error_select_strategy'))
             return
         
         self._reset_traffic_history()
@@ -2307,6 +2316,13 @@ class ZapretLauncher:
                     self._hide_duplicates_warning = data.get('hide_duplicates_warning', False)
 
                     self._auto_update_enabled = data.get('auto_update_enabled', True)
+                    self._auto_update_lists_enabled = data.get('auto_update_lists_enabled', False)
+                    saved_page = data.get('current_page', 'main')
+                    if saved_page in ['main', 'service', 'lists', 'traffic', 'hosts', 'logs', 'settings']:
+                        self.current_page = saved_page
+                    else:
+                        self.current_page = 'main'
+
                     self._analytics_enabled = data.get('analytics_enabled', True)
                     self.user_stats.set_enabled(self._analytics_enabled)
                     
@@ -2329,6 +2345,7 @@ class ZapretLauncher:
             self.log_event("info", f"Failed to load settings: {e}")
             self._tg_secret = os.urandom(16).hex()
             self.current_theme = 'Dark'
+            self.current_page = 'main'
             self.tg_host = TG_HOST
             self.tg_port = TG_PORT
             self.tg_fake_tls = TG_FAKE_TLS
@@ -2348,6 +2365,7 @@ class ZapretLauncher:
                 'show_vpn_detection': getattr(self, '_show_vpn_detection', False),
                 'hide_duplicates_warning': getattr(self, '_hide_duplicates_warning', False),
                 'auto_update_enabled': getattr(self, '_auto_update_enabled', True),
+                'auto_update_lists_enabled': getattr(self, '_auto_update_lists_enabled', False),
                 'analytics_enabled': getattr(self, '_analytics_enabled', True),
                 'language': self.languages.get_current_language(),
                 'tg_secret': getattr(self, '_tg_secret', None),
@@ -2356,6 +2374,7 @@ class ZapretLauncher:
                 'tg_port': getattr(self, 'tg_port', TG_PORT),
                 'tg_fake_tls': getattr(self, 'tg_fake_tls', TG_FAKE_TLS),
                 'tg_fake_tls_domain': getattr(self, 'tg_fake_tls_domain', TG_FAKE_TLS_DOMAIN),
+                'current_page': getattr(self, 'current_page', 'main'),
             }
             with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
                 json.dump(settings, f, indent=2, ensure_ascii=False)
@@ -2363,18 +2382,23 @@ class ZapretLauncher:
             pass
 
     def show_main_page(self):
+        self.current_page = "main"
         self.pages.show_page_with_animation("main")
         
     def show_service_page(self):
+        self.current_page = "service"
         self.pages.show_page_with_animation("service")
         
     def show_lists_page(self):
+        self.current_page = "lists"
         self.pages.show_page_with_animation("lists")
 
     def show_settings_page(self):
+        self.current_page = "settings"
         self.pages.show_page_with_animation("settings")
 
     def show_traffic_page(self):
+        self.current_page = "traffic"
         self.pages.show_page_with_animation("traffic")
         self._cached_processes = []
 
@@ -2389,9 +2413,11 @@ class ZapretLauncher:
         self.root.after(100, self.update_traffic_table)
 
     def show_hosts_page(self):
-            self.pages.show_page_with_animation("hosts")
+        self.current_page = "hosts"
+        self.pages.show_page_with_animation("hosts")
 
     def show_logs_page(self):
+        self.current_page = "logs"
         self.pages.show_page_with_animation("logs")
 
     def _reset_traffic_history(self):
