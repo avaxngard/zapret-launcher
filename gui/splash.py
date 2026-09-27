@@ -17,7 +17,6 @@ from utils.update_verifier import is_safe_to_install
 from utils.version import compare_builds, compare_zapret_versions
 from config import APPDATA_DIR, ZAPRET_VERSION_URL, ZAPRET_CORE_URL, ZIP_URL, EXE_URL, BUILDNUMBER_URL, INSTALLER_URL, ICON_PATH
 from config import GITHUB_ZAPRET_VERSION_URL, GITHUB_ZAPRET_CORE_URL, GITHUB_BUILDNUMBER_URL, GITHUB_EXE_URL, GITHUB_ZIP_URL
-from config import GITLAB_ZAPRET_VERSION_URL, GITLAB_ZAPRET_CORE_URL, GITLAB_BUILDNUMBER_URL, GITLAB_EXE_URL, GITLAB_ZIP_URL
 import urllib.request
 import subprocess
 import sys
@@ -35,7 +34,7 @@ import shutil
 import os
 
 class SplashWindow:
-    def __init__(self, theme='Default', current_version=None, current_build=None, zapret_version=None, auto_update_enabled=True):
+    def __init__(self, theme='Dark', current_version=None, current_build=None, zapret_version=None, auto_update_enabled=True):
         self.window = tk.Tk()
         self.colors_name = theme
         self.colors = get_theme(theme)
@@ -83,15 +82,7 @@ class SplashWindow:
                 'exe': GITHUB_EXE_URL,
                 'zip': GITHUB_ZIP_URL,
                 'zapret': GITHUB_ZAPRET_CORE_URL
-            }#,
-            #{
-            #    'name': 'gitlab',
-            #    'zapret_version': GITLAB_ZAPRET_VERSION_URL,
-            #    'build': GITLAB_BUILDNUMBER_URL,
-            #    'exe': GITLAB_EXE_URL,
-            #    'zip': GITLAB_ZIP_URL,
-            #    'zapret': GITLAB_ZAPRET_CORE_URL
-            #}
+            }
         ]
 
         self.current_source_index = 0
@@ -174,12 +165,14 @@ class SplashWindow:
 
     def _update_window_title_color(self):
         try:
-            if self.colors_name == 'Default':
+            if self.colors_name == 'Dark':
                 header_color = "#0F0F12"
             elif self.colors_name == 'Pink':
                 header_color = "#1E1B2E"
             elif self.colors_name == 'Old':
                 header_color = "#0F172A"
+            elif self.colors_name == 'Contrast':
+                header_color = "#333333"
             else:
                 header_color = "#F0F0F2"
             pywinstyles.change_header_color(self.window, header_color)
@@ -214,26 +207,26 @@ class SplashWindow:
             fg=self.colors['text_secondary'],
             bg=self.colors['bg_dark']
         )
-        self.status_label.pack(pady=(0, 6))
+        self.status_label.pack(pady=(0, 4))
         
         self.progress_var = tk.IntVar(value=0)
-        self.progress_bar = ttk.Progressbar(
-            center_container,
-            variable=self.progress_var,
-            length=260,
-            mode='determinate',
-            maximum=100
-        )
-        self.progress_bar.pack()
         
-        style = ttk.Style()
-        style.theme_use('default')
-        style.configure(
-            'TProgressbar',
-            background=self.colors['accent_hover'],
-            troughcolor=self.colors['bg_light'],
-            thickness=6
+        self.progress_width = 260
+        self.progress_height = 6
+        self.progress_radius = 3
+        
+        self.progress_canvas = tk.Canvas(
+            center_container,
+            width=self.progress_width,
+            height=self.progress_height,
+            bg=self.colors['bg_dark'],
+            highlightthickness=0,
+            bd=0
         )
+        self.progress_canvas.pack(pady=(0, 2))
+        
+        self._current_progress = 0
+        self._draw_progress(0)
         
         bottom_frame = tk.Frame(center_container, bg=self.colors['bg_dark'])
         bottom_frame.pack(fill=tk.X, pady=(15, 0))
@@ -296,30 +289,99 @@ class SplashWindow:
                 self._animate_progress()
         except:
             pass
+
+    def _draw_rounded_rect(self, canvas, x1, y1, x2, y2, radius, color):
+        max_radius = min((x2 - x1) // 2, (y2 - y1) // 2)
+        r = min(radius, max_radius)
+        
+        if r <= 0:
+            canvas.create_rectangle(x1, y1, x2, y2, fill=color, outline='')
+            return
+        
+        canvas.create_rectangle(x1 + r, y1, x2 - r, y2, fill=color, outline='')
+        canvas.create_rectangle(x1, y1 + r, x2, y2 - r, fill=color, outline='')
+        canvas.create_oval(x1, y1, x1 + r * 2, y1 + r * 2, fill=color, outline='')
+        canvas.create_oval(x2 - r * 2, y1, x2, y1 + r * 2, fill=color, outline='')
+        canvas.create_oval(x1, y2 - r * 2, x1 + r * 2, y2, fill=color, outline='')
+        canvas.create_oval(x2 - r * 2, y2 - r * 2, x2, y2, fill=color, outline='')
+
+    def _draw_progress(self, value):
+        if not hasattr(self, 'progress_canvas'):
+            return
+        
+        try:
+            if not self.progress_canvas.winfo_exists():
+                return
+        except Exception:
+            return
+        
+        self.progress_canvas.delete("all")
+        
+        w = self.progress_width
+        h = self.progress_height
+        r = self.progress_radius
+        
+        self._draw_rounded_rect(
+            self.progress_canvas,
+            0, 0, w, h,
+            r,
+            self.colors['bg_light']
+        )
+        
+        if value > 0:
+            fill_width = int(w * value / 100)
+            if fill_width < h:
+                fill_width = h
+            
+            self._draw_rounded_rect(
+                self.progress_canvas,
+                0, 0, fill_width, h,
+                r,
+                self.colors['accent_hover']
+            )
     
     def _animate_progress(self):
         if self._is_closing:
             return
         
-        current = self.progress_var.get()
+        current = self._current_progress
         target = self._target_progress
         
-        if abs(current - target) <= 1:
-            if current != target:
-                self.progress_var.set(target)
+        if abs(current - target) <= 0.5:
+            self._current_progress = target
+            self.progress_var.set(int(target))
+            self._draw_progress(target)
             return
         
         if current < target:
             diff = target - current
-            step = max(1, diff // 8)
+            step = max(0.5, diff / 8)
             new_value = min(current + step, target)
         else:
             diff = current - target
-            step = max(1, diff // 8)
+            step = max(0.5, diff / 8)
             new_value = max(current - step, target)
         
-        self.progress_var.set(new_value)
+        self._current_progress = new_value
+        self.progress_var.set(int(new_value))
+        self._draw_progress(new_value)
         self._animation_id = self.window.after(16, self._animate_progress)
+    
+    def _update_progress_bar(self, value):
+        try:
+            if hasattr(self, 'progress_fill') and self.progress_fill.winfo_exists():
+                width_ratio = max(0.0, min(1.0, value / 100.0))
+                self.progress_fill.place_configure(relwidth=width_ratio)
+        except Exception:
+            pass
+    
+    def _update_top_bar(self, value):
+        try:
+            if hasattr(self, 'top_bar_fill') and self.top_bar_fill.winfo_exists():
+                width_ratio = max(0.0, min(1.0, value / 100.0))
+                self.top_bar_fill.place_configure(relwidth=width_ratio)
+        except Exception:
+            pass
     
     def start(self):
         if not self.is_admin():
@@ -375,6 +437,17 @@ class SplashWindow:
         except Exception:
             pass
         return "0.0"
+
+    def _get_auto_update_lists_enabled(self) -> bool:
+        try:
+            config_file = self.appdata_path / "config.json"
+            if config_file.exists():
+                with open(config_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    return bool(data.get('auto_update_lists_enabled', False))
+        except Exception:
+            pass
+        return False
     
     def _get_current_strategy(self):
         try:
@@ -594,17 +667,28 @@ class SplashWindow:
             self._stop_zapret_processes()
             time.sleep(1.5)
             
+            auto_update_lists = self._get_auto_update_lists_enabled()
+            PROTECTED_LISTS = {'list-custom.txt', 'ipset-white-user.txt'}
+
             lists_dir = zapret_dir / "lists"
             if lists_dir.exists():
-                custom_file = lists_dir / "list-custom.txt"
-                if custom_file.exists():
-                    with open(custom_file, 'r', encoding='utf-8') as f:
-                        saved_custom_files['list-custom.txt'] = f.read()
-                
-                white_user_file = lists_dir / "ipset-white-user.txt"
-                if white_user_file.exists():
-                    with open(white_user_file, 'r', encoding='utf-8') as f:
-                        saved_custom_files['ipset-white-user.txt'] = f.read()
+                for file_path in lists_dir.iterdir():
+                    if not file_path.is_file():
+                        continue
+
+                    if file_path.name in PROTECTED_LISTS:
+                        try:
+                            with open(file_path, 'r', encoding='utf-8') as f:
+                                saved_custom_files[file_path.name] = f.read()
+                        except Exception:
+                            pass
+
+                    elif file_path.suffix == '.txt' and not auto_update_lists:
+                        try:
+                            with open(file_path, 'r', encoding='utf-8') as f:
+                                saved_custom_files[file_path.name] = f.read()
+                        except Exception:
+                            pass
             
             if zapret_dir.exists():
                 version_file = zapret_dir / "version.txt"
@@ -644,7 +728,7 @@ class SplashWindow:
                 if lists_dir.exists():
                     for file in lists_dir.iterdir():
                         if file.is_file():
-                            if file.name not in ['list-custom.txt', 'ipset-white-user.txt']:
+                            if file.name not in PROTECTED_LISTS:
                                 file.unlink()
                 
                 utils_dir = zapret_dir / "utils"
@@ -669,10 +753,10 @@ class SplashWindow:
                     if item.is_dir() and item.name == "lists":
                         lists_dest = dest
                         lists_dest.mkdir(parents=True, exist_ok=True)
-                        
+                            
                         for file_in_archive in item.iterdir():
                             if file_in_archive.is_file():
-                                if file_in_archive.name not in ['list-custom.txt', 'ipset-white-user.txt']:
+                                if file_in_archive.name not in PROTECTED_LISTS:
                                     dest_file = lists_dest / file_in_archive.name
                                     shutil.copy2(file_in_archive, dest_file)
                     
@@ -688,7 +772,7 @@ class SplashWindow:
             if saved_custom_files:
                 lists_dest = zapret_dir / "lists"
                 lists_dest.mkdir(parents=True, exist_ok=True)
-                
+                    
                 for filename, content in saved_custom_files.items():
                     dest_file = lists_dest / filename
                     with open(dest_file, 'w', encoding='utf-8') as f:
