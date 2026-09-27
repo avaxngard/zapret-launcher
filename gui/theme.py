@@ -6,9 +6,11 @@
 #
 # Distributed WITHOUT ANY WARRANTY.
 
-def get_theme(theme_name='Default'):
+from utils.languages import tr
+
+def get_theme(theme_name='Dark'):
     themes = {
-        'Default': {
+        'Dark': {
             'accent': '#6c5579',
             'accent_hover': '#e8ccf7',
             'accent_green': '#4ade80',
@@ -95,9 +97,38 @@ def get_theme(theme_name='Default'):
             'button_text_hover': '#FFFFFF',
             
             'separator': '#D0D0D8',
+        },
+        'Contrast': {
+            'accent': '#000000',
+            'accent_hover': '#333333',
+            'accent_green': '#059669',
+            'accent_darkgreen': '#047857',
+            'accent_red': '#DC2626',
+
+            'bg_dark': '#FFFFFF',
+            'bg_medium': "#BBB7B7",
+            'bg_light': "#DAD8D8",
+            'bg_light_hover': "#D8D4D4",
+
+            'text_primary': '#000000',
+            'text_secondary': '#404040',
+
+            'button_bg': '#000000',
+            'button_hover': '#333333',
+            'button_text': '#FFFFFF',
+            'button_text_hover': '#FFFFFF',
+
+            'separator': '#808080',
         }
     }
-    return themes.get(theme_name, themes['Default'])
+    return themes.get(theme_name, themes['Dark'])
 
 def get_theme_names():
-    return ['Default', 'Pink', 'Old', 'Light']
+    return ['Dark', 'Pink', 'Old', 'Light']
+
+def get_theme_display_name(theme_name: str) -> str:
+    key = f"theme_{theme_name.lower()}"
+    translated = tr(key)
+    if translated == key:
+        return theme_name
+    return translated
