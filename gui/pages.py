@@ -19,7 +19,7 @@ class Pages:
     def __init__(self, app):
         self.app = app
         self.colors = app.colors
-        self.current_page = "main"
+        self.current_page = None
         self.pages = {}
 
         self._pending_page = None
@@ -55,14 +55,12 @@ class Pages:
             "logs": self.logs_page,
             "settings": self.settings_page
         }
-        
-        self.main_page.place(x=0, y=0, width=950, height=800)
     
     def show_page(self, page_name):
         if page_name == self.current_page:
             return
         
-        if self.current_page in self.pages:
+        if self.current_page and self.current_page in self.pages:
             self.pages[self.current_page].place_forget()
         
         if page_name in self.pages:
