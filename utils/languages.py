@@ -55,8 +55,12 @@ class Languages:
             'lists_custom': 'Пользовательские',
             'lists_ipset_white': 'IP-исключения',
             'lists_ipset': 'IP-разрешенные',
-            'lists_edit': 'Изменить',
-            'lists_open_folder': 'Папка с листами',
+            'lists_lines_one':  'строка',
+            'lists_lines_few':  'строки',
+            'lists_lines_many': 'строк',
+            'lists_status_clean': 'Файл в порядке',
+            'lists_status_duplicates': 'Дубликаты',
+            'lists_empty': 'Списки не найдены',
             
             'traffic_title': 'Трафик',
             'traffic_desc': 'Мониторинг сетевого трафика по процессам',
@@ -104,6 +108,11 @@ class Languages:
             'logs_desc': 'Журнал событий',
             'logs_clear': 'Очистить',
             'logs_refresh': 'Обновить',
+
+            'theme_dark': 'Темная',
+            'theme_pink': 'Розовая',
+            'theme_old': 'Синяя',
+            'theme_light': 'Светлая',
 
             'splash_check_connecting': 'Подключение к сети..',
             'splash_check_updates': 'Проверяем обновления...',
@@ -158,6 +167,7 @@ class Languages:
             'settings_news_desc': 'Показать новости и сбросить прочитанные',
             'settings_tgproxy_desc': 'Секрет-ключ и инструкция',
             'settings_autoupdate': 'Автообновления',
+            'settings_autoupdate_lists': 'Автообновления листов',
             'settings_analytics': 'Аналитика',
             'settings_button_on': 'Нажмите чтобы выключить',
             'settings_button_off': 'Нажмите чтобы включить',
@@ -219,6 +229,8 @@ class Languages:
 
             'instruction_title_window': 'Инструкция',
             'edit_title_window': 'Редактирование',
+
+            'expected_folder': 'Ожидаемая папка:',
             
             'error_update_check': 'Не удалось проверить обновления',
             'error_no_strategies': 'Нет доступных стратегий zapret',
@@ -364,8 +376,12 @@ class Languages:
             'lists_custom': 'Custom',
             'lists_ipset_white': 'IP-exceptions',
             'lists_ipset': 'IP-allowed',
-            'lists_edit': 'Edit',
-            'lists_open_folder': 'Lists folder',
+            'lists_lines_one':  'line',
+            'lists_lines_few':  'lines',
+            'lists_lines_many': 'lines',
+            'lists_status_clean': 'Ok',
+            'lists_status_duplicates': 'Duplicates',
+            'lists_empty': 'No lists found',
             
             'traffic_title': 'Traffic',
             'traffic_desc': 'Network traffic monitoring by process',
@@ -413,6 +429,11 @@ class Languages:
             'logs_desc': 'Event log',
             'logs_clear': 'Clear',
             'logs_refresh': 'Refresh',
+
+            'theme_dark': 'Dark',
+            'theme_pink': 'Pink',
+            'theme_old': 'Blue',
+            'theme_light': 'Light',
 
             'splash_check_connecting': 'Checking network..',
             'splash_check_updates': 'Checking for updates...',
@@ -467,6 +488,7 @@ class Languages:
             'settings_news_desc': 'Show news and reset read',
             'settings_tgproxy_desc': 'Secret key and instruction',
             'settings_autoupdate': 'Auto update',
+            'settings_autoupdate_lists': 'Auto update lists',
             'settings_analytics': 'Analytics',
             'settings_button_on': 'Click to turn off',
             'settings_button_off': 'Click to turn on',
@@ -527,6 +549,8 @@ class Languages:
 
             'instruction_title_window': 'Instruction',
             'edit_title_window': 'Editing',
+
+            'expected_folder': 'Expected folder:',
             
             'error_update_check': 'Failed to check for updates',
             'error_no_strategies': 'No zapret strategies available',
@@ -704,3 +728,22 @@ def get_current_language() -> str:
 
 def get_available_languages() -> dict:
     return get_languages().get_available_languages()
+
+def plural_ru(n: int, one: str, few: str, many: str) -> str:
+    n = abs(int(n))
+    if n % 10 == 1 and n % 100 != 11:
+        return one
+    if 2 <= n % 10 <= 4 and not (12 <= n % 100 <= 14):
+        return few
+    return many
+
+def plural_en(n: int, one: str, many: str) -> str:
+    return one if abs(int(n)) == 1 else many
+
+def tr_plural(n: int, one_key: str, few_key: str, many_key: str) -> str:
+    lang = get_current_language()
+    if lang == 'Russian':
+        word = plural_ru(n, tr(one_key), tr(few_key), tr(many_key))
+    else:
+        word = plural_en(n, tr(one_key), tr(many_key))
+    return f"{n} {word}"
