@@ -71,10 +71,14 @@ class SettingsPage:
         grid_frame.rowconfigure(2, weight=0)
         grid_frame.rowconfigure(3, weight=0)
         grid_frame.rowconfigure(4, weight=0)
+        grid_frame.rowconfigure(5, weight=0)
 
         self.autoupdate_card = None
         self.autoupdate_name_label = None
         self.autoupdate_desc_label = None
+        self.autoupdate_lists_card = None
+        self.autoupdate_lists_name_label = None
+        self.autoupdate_lists_desc_label = None
         self.analytics_card = None
         self.analytics_name_label = None
         self.analytics_desc_label = None
@@ -130,6 +134,18 @@ class SettingsPage:
             return_widgets=True
         )
 
+        self.autoupdate_lists_card, self.autoupdate_lists_name_label, self.autoupdate_lists_desc_label = self._create_card(
+            grid_frame, row=2, col=1,
+            name=self._get_autoupdate_lists_card_name(),
+            desc=self._get_autoupdate_lists_card_desc(),
+            command=self._toggle_auto_update_lists,
+            padx=(grid_gap // 2, 0), pady=(0, grid_gap // 2),
+            font_size_name=font_size_card_name,
+            font_size_desc=font_size_card_desc,
+            card_padx=card_padx, card_pady=card_pady,
+            return_widgets=True
+        )
+
         self.analytics_card, self.analytics_name_label, self.analytics_desc_label = self._create_card(
             grid_frame, row=1, col=1,
             name=self._get_analytics_card_name(),
@@ -148,17 +164,6 @@ class SettingsPage:
             desc=tr('settings_integrity_desc'),
             command=self._show_integrity_placeholder,
             padx=(0, grid_gap // 2), pady=(0, grid_gap // 2),
-            font_size_name=font_size_card_name,
-            font_size_desc=font_size_card_desc,
-            card_padx=card_padx, card_pady=card_pady
-        )
-
-        self._create_card(
-            grid_frame, row=2, col=1,
-            name=tr('settings_reinstall'),
-            desc=tr('settings_reinstall_desc'),
-            command=self._reinstall_files,
-            padx=(grid_gap // 2, 0), pady=(0, grid_gap // 2),
             font_size_name=font_size_card_name,
             font_size_desc=font_size_card_desc,
             card_padx=card_padx, card_pady=card_pady
@@ -187,7 +192,7 @@ class SettingsPage:
             return_widgets=True
         )
 
-        self.duplicate_detect_card, self.duplicate_detect_name_label, self.duplicate_detect_desc_label = self._create_card(
+        self._create_card(
             grid_frame, row=4, col=0,
             name=self._get_duplicate_detect_card_name(),
             desc=self._get_duplicate_detect_card_desc(),
@@ -195,8 +200,18 @@ class SettingsPage:
             padx=(0, grid_gap // 2), pady=(0, grid_gap // 2),
             font_size_name=font_size_card_name,
             font_size_desc=font_size_card_desc,
-            card_padx=card_padx, card_pady=card_pady,
-            return_widgets=True
+            card_padx=card_padx, card_pady=card_pady
+        )
+
+        self._create_card(
+            grid_frame, row=5, col=0,
+            name=tr('settings_reinstall'),
+            desc=tr('settings_reinstall_desc'),
+            command=self._reinstall_files,
+            padx=(0, grid_gap // 2), pady=(0, grid_gap // 2),
+            font_size_name=font_size_card_name,
+            font_size_desc=font_size_card_desc,
+            card_padx=card_padx, card_pady=card_pady
         )
 
     def _create_card(self, parent, row, col, name, desc, command,
@@ -317,6 +332,15 @@ class SettingsPage:
         else:
             return tr('settings_button_off')
 
+    def _get_autoupdate_lists_card_name(self):
+        return tr('settings_autoupdate_lists')
+
+    def _get_autoupdate_lists_card_desc(self):
+        if getattr(self.app, '_auto_update_lists_enabled', False):
+            return tr('settings_button_on')
+        else:
+            return tr('settings_button_off')
+
     def _get_analytics_card_name(self):
         return tr('settings_analytics')
 
@@ -348,6 +372,10 @@ class SettingsPage:
         if self.autoupdate_desc_label and self.autoupdate_desc_label.winfo_exists():
             self.autoupdate_desc_label.config(text=self._get_autoupdate_card_desc())
 
+    def _refresh_autoupdate_lists_card(self):
+        if self.autoupdate_lists_desc_label and self.autoupdate_lists_desc_label.winfo_exists():
+            self.autoupdate_lists_desc_label.config(text=self._get_autoupdate_lists_card_desc())
+
     def _refresh_analytics_card(self):
         if self.analytics_desc_label and self.analytics_desc_label.winfo_exists():
             self.analytics_desc_label.config(text=self._get_analytics_card_desc())
@@ -362,6 +390,7 @@ class SettingsPage:
 
     def update_buttons(self):
         self._refresh_autoupdate_card()
+        self._refresh_autoupdate_lists_card()
         self._refresh_analytics_card()
         self._refresh_vpn_detect_card()
         self._refresh_duplicate_detect_card()
@@ -375,6 +404,15 @@ class SettingsPage:
     def _toggle_auto_update(self):
         self.app.toggle_auto_update()
         self._refresh_autoupdate_card()
+
+    def _toggle_auto_update_lists(self):
+        current = getattr(self.app, '_auto_update_lists_enabled', False)
+        self.app._auto_update_lists_enabled = not current
+        try:
+            self.app.save_settings()
+        except Exception:
+            pass
+        self._refresh_autoupdate_lists_card()
 
     def _toggle_analytics(self):
         self.app.toggle_analytics()
