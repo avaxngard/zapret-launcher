@@ -214,6 +214,18 @@ class SettingsPage:
             card_padx=card_padx, card_pady=card_pady
         )
 
+        self.update_source_card, self.update_source_name_label, self.update_source_desc_label = self._create_card(
+            grid_frame, row=5, col=1,
+            name=self._get_update_source_card_name(),
+            desc=self._get_update_source_card_desc(),
+            command=self._show_update_source_selector,
+            padx=(grid_gap // 2, 0), pady=(0, grid_gap // 2),
+            font_size_name=font_size_card_name,
+            font_size_desc=font_size_card_desc,
+            card_padx=card_padx, card_pady=card_pady,
+            return_widgets=True
+        )
+
     def _create_card(self, parent, row, col, name, desc, command,
                      padx, pady, font_size_name, font_size_desc,
                      card_padx, card_pady, return_widgets=False):
@@ -368,6 +380,17 @@ class SettingsPage:
         else:
             return tr('settings_button_on')
 
+    def _get_update_source_card_name(self):
+        return tr('settings_update_source')
+
+    def _get_update_source_card_desc(self):
+        current = getattr(self.app, '_update_source', 'main')
+        if current == 'github':
+            return tr('settings_update_source_github')
+        elif current == 'main':
+            return tr('settings_update_source_main')
+        return tr('settings_update_source_main')
+
     def _refresh_autoupdate_card(self):
         if self.autoupdate_desc_label and self.autoupdate_desc_label.winfo_exists():
             self.autoupdate_desc_label.config(text=self._get_autoupdate_card_desc())
@@ -388,12 +411,17 @@ class SettingsPage:
         if self.duplicate_detect_desc_label and self.duplicate_detect_desc_label.winfo_exists():
             self.duplicate_detect_desc_label.config(text=self._get_duplicate_detect_card_desc())
 
+    def _refresh_update_source_card(self):
+        if self.update_source_desc_label and self.update_source_desc_label.winfo_exists():
+            self.update_source_desc_label.config(text=self._get_update_source_card_desc())
+
     def update_buttons(self):
         self._refresh_autoupdate_card()
         self._refresh_autoupdate_lists_card()
         self._refresh_analytics_card()
         self._refresh_vpn_detect_card()
         self._refresh_duplicate_detect_card()
+        self._refresh_update_source_card()
 
     def _update_autoupdate_button(self):
         self._refresh_autoupdate_card()
@@ -434,6 +462,9 @@ class SettingsPage:
 
     def _show_tgproxy_settings(self):
         self.app.dialogs.show_tgproxy_settings()
+
+    def _show_update_source_selector(self):
+        self.app.dialogs.show_update_source_selector()
 
     def _change_theme(self, new_theme):
         current_theme = self.app.current_theme
