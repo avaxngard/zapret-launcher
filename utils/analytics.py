@@ -146,7 +146,8 @@ class UserStats:
                     'autostart_enabled': settings.get('autostart_enabled', False),
                     'current_strategy': settings.get('current_strategy'),
                     'language': settings.get('language', 'Russian'),
-                    'theme': settings.get('theme', 'Default')
+                    'theme': settings.get('theme', 'Dark'),
+                    'update_source': settings.get('update_source', 'main')
                 }
                 
                 if extra_data:
