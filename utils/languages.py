@@ -173,6 +173,11 @@ class Languages:
             'settings_button_off': 'Нажмите чтобы включить',
             'settings_integrity_desc': 'Проверить наличие всех файлов',
             'settings_reinstall_desc': 'Переустановить ядро',
+            'settings_update_source': 'Сервис обновлений',
+            'settings_update_source_title_dialog': 'Выбор сервиса обновлений',
+            'settings_update_source_desc': 'Выберите сервис загрузки обновлений Zapret Launcher',
+            'settings_update_source_main': 'Сайт (Основной)',
+            'settings_update_source_github': 'GitHub (Зеркало)',
             
             'mode_standard': 'Стандартный',
             'mode_standard_desc': 'Обход блокировок через zapret',
@@ -494,6 +499,11 @@ class Languages:
             'settings_button_off': 'Click to turn on',
             'settings_integrity_desc': 'Check all files presence',
             'settings_reinstall_desc': 'Reinstall the core',
+            'settings_update_source': 'Update service',
+            'settings_update_source_title_dialog': 'Change update service',
+            'settings_update_source_desc': 'Select a download service for Zapret Launcher updates',
+            'settings_update_source_main': 'Website (Main)',
+            'settings_update_source_github': 'GitHub (Mirror)',
                         
             'mode_standard': 'Standard',
             'mode_standard_desc': 'Bypass blocks via zapret',
