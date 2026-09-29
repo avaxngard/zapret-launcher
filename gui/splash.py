@@ -16,7 +16,7 @@ from gui.theme import get_theme
 from utils.update_verifier import is_safe_to_install
 from utils.version import compare_builds, compare_zapret_versions
 from config import APPDATA_DIR, ZAPRET_VERSION_URL, ZAPRET_CORE_URL, ZIP_URL, EXE_URL, BUILDNUMBER_URL, INSTALLER_URL, ICON_PATH
-from config import GITHUB_ZAPRET_VERSION_URL, GITHUB_ZAPRET_CORE_URL, GITHUB_BUILDNUMBER_URL, GITHUB_EXE_URL, GITHUB_ZIP_URL
+from config import GITHUB_ZAPRET_VERSION_URL, GITHUB_ZAPRET_CORE_URL, GITHUB_BUILDNUMBER_URL, GITHUB_INSTALLER_URL, GITHUB_EXE_URL, GITHUB_ZIP_URL
 import urllib.request
 import subprocess
 import sys
@@ -34,7 +34,7 @@ import shutil
 import os
 
 class SplashWindow:
-    def __init__(self, theme='Dark', current_version=None, current_build=None, zapret_version=None, auto_update_enabled=True):
+    def __init__(self, theme='Dark', current_version=None, current_build=None, zapret_version=None, auto_update_enabled=True, update_source='main'):
         self.window = tk.Tk()
         self.colors_name = theme
         self.colors = get_theme(theme)
@@ -73,7 +73,8 @@ class SplashWindow:
                 'build': BUILDNUMBER_URL,
                 'exe': EXE_URL,
                 'zip': ZIP_URL,
-                'zapret': ZAPRET_CORE_URL
+                'zapret': ZAPRET_CORE_URL,
+                'installer': INSTALLER_URL
             },
             {
                 'name': 'github',
@@ -81,11 +82,12 @@ class SplashWindow:
                 'build': GITHUB_BUILDNUMBER_URL,
                 'exe': GITHUB_EXE_URL,
                 'zip': GITHUB_ZIP_URL,
-                'zapret': GITHUB_ZAPRET_CORE_URL
+                'zapret': GITHUB_ZAPRET_CORE_URL,
+                'installer': GITHUB_INSTALLER_URL
             }
         ]
 
-        self.current_source_index = 0
+        self.current_source_index = 1 if update_source == 'github' else 0
         
         self.appdata_path = APPDATA_DIR
         self.internal_path = self.appdata_path / "_internal"
@@ -242,13 +244,14 @@ class SplashWindow:
         manual_label.pack()
         
         def on_enter_manual(event):
-            manual_label.config(fg=self.colors['accent'])
+            manual_label.config(fg=self.colors['accent_hover'])
         
         def on_leave_manual(event):
             manual_label.config(fg=self.colors['text_secondary'])
         
         def on_click_manual(event):
-            webbrowser.open(INSTALLER_URL)
+            url = self._get_url('installer') or INSTALLER_URL
+            webbrowser.open(url)
         
         manual_label.bind("<Enter>", on_enter_manual)
         manual_label.bind("<Leave>", on_leave_manual)
@@ -503,15 +506,19 @@ class SplashWindow:
         if result:
             self._run_strategy_and_restart(strategy)
         else:
-            sys.exit(0)
+            self._launch_main_app()
 
     def _download_file_with_fallback(self, url_type, dest_path, start_progress=0, end_progress=100):
-        for i in range(self.current_source_index, len(self.sources)):
+        order = list(range(self.current_source_index, len(self.sources))) + \
+                list(range(0, self.current_source_index))
+        
+        for i in order:
             try:
                 source_name = self._get_source_name(i)
-                if i > self.current_source_index:
+                if i != self.current_source_index:
                     current_source = source_name
-                    self.after(0, lambda: self.update_status(tr('splash_trying_source').format(source=current_source), start_progress))
+                    self.after(0, lambda: self.update_status(
+                        tr('splash_trying_source').format(source=current_source), start_progress))
                 
                 url = self.sources[i][url_type]
                 result = self._download_with_progress(url, dest_path, start_progress, end_progress)
@@ -526,15 +533,19 @@ class SplashWindow:
         self.update_status(tr('splash_check_updates'), 30)
         
         def check():
-            for source_index in range(len(self.sources)):
+            order = list(range(self.current_source_index, len(self.sources))) + \
+                    list(range(0, self.current_source_index))
+            
+            for source_index in order:
                 try:
                     source_name = self._get_source_name(source_index)
                     current_source = source_name
                     
-                    if source_index == 0:
+                    if source_index == self.current_source_index:
                         self.after(0, lambda: self.update_status(tr('splash_check_updates'), 30))
                     else:
-                        self.after(0, lambda: self.update_status(tr('splash_trying_source').format(source=current_source), 30))
+                        self.after(0, lambda: self.update_status(
+                            tr('splash_trying_source').format(source=current_source), 30))
                     
                     url = self.sources[source_index]['build']
                     req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0', 'Connection': 'close'})
@@ -545,7 +556,6 @@ class SplashWindow:
                         need_launcher_update = compare_builds(current_build, latest_build)
                         
                         self.current_source_index = source_index
-                        
                         need_zapret_update, latest_zapret = self._check_zapret_core_update()
                         
                         if need_launcher_update:
@@ -558,21 +568,25 @@ class SplashWindow:
                         return
                         
                 except Exception as e:
-                    if source_index < len(self.sources) - 1:
+                    if source_index != order[-1]:
                         continue
                     else:
                         self.after(0, lambda: self.update_status(tr('splash_all_sources_failed'), 100))
                         self.after(1000, self._launch_main_app)
                         return
-            
+        
         threading.Thread(target=check, daemon=True).start()
 
     def _check_zapret_core_update(self) -> tuple[bool, Optional[str]]:
-        for source_index in range(self.current_source_index, len(self.sources)):
+        order = list(range(self.current_source_index, len(self.sources))) + \
+                list(range(0, self.current_source_index))
+        
+        for source_index in order:
             try:
                 source_name = self._get_source_name(source_index)
-                if source_index > self.current_source_index:
-                    self.after(0, lambda: self.update_status(tr('splash_trying_zapret_source').format(source=source_name), 40))
+                if source_index != self.current_source_index:
+                    self.after(0, lambda: self.update_status(
+                        tr('splash_trying_zapret_source').format(source=source_name), 40))
                 
                 url = self.sources[source_index]['zapret_version']
                 req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0', 'Connection': 'close'})
@@ -842,27 +856,54 @@ class SplashWindow:
                 time.sleep(2)
                 
                 bat_content = f'''@echo off
-                timeout /t 2 /nobreak > nul
+                setlocal enableextensions
                 set "source_exe={temp_exe}"
                 set "target_exe={current_exe}"
                 set "temp_zip={temp_zip}"
+                set "target_dir={current_exe.parent}"
+                set "internal_dir={current_exe.parent}\\_internal"
+                set "old_internal={current_exe.parent}\\_internal_old_%RANDOM%"
+
+                :wait_exe
+                2>nul (>>"%target_exe%" call ) && (
+                    timeout /t 1 /nobreak > nul
+                    goto wait_exe
+                )
 
                 :retry_copy
-                copy /y "%source_exe%" "%target_exe%" > nul
+                copy /y /b "%source_exe%" "%target_exe%" > nul 2>&1
                 if errorlevel 1 (
-                    echo Waiting for file...
                     timeout /t 1 /nobreak > nul
                     goto retry_copy
                 )
 
-                if exist "%source_exe%" del /f /q "%source_exe%" 2>nul
-                if exist "%temp_zip%" del /f /q "%temp_zip%" 2>nul
+                :retry_move
+                if exist "%internal_dir%" (
+                    move "%internal_dir%" "%old_internal%" > nul 2>&1
+                    if errorlevel 1 (
+                        timeout /t 1 /nobreak > nul
+                        goto retry_move
+                    )
+                )
 
-                timeout /t 1 /nobreak > nul
+                if exist "%temp_zip%" (
+                    tar -xf "%temp_zip%" -C "%target_dir%" 2>nul
+                )
+
+                if not exist "%internal_dir%" (
+                    mkdir "%internal_dir%" >nul 2>&1
+                    for /d %%D in ("%target_dir%\\*") do (
+                        if /I not "%%~nxD"=="_internal" if /I not "%%~nxD"=="_internal_old_*" (
+                            robocopy "%%D" "%internal_dir%\\%%~nxD" /E /MOVE /NFL /NDL /NJH /NJS /NC /NS > nul
+                        )
+                    )
+                )
+
+                start "" /b cmd /c "timeout /t 2 /nobreak > nul & rmdir /s /q "%old_internal%" 2>nul & del /f /q "%source_exe%" 2>nul & del /f /q "%temp_zip%" 2>nul & del /f /q "%~f0" 2>nul"
                 start "" "%target_exe%"
-                del /f /q "%~f0" 2>nul
+                exit
                 '''
-                
+                                
                 with open(update_script, 'w', encoding='utf-8') as f:
                     f.write(bat_content)
                 
