@@ -1603,3 +1603,90 @@ class Dialogs:
         dialog.protocol("WM_DELETE_WINDOW", dialog.destroy)
         dialog.bind('<Escape>', lambda e: dialog.destroy())
         dialog.deiconify()
+
+    def show_update_source_selector(self):
+        dialog = tk.Toplevel(self.app.root)
+        dialog.title(tr('settings_update_source_title_dialog'))
+        dialog.resizable(False, False)
+        dialog.configure(bg=self.colors['bg_medium'])
+        dialog.transient(self.app.root)
+        dialog.grab_set()
+        dialog.focus_force()
+
+        w, h = scale_size(400, self.scale_factor), scale_size(200, self.scale_factor)
+        x = self.app.root.winfo_x() + (self.app.root.winfo_width() // 2) - w // 2
+        y = self.app.root.winfo_y() + (self.app.root.winfo_height() // 2) - h // 2
+        dialog.geometry(f"{w}x{h}+{x}+{y}")
+        dialog.withdraw()
+        self.app.set_dialog_header_color(dialog)
+        dialog.update_idletasks()
+
+        tk.Label(
+            dialog,
+            text=tr('settings_update_source'),
+            font=("Segoe UI Variable", scale_size(16, self.scale_factor), "bold"),
+            fg=self.colors['text_primary'],
+            bg=self.colors['bg_medium']
+        ).pack(pady=(scale_size(15, self.scale_factor), scale_size(3, self.scale_factor)))
+
+        tk.Label(
+            dialog,
+            text=tr('settings_update_source_desc'),
+            font=("Segoe UI Variable", scale_size(9, self.scale_factor)),
+            fg=self.colors['text_secondary'],
+            bg=self.colors['bg_medium'],
+            wraplength=scale_size(360, self.scale_factor),
+            justify=tk.CENTER
+        ).pack(pady=(0, scale_size(12, self.scale_factor)))
+
+        list_frame = tk.Frame(dialog, bg=self.colors['bg_medium'])
+        list_frame.pack(fill=tk.BOTH, expand=True,
+                        padx=scale_size(30, self.scale_factor),
+                        pady=scale_size(5, self.scale_factor))
+
+        sources = [
+            ('main',   tr('settings_update_source_main')),
+            ('github', tr('settings_update_source_github')),
+        ]
+
+        current_source = getattr(self.app, '_update_source', 'main')
+
+        for source_id, source_label in sources:
+            is_active = (source_id == current_source)
+            btn = RoundedButton(
+                list_frame,
+                text=source_label,
+                command=lambda sid=source_id, d=dialog: self._apply_update_source(sid, d),
+                width=scale_size(340, self.scale_factor),
+                height=scale_size(35, self.scale_factor),
+                bg=self.colors['accent'] if is_active else self.colors['bg_light'],
+                fg=self.colors['button_text_hover'] if is_active else self.colors['text_secondary'],
+                hover_fg=self.colors['button_text_hover'],
+                font=("Segoe UI Variable", scale_size(11, self.scale_factor)),
+                corner_radius=scale_size(8, self.scale_factor),
+                hover_color=self.colors['accent'],
+                theme_name=self.current_theme
+            )
+            btn.pack(pady=scale_size(4, self.scale_factor))
+
+        dialog.protocol("WM_DELETE_WINDOW", dialog.destroy)
+        dialog.bind('<Escape>', lambda e: dialog.destroy())
+        dialog.deiconify()
+
+    def _apply_update_source(self, source_id: str, dialog):
+        current = getattr(self.app, '_update_source', 'main')
+        if source_id != current:
+            self.app._update_source = source_id
+            try:
+                self.app.save_settings()
+            except Exception:
+                pass
+
+            try:
+                page = self.app.pages.settings_page_obj
+                if hasattr(page, '_refresh_update_source_card'):
+                    page._refresh_update_source_card()
+            except Exception:
+                pass
+
+        dialog.destroy()
