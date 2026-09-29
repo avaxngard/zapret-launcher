@@ -49,6 +49,7 @@ import ctypes
 import urllib.request
 from utils.version import compare_builds, compare_zapret_versions
 from utils.scaling import set_dpi_awareness, get_optimal_scale, scale_size
+from utils.stats import StatsMonitor
 from config import CURRENT_VERSION, CURRENT_BUILD, APPDATA_DIR, CONFIG_FILE, ZAPRET_CORE_DIR, LISTS_DIR, TG_HOST, TG_PORT, TG_FAKE_TLS, TG_FAKE_TLS_DOMAIN, BUILDNUMBER_URL, ZAPRET_VERSION_URL, VERSION_URL, ICON_PATH, PNG_ICON_PATH, CHECK_UPDATES_INTERVAL
 
 def is_admin():
@@ -65,138 +66,6 @@ def run_as_admin():
     except Exception as e:
         messagebox.showerror(tr('error_no_connection'), f"{tr('error_admin_required')}: {e}")
     sys.exit(0)
-
-class StatsMonitor:
-    def __init__(self):
-        self.session_start = None
-        self.total_up_bytes = 0
-        self.total_down_bytes = 0
-        self.connection_count = 0
-        self.disconnection_count = 0
-        self.is_monitoring = False
-        self._monitor_thread = None
-        self._cache_duration = 1.0
-        self._cached_stats = (0, 0)
-        self._cached_time = 0
-        self._stop_event = None
-        self.last_up = 0
-        self.last_down = 0
-        self.current_speed_up = 0
-        self.current_speed_down = 0
-        self.last_update_time = 0
-        
-    def start_session(self):
-        self.session_start = time.time()
-        self.connection_count += 1
-        self.is_monitoring = True
-        self.total_up_bytes = 0
-        self.total_down_bytes = 0
-        self.current_speed_up = 0
-        self.current_speed_down = 0
-        self.last_up, self.last_down = self._get_network_stats()
-        self.last_update_time = time.time()
-        
-    def end_session(self):
-        self.is_monitoring = False
-        self.disconnection_count += 1
-        
-    def _get_network_stats(self):
-        current_time = time.time()
-        if hasattr(self, '_cached_stats') and hasattr(self, '_cached_time'):
-            if current_time - self._cached_time < self._cache_duration:
-                return self._cached_stats
-        
-        try:
-            counters = psutil.net_io_counters()
-            recv = counters.bytes_recv
-            sent = counters.bytes_sent
-            self._cached_stats = (recv, sent)
-            self._cached_time = current_time
-            return recv, sent
-        except Exception:
-            return 0, 0
-    
-    def update_speed(self):
-        if not self.is_monitoring:
-            return
-        
-        try:
-            current_up, current_down = self._get_network_stats()
-            now = time.time()
-            time_diff = now - self.last_update_time
-            
-            if current_up > self.last_up:
-                self.total_up_bytes += (current_up - self.last_up)
-            if current_down > self.last_down:
-                self.total_down_bytes += (current_down - self.last_down)
-            
-            if time_diff >= 0.5:
-                up_diff = max(0, current_up - self.last_up)
-                down_diff = max(0, current_down - self.last_down)
-                
-                raw_speed_up = up_diff / time_diff if time_diff > 0 else 0
-                raw_speed_down = down_diff / time_diff if time_diff > 0 else 0
-                
-                self.current_speed_up = self.current_speed_up * 0.7 + raw_speed_up * 0.3
-                self.current_speed_down = self.current_speed_down * 0.7 + raw_speed_down * 0.3
-                
-                self.last_update_time = now
-            
-            self.last_up = current_up
-            self.last_down = current_down
-            
-            self.current_speed_up = max(0, self.current_speed_up)
-            self.current_speed_down = max(0, self.current_speed_down)
-        except:
-            pass
-    
-    def get_session_time(self):
-        if self.session_start:
-            return time.time() - self.session_start
-        return 0
-    
-    def format_time(self, seconds):
-        hours = int(seconds // 3600)
-        minutes = int((seconds % 3600) // 60)
-        secs = int(seconds % 60)
-        return f"{hours:02d}:{minutes:02d}:{secs:02d}"
-    
-    def format_bytes(self, bytes_val):
-        if bytes_val < 1024:
-            return f"{bytes_val} B"
-        elif bytes_val < 1024 * 1024:
-            return f"{bytes_val / 1024:.1f} KB"
-        elif bytes_val < 1024 * 1024 * 1024:
-            return f"{bytes_val / (1024 * 1024):.1f} MB"
-        else:
-            return f"{bytes_val / (1024 * 1024 * 1024):.2f} GB"
-    
-    def format_speed(self, bytes_per_sec):
-        if bytes_per_sec < 1024:
-            return f"{bytes_per_sec:.0f} B/s"
-        elif bytes_per_sec < 1024 * 1024:
-            return f"{bytes_per_sec / 1024:.1f} KB/s"
-        else:
-            return f"{bytes_per_sec / (1024 * 1024):.1f} MB/s"
-    
-    def get_stats_dict(self):
-        self.update_speed()
-        return {
-            'session_time': self.get_session_time(),
-            'session_time_str': self.format_time(self.get_session_time()),
-            'up_bytes': self.total_up_bytes,
-            'up_str': self.format_bytes(self.total_up_bytes),
-            'down_bytes': self.total_down_bytes,
-            'down_str': self.format_bytes(self.total_down_bytes),
-            'total_bytes': self.total_up_bytes + self.total_down_bytes,
-            'total_str': self.format_bytes(self.total_up_bytes + self.total_down_bytes),
-            'connections': self.connection_count,
-            'disconnections': self.disconnection_count,
-            'speed_up': self.current_speed_up,
-            'speed_up_str': self.format_speed(self.current_speed_up),
-            'speed_down': self.current_speed_down,
-            'speed_down_str': self.format_speed(self.current_speed_down),
-        }
 
 class TGProxyServer:
     def __init__(self, host=None, port=None, fake_tls_domain=None):
@@ -502,15 +371,110 @@ class ZapretCore:
         
     def run_service_command(self, command: str) -> Tuple[bool, str]:
         if command == "game_filter":
-            self.game_filter_enabled = not self.game_filter_enabled
-            return True, f"Game Filter: {tr('status_enabled') if self.game_filter_enabled else tr('status_disabled')}\n{tr('restart_zapret')}"
-            
+            return self._toggle_game_filter()
+
         elif command == "ipset_filter":
-            modes = ["none", "loaded", "any"]
-            current_idx = modes.index(self.ipset_filter_mode)
-            self.ipset_filter_mode = modes[(current_idx + 1) % 3]
-            return True, f"IPSet Filter: {self.ipset_filter_mode}\n{tr('restart_zapret')}"
+            return self._toggle_ipset_filter()
+
         return False, f"{tr('error_unknown_command')} {command}"
+
+    def _read_game_filter_mode(self) -> str:
+        filter_file = self.utils_dir / "game_filter.enabled"
+        if not filter_file.exists():
+            return "disabled"
+        try:
+            for line in filter_file.read_text(encoding='utf-8').splitlines():
+                if line.lower().startswith("mode="):
+                    mode = line.split("=", 1)[1].strip().lower()
+                    if mode in ("disabled", "all", "tcp", "udp"):
+                        return mode
+        except Exception:
+            pass
+        return "disabled"
+
+    def _write_game_filter_mode(self, mode: str):
+        filter_file = self.utils_dir / "game_filter.enabled"
+        filter_file.parent.mkdir(parents=True, exist_ok=True)
+
+        tcp_range = "1024-65535"
+        udp_range = "1024-65535"
+
+        if filter_file.exists():
+            try:
+                for line in filter_file.read_text(encoding='utf-8').splitlines():
+                    low = line.lower().strip()
+                    if low.startswith("tcp="):
+                        val = line.split("=", 1)[1].strip()
+                        if val:
+                            tcp_range = val
+                    elif low.startswith("udp="):
+                        val = line.split("=", 1)[1].strip()
+                        if val:
+                            udp_range = val
+            except Exception:
+                pass
+
+        content = f"mode={mode}\ntcp={tcp_range}\nudp={udp_range}\n"
+        filter_file.write_text(content, encoding='utf-8')
+
+    def _toggle_game_filter(self) -> Tuple[bool, str]:
+        try:
+            current = self._read_game_filter_mode()
+            cycle = ["disabled", "all", "tcp", "udp"]
+            next_mode = cycle[(cycle.index(current) + 1) % 4]
+            self._write_game_filter_mode(next_mode)
+            self.game_filter_enabled = (next_mode != "disabled")
+            return True, f"Game Filter: {next_mode}\n{tr('restart_zapret')}"
+        except Exception as e:
+            return False, f"Game Filter error: {e}"
+
+    def _read_ipset_state(self) -> str:
+        list_file = self.lists_dir / "ipset-all.txt"
+        if not list_file.exists():
+            return "any"
+        try:
+            content = list_file.read_text(encoding='utf-8', errors='ignore').strip()
+            if not content:
+                return "any"
+            if "203.0.113.113/32" in content:
+                return "none"
+            return "loaded"
+        except Exception:
+            return "any"
+
+    def _apply_ipset_mode(self, mode: str):
+        list_file = self.lists_dir / "ipset-all.txt"
+        backup_file = self.lists_dir / "ipset-all.txt.backup"
+
+        if mode == "none":
+            if list_file.exists():
+                if backup_file.exists():
+                    backup_file.unlink()
+                list_file.rename(backup_file)
+            list_file.write_text("203.0.113.113/32\n", encoding='utf-8')
+
+        elif mode == "any":
+            list_file.write_text("", encoding='utf-8')
+
+        elif mode == "loaded":
+            if not backup_file.exists():
+                raise FileNotFoundError("No .backup to restore")
+            if list_file.exists():
+                list_file.unlink()
+            backup_file.rename(list_file)
+
+    def _toggle_ipset_filter(self) -> Tuple[bool, str]:
+        try:
+            current = self._read_ipset_state()
+            cycle = ["loaded", "none", "any"]
+            next_mode = cycle[(cycle.index(current) + 1) % 3]
+            self._apply_ipset_mode(next_mode)
+            self.ipset_filter_mode = next_mode
+            return True, f"IPSet Filter: {next_mode}\n{tr('restart_zapret')}"
+        except FileNotFoundError:
+            return False, "No backup to restore. Update list first"
+        except Exception as e:
+            return False, f"IPSet error: {e}"
 
 class ZapretLauncher:
     def __init__(self, root):
@@ -595,6 +559,7 @@ class ZapretLauncher:
         self._auto_update_enabled = True
         self._auto_update_lists_enabled = False
         self._analytics_enabled = True
+        self._update_source = 'main'
 
         self._current_notification = None
 
@@ -2318,6 +2283,7 @@ class ZapretLauncher:
                     self._auto_update_enabled = data.get('auto_update_enabled', True)
                     self._auto_update_lists_enabled = data.get('auto_update_lists_enabled', False)
                     saved_page = data.get('current_page', 'main')
+                    self._update_source = data.get('update_source', 'main')
                     if saved_page in ['main', 'service', 'lists', 'traffic', 'hosts', 'logs', 'settings']:
                         self.current_page = saved_page
                     else:
@@ -2353,6 +2319,7 @@ class ZapretLauncher:
             self._show_vpn_detection = True
             self._hide_duplicates_warning = False
             self._analytics_enabled = False
+            self._update_source = 'main'
             self.user_stats.set_enabled(False)
             self.user_stats.start()
 
@@ -2375,6 +2342,7 @@ class ZapretLauncher:
                 'tg_fake_tls': getattr(self, 'tg_fake_tls', TG_FAKE_TLS),
                 'tg_fake_tls_domain': getattr(self, 'tg_fake_tls_domain', TG_FAKE_TLS_DOMAIN),
                 'current_page': getattr(self, 'current_page', 'main'),
+                'update_source': getattr(self, '_update_source', 'main'),
             }
             with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
                 json.dump(settings, f, indent=2, ensure_ascii=False)
@@ -3165,11 +3133,13 @@ if __name__ == "__main__":
         pass
     
     auto_update_enabled = True
+    update_source = 'main'
     try:
         if CONFIG_FILE.exists():
             with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
                 data = json.load(f)
                 auto_update_enabled = data.get('auto_update_enabled', True)
+                update_source = data.get('update_source', 'main')
     except Exception:
         pass
     
@@ -3181,7 +3151,8 @@ if __name__ == "__main__":
             current_version=CURRENT_VERSION, 
             current_build=CURRENT_BUILD,
             zapret_version=zapret_version,
-            auto_update_enabled=auto_update_enabled
+            auto_update_enabled=auto_update_enabled,
+            update_source=update_source
         )
         splash.start()
     else:
