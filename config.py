@@ -47,6 +47,7 @@ GITHUB_BUILDNUMBER_URL = "https://raw.githubusercontent.com/avaxngard/zapret-lau
 GITHUB_VERSION_URL = "https://raw.githubusercontent.com/avaxngard/zapret-launcher/main/docs/version.txt"
 GITHUB_EXE_URL = "https://raw.githubusercontent.com/avaxngard/zapret-launcher/main/updater/updater.exe"
 GITHUB_ZIP_URL = "https://raw.githubusercontent.com/avaxngard/zapret-launcher/main/updater/_internal.zip"
+GITHUB_INSTALLER_URL = "https://raw.githubusercontent.com/avaxngard/zapret-launcher/main/updater/zapret-launcher-installer-win10.exe"
 
 # GitLab
 GITLAB_ZAPRET_VERSION_URL = "https://gitlab.com/tweenkrage/zapret-launcher/-/raw/main/docs/zapret_version.txt"
