@@ -7,6 +7,18 @@
 # Distributed WITHOUT ANY WARRANTY.
 
 import tkinter as tk
+import traceback
+from config import APPDATA_DIR
+from datetime import datetime
+
+def _log_widget(msg: str):
+    try:
+        log_file = APPDATA_DIR / "logs.txt"
+        ts = datetime.now().strftime("%d.%m.%Y %H:%M:%S")
+        with open(log_file, 'a', encoding='utf-8') as f:
+            f.write(f"[{ts}] [widgets] {msg}\n")
+    except Exception:
+        pass
 
 def _get_parent_bg(parent):
     try:
@@ -41,30 +53,42 @@ class ModernSwitch(tk.Canvas):
 
     def on_click(self, event):
         self.state = not self.state
-        if self.state:
-            self.coords(self.slider, self.width-self.height+4, 4, self.width-4, self.height-4)
-            self.itemconfig(self.bg_rect, fill=self.active_color)
-        else:
-            self.coords(self.slider, 4, 4, self.height-4, self.height-4)
-            self.itemconfig(self.bg_rect, fill=self.inactive_color)
+        try:
+            if self.state:
+                self.coords(self.slider, self.width-self.height+4, 4, self.width-4, self.height-4)
+                self.itemconfig(self.bg_rect, fill=self.active_color)
+            else:
+                self.coords(self.slider, 4, 4, self.height-4, self.height-4)
+                self.itemconfig(self.bg_rect, fill=self.inactive_color)
+        except Exception as e:
+            _log_widget(f"ModernSwitch.on_click draw error: {e}")
+
         if self.command:
-            self.command(self.state)
+            try:
+                self.command(self.state)
+            except Exception as e:
+                _log_widget(
+                    f"ModernSwitch command error (state={self.state}): {e}\n"
+                    f"{traceback.format_exc()}"
+                )
 
 class RoundedButton(tk.Canvas):
     def __init__(self, parent, text, command, width=200, height=40, 
             bg='#2D2D35', fg='#FFFFFF',
             font=("Inter", 11, "bold"), 
             corner_radius=8, hover_color=None, hover_fg='#FFFFFF',
-            animation_steps=5, theme_name='Default'):
+            animation_steps=5, theme_name='Dark'):
         super().__init__(parent, width=width, height=height, highlightthickness=0, bg=_get_parent_bg(parent), cursor="hand2")
         
         if hover_color is None:
-            if theme_name == 'Default':
+            if theme_name == 'Dark':
                 self.hover_color = '#9b78a8'
             elif theme_name == 'Pink':
                 self.hover_color = '#DD72A9'
             elif theme_name == 'Old':
                 self.hover_color = '#60A5FA'
+            elif theme_name == 'Contrast':
+                self.hover_color = '#333333'
             else:
                 self.hover_color = '#9b78a8'
 
@@ -126,8 +150,8 @@ class RoundedButton(tk.Canvas):
         if cmd and self.enabled:
             try:
                 cmd()
-            except Exception:
-                pass
+            except Exception as e:
+                _log_widget(f"RoundedButton command error: {e}\n{traceback.format_exc()}")
 
     def _animate_press(self, step):
         if step >= self.animation_steps:
@@ -232,11 +256,13 @@ class RoundedButton(tk.Canvas):
     def update_theme(self, theme_name):
             self.theme_name = theme_name
             
-            if theme_name == 'Default':
+            if theme_name == 'Dark':
                 self.hover_color = '#9b78a8'
             elif theme_name == 'Pink':
                 self.hover_color = '#DD72A9'
             elif theme_name == 'Old':
                 self.hover_color = '#60A5FA'
+            elif theme_name == 'Contrast':
+                self.hover_color = '#333333'
             else:
                 self.hover_color = '#9b78a8'
