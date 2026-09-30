@@ -38,7 +38,7 @@ def create_manifest():
     name="ZapretLauncher"
     type="win32"
   />
-  <description>Zapret Launcher - Bypass restrictions</description>
+  <description>Zapret Launcher - DPI Bypass</description>
   <application xmlns="urn:schemas-microsoft-com:asm.v3">
     <windowsSettings>
       <dpiAware xmlns="http://schemas.microsoft.com/SMI/2005/WindowsSettings">true</dpiAware>
