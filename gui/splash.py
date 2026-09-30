@@ -7,9 +7,10 @@
 # Distributed WITHOUT ANY WARRANTY.
 
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import messagebox
 from pathlib import Path
 from PIL import Image, ImageTk
+from datetime import datetime
 from utils.languages import tr
 from typing import Optional
 from gui.theme import get_theme
@@ -34,6 +35,15 @@ import shutil
 import os
 
 class SplashWindow:
+    def _log(self, ctx: str, e: Exception):
+        try:
+            log_file = APPDATA_DIR / "logs.txt"
+            ts = datetime.now().strftime("%d.%m.%Y %H:%M:%S")
+            with open(log_file, 'a', encoding='utf-8') as f:
+                f.write(f"[{ts}] [splash] {ctx}: {e}\n")
+        except Exception:
+            pass
+
     def __init__(self, theme='Dark', current_version=None, current_build=None, zapret_version=None, auto_update_enabled=True, update_source='main'):
         self.window = tk.Tk()
         self.colors_name = theme
@@ -148,17 +158,17 @@ class SplashWindow:
 
         try:
             icon_paths = [ICON_PATH]
-            
             for path in icon_paths:
                 if path and path.exists():
                     try:
                         if path.suffix.lower() == '.ico':
                             self.window.iconbitmap(default=str(path))
                             break
-                    except:
+                    except Exception as e:
+                        self._log("iconbitmap", e)
                         continue
-        except Exception:
-            pass
+        except Exception as e:
+            self._log("setup_window", e)
 
         self.window.attributes('-alpha', 0.0)
         self._update_window_title_color()
@@ -181,8 +191,8 @@ class SplashWindow:
             
         except ImportError:
             pass
-        except Exception:
-            pass
+        except Exception as e:
+            self._log("_update_window_title_color", e)
         
     def center_window(self):
         screen_width = self.window.winfo_screenwidth()
@@ -290,8 +300,8 @@ class SplashWindow:
                         pass
                     self._animation_id = None
                 self._animate_progress()
-        except:
-            pass
+        except Exception as e:
+            self._log("update_status", e)
 
     def _draw_rounded_rect(self, canvas, x1, y1, x2, y2, radius, color):
         max_radius = min((x2 - x1) // 2, (y2 - y1) // 2)
@@ -315,7 +325,8 @@ class SplashWindow:
         try:
             if not self.progress_canvas.winfo_exists():
                 return
-        except Exception:
+        except Exception as e:
+            self._log("_draw_progress winfo", e)
             return
         
         self.progress_canvas.delete("all")
@@ -375,16 +386,16 @@ class SplashWindow:
             if hasattr(self, 'progress_fill') and self.progress_fill.winfo_exists():
                 width_ratio = max(0.0, min(1.0, value / 100.0))
                 self.progress_fill.place_configure(relwidth=width_ratio)
-        except Exception:
-            pass
+        except Exception as e:
+            self._log("_update_progress_bar", e)
     
     def _update_top_bar(self, value):
         try:
             if hasattr(self, 'top_bar_fill') and self.top_bar_fill.winfo_exists():
                 width_ratio = max(0.0, min(1.0, value / 100.0))
                 self.top_bar_fill.place_configure(relwidth=width_ratio)
-        except Exception:
-            pass
+        except Exception as e:
+            self._log("_update_top_bar", e)
     
     def start(self):
         if not self.is_admin():
@@ -426,8 +437,8 @@ class SplashWindow:
                         return True
                 except (psutil.NoSuchProcess, psutil.AccessDenied):
                     continue
-        except Exception:
-            pass
+        except Exception as e:
+            self._log("_is_winws_running", e)
         return False
         
     def get_current_zapret_version(self):
@@ -437,8 +448,8 @@ class SplashWindow:
                 version = version_file.read_text(encoding='utf-8').strip()
                 version = re.sub(r'[^\d\.a-z]', '', version.lower())
                 return version
-        except Exception:
-            pass
+        except Exception as e:
+            self._log("get_current_zapret_version", e)
         return "0.0"
 
     def _get_auto_update_lists_enabled(self) -> bool:
@@ -448,8 +459,8 @@ class SplashWindow:
                 with open(config_file, 'r', encoding='utf-8') as f:
                     data = json.load(f)
                     return bool(data.get('auto_update_lists_enabled', False))
-        except Exception:
-            pass
+        except Exception as e:
+            self._log("_get_auto_update_lists_enabled", e)
         return False
     
     def _get_current_strategy(self):
@@ -461,8 +472,8 @@ class SplashWindow:
                     strategy = data.get('current_strategy')
                     if strategy and strategy != "null" and strategy.strip():
                         return strategy
-        except Exception:
-            pass
+        except Exception as e:
+            self._log("_get_current_strategy", e)
         return None
     
     def _run_strategy_and_restart(self, strategy=None):
@@ -486,8 +497,8 @@ class SplashWindow:
             subprocess.Popen([exe_path], creationflags=subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS)
             self.close()
             
-        except Exception:
-            pass
+        except Exception as e:
+            self._log("_run_strategy_and_restart", e)
 
     def _show_no_internet_dialog(self):
         strategy = self._get_current_strategy()
@@ -596,7 +607,8 @@ class SplashWindow:
                     current_version = self.get_current_zapret_version()
                     need_update = compare_zapret_versions(current_version, latest_version)
                     return need_update, latest_version
-            except Exception:
+            except Exception as e:
+                self._log(f"_check_zapret_core_update source={source_index}", e)
                 continue
         return False, None
 
@@ -635,7 +647,8 @@ class SplashWindow:
                                     self._target_progress = progress
                                     self._animate_progress()
             return True
-        except Exception:
+        except Exception as e:
+            self._log("_download_with_progress", e)
             return False
         
     def _update_zapret_core_only(self, new_version):
@@ -656,7 +669,8 @@ class SplashWindow:
                     self.after(0, lambda: self.update_status(tr('splash_update_error'), 100))
                     self.after(2000, self._launch_main_app)
                     
-            except Exception:
+            except Exception as e:
+                self._log("_update_zapret_core_only", e)
                 self.after(0, lambda: self.update_status(tr('splash_update_error'), 100))
                 self.after(2000, self._launch_main_app)
         
@@ -694,15 +708,15 @@ class SplashWindow:
                         try:
                             with open(file_path, 'r', encoding='utf-8') as f:
                                 saved_custom_files[file_path.name] = f.read()
-                        except Exception:
-                            pass
+                        except Exception as e:
+                            self._log(f"save list {file_path.name}", e)
 
                     elif file_path.suffix == '.txt' and not auto_update_lists:
                         try:
                             with open(file_path, 'r', encoding='utf-8') as f:
                                 saved_custom_files[file_path.name] = f.read()
-                        except Exception:
-                            pass
+                        except Exception as e:
+                            self._log(f"save list {file_path.name}", e)
             
             if zapret_dir.exists():
                 version_file = zapret_dir / "version.txt"
@@ -798,7 +812,8 @@ class SplashWindow:
             self.update_status(None, 98)
             return True
             
-        except Exception:
+        except Exception as e:
+            self._log("_download_zapret_core", e)
             return False
         finally:
             if temp_zip and temp_zip.exists():
@@ -837,8 +852,8 @@ class SplashWindow:
                     ))
                     try:
                         temp_exe.unlink()
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        self._log("unlink temp_exe (unsafe)", e)
                     self.after(3000, self._launch_main_app)
                     return
 
@@ -916,7 +931,8 @@ class SplashWindow:
                 self.after(100, self.close)
                 sys.exit(0)
                                 
-            except Exception:
+            except Exception as e:
+                self._log("_download_and_update", e)
                 self.after(0, lambda: self.update_status(tr('splash_update_error'), 100))
                 self.after(2000, self._launch_main_app)
                 
@@ -945,8 +961,8 @@ class SplashWindow:
             subprocess.run(['taskkill', '/F', '/IM', 'winws.exe'], capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW)
             subprocess.run(['sc', 'stop', 'WinDivert'], capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW)
             time.sleep(1)
-        except:
-            pass
+        except Exception as e:
+            self._log("_stop_zapret_processes", e)
 
     def cleanup_old_internal_folders(self):
         try:
@@ -975,8 +991,8 @@ class SplashWindow:
                             pass
                     except Exception:
                         pass
-        except Exception:
-            pass
+        except Exception as e:
+            self._log("cleanup_old_internal_folders", e)
 
     def _launch_main_app(self):
         if self._is_closing:
@@ -998,19 +1014,19 @@ class SplashWindow:
                 exe_path = sys.argv[0]
             
             subprocess.Popen([exe_path, '--no-splash', '--from-splash'], creationflags=subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS)
-        except Exception:
-            pass
+        except Exception as e:
+            self._log("_launch_main_app", e)
     
     def close(self):
         if self._animation_id:
             try:
                 self.window.after_cancel(self._animation_id)
-            except:
-                pass
+            except Exception as e:
+                self._log("close after_cancel", e)
             self._animation_id = None
         
         self._is_closing = True
         try:
             self.window.destroy()
-        except:
-            pass
+        except Exception as e:
+            self._log("close destroy", e)
