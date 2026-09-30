@@ -208,6 +208,13 @@ class ListEditor:
             info_label.configure(bg=app.colors['bg_medium'], fg=app.colors['text_secondary'])
         info_label.pack(side=tk.LEFT, padx=10)
 
+    def _log(self, ctx: str, e: Exception):
+        try:
+            if self.app and hasattr(self.app, 'log_event'):
+                self.app.log_event("info", f"{ctx}: {e}")
+        except Exception:
+            pass
+
     def toggle_search(self, event=None):
         if self.search_visible:
             self.search_frame.pack_forget()
@@ -269,36 +276,36 @@ class ListEditor:
             pywinstyles.change_header_color(dialog, header_color)
         except ImportError:
             pass
-        except Exception:
-            pass
+        except Exception as e:
+            self._log("_set_dialog_header_color", e)
         
     def copy_text(self, event=None):
         try:
             self.text_area.event_generate("<<Copy>>")
             return "break"
-        except:
-            pass
+        except Exception as e:
+            self._log("copy_text", e)
             
     def paste_text(self, event=None):
         try:
             self.text_area.event_generate("<<Paste>>")
             return "break"
-        except:
-            pass
+        except Exception as e:
+            self._log("paste_text", e)
             
     def cut_text(self, event=None):
         try:
             self.text_area.event_generate("<<Cut>>")
             return "break"
-        except:
-            pass
+        except Exception as e:
+            self._log("cut_text", e)
             
     def select_all(self, event=None):
         try:
             self.text_area.tag_add("sel", "1.0", "end")
             return "break"
-        except:
-            pass
+        except Exception as e:
+            self._log("select_all", e)
         
     def load_content(self):
         try:
@@ -309,8 +316,7 @@ class ListEditor:
             else:
                 self.text_area.insert('1.0', "# File not found. Create content and save")
         except Exception as e:
-            if self.app:
-                self.app.log_event("info", f"Failed to upload file: {os.path.basename(self.file_path)}")
+            self._log(f"load_content {os.path.basename(self.file_path)}", e)
             messagebox.showerror(tr('error_no_connection'), f"{tr('editor_error_load')}: {str(e)}")
     
     def save_content(self):
@@ -323,4 +329,5 @@ class ListEditor:
             messagebox.showinfo(tr('success'), f"{tr('editor_success')}\n{tr('restart_zapret')}")
             self.dialog.destroy()
         except Exception as e:
+            self._log(f"save_content {os.path.basename(self.file_path)}", e)
             messagebox.showerror(tr('error_no_connection'), f"{tr('editor_error_save')}: {str(e)}")
