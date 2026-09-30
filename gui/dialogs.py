@@ -25,6 +25,12 @@ class Dialogs:
         self.colors = app.colors
         self.current_theme = app.current_theme
         self.scale_factor = getattr(app, 'scale_factor', 1.0)
+
+    def _log(self, ctx: str, e: Exception):
+        try:
+            self.app.log_event("info", f"{ctx}: {e}")
+        except Exception:
+            pass
         
     def show_mode_selector(self):
         dialog_width = scale_size(500, self.scale_factor)
@@ -416,8 +422,8 @@ class Dialogs:
                 strategy_listbox.selection_set(idx)
                 strategy_listbox.see(idx)
                 desc_label.config(text=f"{tr('selected')} {self.app.current_strategy}")
-            except ValueError:
-                pass
+            except ValueError as e:
+                self._log("show_strategy_selector", e)
         
         def move_selection(delta):
             nonlocal is_processing
@@ -548,7 +554,11 @@ class Dialogs:
                 self.app.start_stats_monitoring()
                 
                 if hasattr(self.app, 'mode_label') and self.app.mode_label:
-                    self.app.mode_label.config(text=mode["name"], fg=self.colors['accent_green'])
+                    strategy_display = self.app.zapret.get_strategy_display_name(selected_strategy)
+                    self.app.mode_label.config(
+                        text=f"{mode['name']} ({strategy_display})",
+                        fg=self.colors['accent_green']
+                    )
                 self.app.update_status(f"{tr('status_connected')}", self.colors['accent_green'])
                 self.app.update_ui_state()
                 self.app.save_settings()
@@ -559,8 +569,8 @@ class Dialogs:
                 try:
                     if hasattr(self.app, 'user_stats'):
                         self.app.user_stats.on_connect(mode["name"])
-                except Exception:
-                    pass
+                except Exception as e:
+                    self._log("user_stats.on_connect", e)
 
                 self.app._connecting = False
                 self.app.force_tray_menu_update()
@@ -980,8 +990,8 @@ class Dialogs:
                                     killed_count += 1
                             except (psutil.NoSuchProcess, psutil.AccessDenied):
                                 continue
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        self._log(f"kill vpn proc {proc_name}", e)
 
             if callback:
                 self.app.root.after(100, callback)
@@ -1679,14 +1689,14 @@ class Dialogs:
             self.app._update_source = source_id
             try:
                 self.app.save_settings()
-            except Exception:
-                pass
+            except Exception as e:
+                self._log("_apply_update_source save", e)
 
             try:
                 page = self.app.pages.settings_page_obj
                 if hasattr(page, '_refresh_update_source_card'):
                     page._refresh_update_source_card()
-            except Exception:
-                pass
+            except Exception as e:
+                self._log("_apply_update_source refresh", e)
 
         dialog.destroy()
