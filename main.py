@@ -287,8 +287,8 @@ class ZapretCore:
         if resource_version_file.exists():
             try:
                 return resource_version_file.read_text(encoding='utf-8').strip()
-            except Exception:
-                pass
+            except Exception as e:
+                self.log_event("info", f"get_resource_core_version: {e}")
         return "0.0"
             
     def load_strategies(self):
@@ -301,10 +301,15 @@ class ZapretCore:
         self.available_strategies.sort()
         
     def get_strategy_display_name(self, filename: str) -> str:
-        name = filename.replace(".bat", "").replace("general", "")
+        name = filename.replace(".bat", "").replace("general", "").strip()
         if not name:
             return "GENERAL"
-        return name.strip()
+
+        if name.startswith("(") and name.endswith(")"):
+            name = name[1:-1].strip()
+
+        name = re.sub(r'([A-Za-z]+)(\d+)', r'\1 \2', name)
+        return name
         
     def run_strategy(self, strategy_name: str) -> Tuple[bool, str]:
         if not is_admin():
@@ -365,8 +370,8 @@ class ZapretCore:
             try:
                 if proc.info['name'] and proc.info['name'].lower() == 'winws.exe':
                     return True
-            except:
-                pass
+            except Exception as e:
+                self.log_event("info", f"is_winws_running: {e}")
         return False
         
     def run_service_command(self, command: str) -> Tuple[bool, str]:
@@ -388,8 +393,8 @@ class ZapretCore:
                     mode = line.split("=", 1)[1].strip().lower()
                     if mode in ("disabled", "all", "tcp", "udp"):
                         return mode
-        except Exception:
-            pass
+        except Exception as e:
+            self.log_event("info", f"_read_game_filter_mode: {e}")
         return "disabled"
 
     def _write_game_filter_mode(self, mode: str):
@@ -411,8 +416,8 @@ class ZapretCore:
                         val = line.split("=", 1)[1].strip()
                         if val:
                             udp_range = val
-            except Exception:
-                pass
+            except Exception as e:
+                self.log_event("info", f"_write_game_filter_mode: {e}")
 
         content = f"mode={mode}\ntcp={tcp_range}\nudp={udp_range}\n"
         filter_file.write_text(content, encoding='utf-8')
@@ -439,7 +444,8 @@ class ZapretCore:
             if "203.0.113.113/32" in content:
                 return "none"
             return "loaded"
-        except Exception:
+        except Exception as e:
+            self.log_event("info", f"_read_ipset_state: {e}")
             return "any"
 
     def _apply_ipset_mode(self, mode: str):
@@ -523,7 +529,6 @@ class ZapretLauncher:
         self.root.geometry(f"{self.window_width}x{self.window_height}")
         self.root.resizable(False, False)
         self.center_window()
-        self._update_window_title_color()
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
 
         self.stats = StatsMonitor()
@@ -633,6 +638,8 @@ class ZapretLauncher:
         self.languages = get_languages()
         self.load_settings()
 
+        self._update_window_title_color()
+
         self._initial_page = getattr(self, 'current_page', 'main')
 
         self.tg_proxy = TGProxyServer(host=self.tg_host, port=self.tg_port, fake_tls_domain=self.tg_fake_tls_domain if self.tg_fake_tls else '')
@@ -735,11 +742,11 @@ class ZapretLauncher:
                             pywinstyles.change_header_color(child, dialog_header_color)
                     except tk.TclError:
                         continue
-                    except Exception:
-                        pass
-                        
-        except Exception:
-            pass
+                    except Exception as e:
+                        self.log_event("info", f"update_all_window_headers: {e}")
+
+        except Exception as e:
+            self.log_event("info", f"update_all_window_headers outer: {e}")
 
     def ensure_custom_list_file(self):
         try:
@@ -752,8 +759,8 @@ class ZapretLauncher:
                 with open(custom_list_path, 'w', encoding='utf-8') as f:
                     f.write("zapret-launcher.ru\n")
                 
-        except Exception:
-            pass
+        except Exception as e:
+            self.log_event("info", f"ensure_custom_list_file: {e}")
 
     def ensure_ipset_user_list_file(self):
             try:
@@ -766,15 +773,15 @@ class ZapretLauncher:
                     with open(ipset_user_path, 'w', encoding='utf-8') as f:
                         f.write("203.0.113.113/32\n")
                     
-            except Exception:
-                pass
+            except Exception as e:
+                self.log_event("info", f"ensure_ipset_user_list_file: {e}")
 
     def update_tray_icon_state(self):
         if hasattr(self, 'tray_icon') and self.tray_icon:
             try:
                 self.tray_icon.update_icon_state()
-            except Exception:
-                pass
+            except Exception as e:
+                self.log_event("info", f"update_tray_icon_state: {e}")
 
     def center_window(self):
         screen_width = self.root.winfo_screenwidth()
@@ -787,8 +794,8 @@ class ZapretLauncher:
         try:
             self.save_settings()
             self.root.withdraw()
-        except Exception:
-            pass
+        except Exception as e:
+            self.log_event("info", f"on_closing: {e}")
 
     def update_ui_colors(self):
         def update_widget(widget):
@@ -809,8 +816,8 @@ class ZapretLauncher:
                 
                 for child in widget.winfo_children():
                     update_widget(child)
-            except:
-                pass
+            except Exception as e:
+                self.log_event("info", f"update_ui_colors: {e}")
         update_widget(self.root)
 
     def update_nav_buttons_colors(self):
@@ -857,8 +864,8 @@ class ZapretLauncher:
             pywinstyles.change_header_color(dialog, header_color)
         except ImportError:
             pass
-        except Exception:
-            pass
+        except Exception as e:
+            self.log_event("info", f"set_dialog_header_color: {e}")
 
     def _update_window_title_color(self):
         try:
@@ -877,15 +884,15 @@ class ZapretLauncher:
             
         except ImportError:
             pass
-        except Exception:
-            pass
+        except Exception as e:
+            self.log_event("info", f"_update_window_title_color: {e}")
 
     def _stop_windivert_before_restart(self):
         try:
             subprocess.run(['sc', 'stop', 'WinDivert'], capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW)
             time.sleep(0.5)
-        except:
-            pass
+        except Exception as e:
+            self.log_event("info", f"_stop_windivert_before_restart: {e}")
 
     def quit_from_tray(self):
         self.save_settings()
@@ -899,8 +906,8 @@ class ZapretLauncher:
         try:
             self.root.quit()
             self.root.destroy()
-        except:
-            pass
+        except Exception as e:
+            self.log_event("info", f"quit_from_tray: {e}")
         sys.exit(0)
 
     def _hide_all_dialogs(self):
@@ -909,10 +916,10 @@ class ZapretLauncher:
                 if isinstance(child, tk.Toplevel) and child.winfo_exists():
                     try:
                         child.withdraw()
-                    except:
-                        pass
-        except Exception:
-            pass
+                    except Exception as e:
+                        self.log_event("info", f"hide dialog: {e}")
+        except Exception as e:
+            self.log_event("info", f"_hide_all_dialogs: {e}")
 
     def _show_all_dialogs(self):
         try:
@@ -926,23 +933,23 @@ class ZapretLauncher:
                         
                         try:
                             pywinstyles.change_header_color(child, dialog_header_color)
-                        except:
-                            pass
+                        except Exception as e:
+                            self.log_event("info", f"change header: {e}")
                         
                         child.deiconify()
                         child.lift()
                         child.focus_force()
-                    except:
-                        pass
-        except Exception:
-            pass
+                    except Exception as e:
+                        self.log_event("info", f"show dialog: {e}")
+        except Exception as e:
+            self.log_event("info", f"_show_all_dialogs: {e}")
 
     def force_tray_menu_update(self):
         if hasattr(self, 'tray_icon') and self.tray_icon:
             try:
                 self.tray_icon.force_update_menu()
-            except Exception:
-                pass
+            except Exception as e:
+                self.log_event("info", f"force_tray_menu_update: {e}")
 
     def setup_ui(self):
         self.main_container = tk.Frame(self.root, bg=self.colors['bg_dark'])
@@ -986,8 +993,8 @@ class ZapretLauncher:
         try:
             if hasattr(self, 'user_stats'):
                 self.user_stats.on_launch()
-        except Exception:
-            pass
+        except Exception as e:
+            self.log_event("info", f"_schedule_heartbeat: {e}")
 
         self.root.after(300000, self._schedule_heartbeat)
 
@@ -1840,16 +1847,16 @@ class ZapretLauncher:
             
             notification.bind("<Button-1>", on_notification_click)
             
-        except Exception:
-            pass
+        except Exception as e:
+            self.log_event("info", f"show_notification: {e}")
 
     def load_settings_data(self):
         try:
             if CONFIG_FILE.exists():
                 with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
                     return json.load(f)
-        except:
-            pass
+        except Exception as e:
+            self.log_event("info", f"load_settings_data: {e}")
         return {}
 
     def set_autostart(self, enabled):
@@ -1918,13 +1925,13 @@ class ZapretLauncher:
             elif hasattr(widget, 'configure') and 'bg' in widget.keys():
                 try:
                     widget.configure(bg=self.colors['bg_dark'])
-                except:
-                    pass
+                except Exception as e:
+                    self.log_event("info", f"update_widget_colors configure: {e}")
             
             for child in widget.winfo_children():
                 self.update_widget_colors(child)
-        except Exception:
-            pass
+        except Exception as e:
+            self.log_event("info", f"update_widget_colors: {e}")
 
     def toggle_autostart(self):
         current = self.check_autostart_status()
@@ -1936,7 +1943,7 @@ class ZapretLauncher:
             else:
                 messagebox.showinfo(tr('information_desc'), tr('autostart_disabled'))
         else:
-            messagebox.showerror(tr('error_occurred'), tr('autostart_error'))
+            messagebox.showerror(tr('error'), tr('autostart_error'))
 
     def open_website(self):
         webbrowser.open("https://zapret-launcher.ru")
@@ -1949,7 +1956,15 @@ class ZapretLauncher:
             self.is_connected = True
 
             if hasattr(self, 'mode_label') and self.mode_label:
-                self.mode_label.config(text=tr('mode_standard'), fg=self.colors['accent_green'])
+                strategy = getattr(self, 'current_strategy', None)
+                if strategy:
+                    strategy_display = self.zapret.get_strategy_display_name(strategy)
+                    self.mode_label.config(
+                        text=f"{tr('mode_standard')} ({strategy_display})",
+                        fg=self.colors['accent_green']
+                    )
+                else:
+                    self.mode_label.config(text=tr('mode_standard'), fg=self.colors['accent_green'])
 
             self.update_status(tr('status_connected'), self.colors['accent_green'])
             self.update_ui_state()
@@ -1993,8 +2008,8 @@ class ZapretLauncher:
         if hasattr(self, 'tray_icon') and self.tray_icon:
             try:
                 self.tray_icon.update_menu()
-            except:
-                pass
+            except Exception as e:
+                self.log_event("info", f"update_ui_state tray: {e}")
 
     def toggle_connection(self):
         if self._connecting:
@@ -2011,7 +2026,8 @@ class ZapretLauncher:
                     if hasattr(self, 'tray_icon') and self.tray_icon:
                         self.tray_icon.force_update_menu()
 
-            except Exception:
+            except Exception as e:
+                self.log_event("info", f"toggle_connection: {e}")
                 self._connecting = False
         self.root.after(500, self.update_tray_icon_state)
 
@@ -2208,9 +2224,9 @@ class ZapretLauncher:
             self.update_tray_icon_state()
             self._disconnecting = False
             self.force_tray_menu_update()
-        except Exception:
+        except Exception as e:
+            self.log_event("info", f"finish_disconnect: {e}")
             self._disconnecting = False
-            pass
 
     def run_service_command(self, command):
         if not check_zapret_folder():
@@ -2252,7 +2268,11 @@ class ZapretLauncher:
                 return 'RUNNING' not in verify.stdout
             else:
                 return True   
-        except (subprocess.TimeoutExpired, Exception):
+        except subprocess.TimeoutExpired as e:
+            self.log_event("info", f"_stop_windivert_service timeout: {e}")
+            return False
+        except Exception as e:
+            self.log_event("info", f"_stop_windivert_service: {e}")
             return False
 
     def load_settings(self):
@@ -2346,8 +2366,8 @@ class ZapretLauncher:
             }
             with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
                 json.dump(settings, f, indent=2, ensure_ascii=False)
-        except:
-            pass
+        except Exception as e:
+            self.log_event("info", f"save_settings: {e}")
 
     def show_main_page(self):
         self.current_page = "main"
@@ -2529,7 +2549,8 @@ class ZapretLauncher:
                             else:
                                 bytes_sent = 0
                                 bytes_recv = 0
-                        except:
+                        except Exception as e:
+                            self.log_event("info", f"io_counters: {e}")
                             bytes_sent = 0
                             bytes_recv = 0
                         
@@ -2671,8 +2692,8 @@ class ZapretLauncher:
                 return float(speed_str.replace(' MB/s', '')) * 1024 * 1024
             elif 'B/s' in speed_str:
                 return float(speed_str.replace(' B/s', ''))
-        except:
-            pass
+        except Exception as e:
+            self.log_event("info", f"_parse_speed_value({speed_str}): {e}")
         return 0
     
     def _format_bytes(self, bytes_val):
@@ -2721,7 +2742,8 @@ class ZapretLauncher:
             self.hostname_cache[ip] = ip
             self.hostname_cache_time[ip] = current_time
             return ip
-        except Exception:
+        except Exception as e:
+            self.log_event("info", f"_get_hostname({ip}): {e}")
             return ip
         finally:
             socket.setdefaulttimeout(None)
@@ -2976,7 +2998,13 @@ class ZapretLauncher:
         
     def _on_combined_start_success(self, mode_name):
         if hasattr(self, 'mode_label') and self.mode_label:
-            self.mode_label.config(text=mode_name, fg=self.colors['accent_green'])
+            strategy = getattr(self, 'current_strategy', None)
+            if strategy:
+                strategy_display = self.zapret.get_strategy_display_name(strategy)
+                display_text = f"{mode_name} ({strategy_display})"
+            else:
+                display_text = mode_name
+            self.mode_label.config(text=display_text, fg=self.colors['accent_green'])
 
         self.update_status(f"{tr('status_connected')}", self.colors['accent_green'])
         self.update_ui_state()
