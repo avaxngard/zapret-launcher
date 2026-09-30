@@ -192,7 +192,7 @@ class SettingsPage:
             return_widgets=True
         )
 
-        self._create_card(
+        self.duplicate_detect_card, self.duplicate_detect_name_label, self.duplicate_detect_desc_label = self._create_card(
             grid_frame, row=4, col=0,
             name=self._get_duplicate_detect_card_name(),
             desc=self._get_duplicate_detect_card_desc(),
@@ -200,7 +200,8 @@ class SettingsPage:
             padx=(0, grid_gap // 2), pady=(0, grid_gap // 2),
             font_size_name=font_size_card_name,
             font_size_desc=font_size_card_desc,
-            card_padx=card_padx, card_pady=card_pady
+            card_padx=card_padx, card_pady=card_pady,
+            return_widgets=True
         )
 
         self._create_card(
