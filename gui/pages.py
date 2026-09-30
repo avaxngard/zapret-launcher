@@ -60,12 +60,18 @@ class Pages:
         if page_name == self.current_page:
             return
         
-        if self.current_page and self.current_page in self.pages:
-            self.pages[self.current_page].place_forget()
-        
-        if page_name in self.pages:
-            self.pages[page_name].place(x=0, y=0, relwidth=1, relheight=1)
-            self.current_page = page_name
+        try:
+            if self.current_page and self.current_page in self.pages:
+                self.pages[self.current_page].place_forget()
+            
+            if page_name in self.pages:
+                self.pages[page_name].place(x=0, y=0, relwidth=1, relheight=1)
+                self.current_page = page_name
+        except Exception as e:
+            try:
+                self.app.log_event("info", f"show_page({page_name}): {e}")
+            except Exception:
+                pass
     
     def show_page_with_animation(self, page_name):
         if page_name == self.current_page and not self._animation_active:
@@ -99,7 +105,12 @@ class Pages:
             try:
                 overlay.attributes('-alpha', alpha)
                 self.app.root.after(10, lambda: self._animate_fade_out(overlay, page_name, alpha + 0.05))
-            except:
+            except Exception as e:
+                if alpha <= 0.05:
+                    try:
+                        self.app.log_event("info", f"_animate_fade_out start: {e}")
+                    except Exception:
+                        pass
                 self._finish_animation()
         else:
             self.show_page(page_name)
@@ -110,13 +121,21 @@ class Pages:
             try:
                 overlay.attributes('-alpha', alpha)
                 self.app.root.after(10, lambda: self._animate_fade_in(overlay, alpha - 0.05))
-            except:
+            except Exception as e:
+                if alpha >= 0.95:
+                    try:
+                        self.app.log_event("info", f"_animate_fade_in start: {e}")
+                    except Exception:
+                        pass
                 self._finish_animation()
         else:
             try:
                 overlay.destroy()
-            except:
-                pass
+            except Exception as e:
+                try:
+                    self.app.log_event("info", f"overlay.destroy: {e}")
+                except Exception:
+                    pass
             self._finish_animation()
     
     def _finish_animation(self):
