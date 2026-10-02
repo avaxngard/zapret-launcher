@@ -31,8 +31,6 @@ TG_FAKE_TLS_DOMAIN = "www.google.com"
 API_URL_STATS = "https://zapret-launcher.ru/api/stats.php"
 API_URL_NEWS = "https://zapret-launcher.ru/api/news.php"
 
-DONATION_URL = "https://www.donationalerts.com/r/tweenkedrage"
-
 # Site
 ZAPRET_VERSION_URL = "https://zapret-launcher.ru/updater/docs/zapret_version.txt"
 ZAPRET_CORE_URL = "https://zapret-launcher.ru/updater/zapret_core.zip"
