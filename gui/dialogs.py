@@ -1568,20 +1568,40 @@ class Dialogs:
         self.app.set_dialog_header_color(dialog)
         dialog.update_idletasks()
 
-        tk.Label(dialog, text="Telegram Proxy", font=("Segoe UI Variable", scale_size(16, self.scale_factor), "bold"),
-                 fg=self.colors['text_primary'], bg=self.colors['bg_medium']).pack(pady=(scale_size(15, self.scale_factor), scale_size(3, self.scale_factor)))
+        tk.Label(
+            dialog,
+            text="Telegram Proxy",
+            font=("Segoe UI Variable", scale_size(16, self.scale_factor), "bold"),
+            fg=self.colors['text_primary'],
+            bg=self.colors['bg_medium']
+        ).pack(pady=(scale_size(15, self.scale_factor), scale_size(3, self.scale_factor)))
 
-        secret_value = getattr(self.app, '_tg_secret', None) or ''
-        secret_text = f"{tr('settings_current_tg_secret')} {secret_value}"
+        secret_label = tk.Label(
+            dialog,
+            text="",
+            font=("Segoe UI Variable", scale_size(9, self.scale_factor)),
+            fg=self.colors['text_secondary'],
+            bg=self.colors['bg_medium'],
+            wraplength=scale_size(400, self.scale_factor)
+        )
+        secret_label.pack(pady=(scale_size(2, self.scale_factor), scale_size(8, self.scale_factor)))
 
-        tk.Label(dialog, text=secret_text, font=("Segoe UI Variable", scale_size(9, self.scale_factor)),
-                 fg=self.colors['text_secondary'], bg=self.colors['bg_medium'],
-                 wraplength=scale_size(400, self.scale_factor)).pack(pady=(scale_size(2, self.scale_factor), scale_size(8, self.scale_factor)))
+        def refresh_secret_label():
+            if not secret_label.winfo_exists():
+                return
+            secret_value = getattr(self.app, '_tg_secret', None) or ''
+            secret_label.config(text=f"{tr('settings_current_tg_secret')} {secret_value}")
+
+        refresh_secret_label()
+
+        def on_regen():
+            self.app.regenerate_tg_secret()
+            refresh_secret_label()
 
         regen_btn = RoundedButton(
             dialog,
             text=tr('tg_generate_secret'),
-            command=lambda d=dialog: (d.destroy(), self.app.regenerate_tg_secret()),
+            command=on_regen,
             width=scale_size(300, self.scale_factor),
             height=scale_size(35, self.scale_factor),
             bg=self.colors['accent'],
@@ -1594,11 +1614,10 @@ class Dialogs:
         )
         regen_btn.pack(pady=(scale_size(5, self.scale_factor), scale_size(2, self.scale_factor)))
 
-        instruction_text = self.app.pages.settings_page_obj._get_instruction_button_text()
         instr_btn = RoundedButton(
             dialog,
-            text=instruction_text,
-            command=lambda d=dialog: (d.destroy(), self.app.pages.settings_page_obj._show_instruction()),
+            text="",
+            command=None,
             width=scale_size(300, self.scale_factor),
             height=scale_size(35, self.scale_factor),
             bg=self.colors['bg_light'],
@@ -1610,6 +1629,21 @@ class Dialogs:
             theme_name=self.current_theme
         )
         instr_btn.pack(pady=(scale_size(2, self.scale_factor), scale_size(5, self.scale_factor)))
+
+        def refresh_instruction_button():
+            if not instr_btn.winfo_exists():
+                return
+            text = self.app.pages.settings_page_obj._get_instruction_button_text()
+            instr_btn.set_text(text)
+
+        def on_toggle_instruction():
+            self.app.pages.settings_page_obj._show_instruction()
+            refresh_instruction_button()
+
+        instr_btn._command = on_toggle_instruction
+        instr_btn.command = on_toggle_instruction
+        refresh_instruction_button()
+
         dialog.protocol("WM_DELETE_WINDOW", dialog.destroy)
         dialog.bind('<Escape>', lambda e: dialog.destroy())
         dialog.deiconify()
