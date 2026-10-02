@@ -200,23 +200,33 @@ class MainPage:
                 new_fake_tls != self.app.tg_fake_tls or
                 new_domain != self.app.tg_fake_tls_domain
             )
-            
+
             if not settings_changed:
                 return
-            
+
+            if new_host == "0.0.0.0":
+                confirm = messagebox.askyesno(
+                    tr('error_warning'),
+                    tr('tg_proxy_bind_all_warning')
+                )
+                if not confirm:
+                    self.tg_host_entry.delete(0, tk.END)
+                    self.tg_host_entry.insert(0, self.app.tg_host)
+                    return
+
             self.app.tg_host = new_host
             self.app.tg_port = new_port
             self.app.tg_fake_tls = new_fake_tls
             self.app.tg_fake_tls_domain = new_domain
-            
+
             if hasattr(self.app, 'tg_proxy'):
                 self.app.tg_proxy._host = new_host
                 self.app.tg_proxy._port = new_port
                 self.app.tg_proxy._fake_tls_domain = new_domain if new_fake_tls else ''
-            
+
             self.app.save_settings()
             self.app.show_notification(tr('notification_save_settings'), 2000)
-            
+
         except ValueError:
             self.app.show_notification(tr('error_port_have_words'), 2000)
 
