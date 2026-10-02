@@ -114,14 +114,13 @@ class Languages:
             'theme_old': 'Синяя',
             'theme_light': 'Светлая',
 
-            'splash_check_connecting': 'Подключение к сети..',
+            'splash_check_connecting': 'Подключаемся к сети..',
             'splash_check_updates': 'Проверяем обновления...',
             'splash_downloading_exe': 'Загрузка обновления...',
             'splash_downloading_zip': 'Загрузка внутренних файлов...',
-            'splash_extracting': 'Распаковка...',
-            'splash_downloading_zapret': 'Загрузка zapret...',
+            'splash_downloading_zapret': 'Загрузка ядра zapret...',
             'splash_extracting_zapret': 'Распаковка zapret...',
-            'splash_updating_zapret': 'Обновление zapret...',
+            'splash_updating_zapret': 'Обновляем zapret...',
             'splash_install_update': 'Устанавливаем обновление...',
             'splash_starting_exe': 'Запускаем лаунчер..',
             'splash_update_error': 'Ошибка обновления',
@@ -260,6 +259,15 @@ class Languages:
             'error_restart_launcher': 'Не удалось перезапустить лаунчер',
             'error': 'Ошибка',
 
+            'tg_proxy_bind_all_warning': (
+                'Вы указали хост "0.0.0.0"\n\n'
+                'Это значит, что прокси будет доступен ВСЕМ устройствам в вашей локальной сети '
+                '(телефонам, ноутбукам, ТВ и другим)\n'
+                'Любой, кто знает ваш секрет-ключ, сможет использовать ваш прокси\n'
+                'Не используйте этот хост в общественных Wi-Fi-сетях\n\n'
+                'Продолжить?'
+            ),
+
             'tg_secret_required_message': 'Для работы Telegram Proxy требуется секрет-ключ.\n\nСгенерировать новый секрет и продолжить?',
             'tg_secret_updated': 'Секрет-ключ обновлен',
             'tg_secret_new': 'Новый секрет:',
@@ -272,6 +280,7 @@ class Languages:
             'status_enabled': 'включен',
             'status_disabled': 'выключен',
             'restart_zapret': 'Перезапустите zapret',
+            'reinstall_launcher': 'Переустановите лаунчер',
             
             'main_page_tg_proxy_host': 'Хост',
             'main_page_tg_proxy_port': 'Порт',
@@ -325,7 +334,6 @@ class Languages:
             'update_ask_now': 'Хотите обновиться прямо сейчас?',
             'update_link_changelog': 'Посмотреть изменения',
 
-            'seconds': 'сек',
             'and': 'и еще',
             'please_wait': 'Пожалуйста, подождите...',
             'confirm_title': 'Подтверждение',
@@ -446,7 +454,6 @@ class Languages:
             'splash_starting_exe': 'Starting..',
             'splash_downloading_exe': 'Downloading executable...',
             'splash_downloading_zip': 'Downloading files...',
-            'splash_extracting': 'Extracting...',
             'splash_downloading_zapret': 'Downloading zapret...',
             'splash_updating_zapret': 'Updating zapret...',
             'splash_extracting_zapret': 'Extracting zapret...',
@@ -485,7 +492,7 @@ class Languages:
             'settings_reinstall_disconnect': 'To reinstall the core, you need to disconnect the active connection\nDisconnect and continue?',
             'settings_current_tg_secret': 'Your secret key:',
             'settings_autostart': 'Autostart',
-            'settings_autostart_desc': 'Launch launcher on Windows startup',
+            'settings_autostart_desc': 'Start launcher on Windows startup',
             'settings_search_dublicate': 'Duplicate detection',
             'settings_search_vpn': 'VPN detection',
             'settings_theme_desc': 'Change launcher theme',
@@ -585,6 +592,15 @@ class Languages:
             'error_restart_launcher': 'Failed to restart the launcher',
             'error': 'Error',
 
+            'tg_proxy_bind_all_warning': (
+                'You specified host "0.0.0.0"\n\n'
+                'This means the proxy will be available to ALL devices on your local network '
+                '(phones, laptops, TVs and others)\n'
+                'Anyone who knows your secret key can use your proxy\n'
+                'Do not use this host on public Wi-Fi networks\n\n'
+                'Continue?'
+            ),
+
             'tg_secret_required_message': 'A secret-key is required for Telegram Proxy to work.\n\nGenerate a new secret and continue?',
             'tg_secret_updated': 'Secret-key updated',
             'tg_secret_new': 'New secret:',
@@ -598,6 +614,7 @@ class Languages:
             'status_enabled': 'enabled',
             'status_disabled': 'disabled',
             'restart_zapret': 'Restart the zapret',
+            'reinstall_launcher': 'Reinstall the  launcher',
 
             'main_page_tg_proxy_host': 'Host',
             'main_page_tg_proxy_port': 'Port',
@@ -651,7 +668,6 @@ class Languages:
             'update_ask_now': 'Want to upgrade now?',
             'update_link_changelog': 'View changes',
 
-            'seconds': 'sec',
             'and': 'and also',
             'please_wait': 'Please wait...',
             'confirm_title': 'Сonfirmation',
