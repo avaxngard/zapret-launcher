@@ -241,9 +241,8 @@ class ZapretCore:
         
         if required_version == "0.0":
             messagebox.showerror(
-                "Error",
-                "File version.txt was not found in the launcher resources\n"
-                "Reinstall the launcher"
+                tr('error'),
+                f"{tr('error_version_missing')}\n{tr('reinstall_launcher')}"
             )
             sys.exit(1)
         
@@ -1191,57 +1190,79 @@ class ZapretLauncher:
         except Exception:
             pass
 
-    def check_for_updates(self):
+    def check_for_updates(self) -> Optional[bool]:
         if not getattr(self, '_auto_update_enabled', True):
             self.root.after(0, self.hide_update_label)
-            return
-    
+            return None
+
         try:
-            headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)', 'Accept': 'text/plain', 'Connection': 'close'}
-            
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+                'Accept': 'text/plain',
+                'Connection': 'close',
+            }
+
             buildnumber_url = BUILDNUMBER_URL
             req = urllib.request.Request(buildnumber_url, headers=headers)
-            
+
             with urllib.request.urlopen(req, timeout=10) as response:
                 latest_build = response.read().decode('utf-8').strip()
-            
+
             current_build = CURRENT_BUILD
             need_launcher_update = compare_builds(current_build, latest_build)
-            
+
             if need_launcher_update:
+                self.log_event(
+                    "info",
+                    f"Launcher update available: build {current_build} -> {latest_build}"
+                )
                 self.root.after(0, self.show_update_label)
-                return
-            
+                return True
+
             current_zapret_version = self.get_current_zapret_version()
             latest_zapret_version = None
-            
+
             try:
                 zapret_version_url = ZAPRET_VERSION_URL
                 req_zapret = urllib.request.Request(zapret_version_url, headers=headers)
-                
+
                 with urllib.request.urlopen(req_zapret, timeout=10) as response:
                     latest_zapret_version = response.read().decode('utf-8').strip()
-                    
+
             except Exception as e:
                 self.log_event("info", f"Failed to check zapret update: {e}")
                 self.root.after(0, self.hide_update_label)
-                return
-            
+                return None
+
             need_zapret_update = False
             if latest_zapret_version and current_zapret_version:
-                need_zapret_update = compare_zapret_versions(current_zapret_version, latest_zapret_version)
-            
+                need_zapret_update = compare_zapret_versions(
+                    current_zapret_version, latest_zapret_version
+                )
+
             if need_zapret_update:
+                self.log_event(
+                    "info",
+                    f"Zapret core update available: {current_zapret_version} -> {latest_zapret_version}"
+                )
                 self.root.after(0, self.show_update_label_zapret)
-            else:
-                self.root.after(0, self.hide_update_label)
-                
+                return True
+
+            self.log_event(
+                "info",
+                f"No updates. Launcher build {current_build}, zapret {current_zapret_version}"
+            )
+            self.root.after(0, self.hide_update_label)
+            return False
+
         except urllib.error.URLError as e:
             self.log_event("info", f"Network error while checking updates: {e}")
             self.root.after(0, self.hide_update_label)
+            return None
         except Exception as e:
             self.log_event("info", f"Unexpected error checking updates: {e}")
             self.root.after(0, self.hide_update_label)
+            return None
 
     def get_current_zapret_version(self) -> str:
         try:
@@ -1485,7 +1506,7 @@ class ZapretLauncher:
         self.root.clipboard_clear()
         self.root.clipboard_append(link)
         self.root.update()
-        self.show_notification(tr('notification_copied_secret'), 3000)
+        self.show_notification(tr('notification_updated_secret'), 3000)
         
     def _do_start_tg_proxy(self):
         self._reset_traffic_history()
@@ -3037,6 +3058,21 @@ class ZapretLauncher:
 
         if hasattr(self, 'tg_proxy') and self.tg_proxy:
             self.tg_proxy.stop()
+
+    def _format_interval_ms(self, ms: int) -> str:
+        total_seconds = ms // 1000
+        hours = total_seconds // 3600
+        minutes = (total_seconds % 3600) // 60
+        seconds = total_seconds % 60
+
+        parts = []
+        if hours:
+            parts.append(f"{hours} h")
+        if minutes:
+            parts.append(f"{minutes} min")
+        if seconds and not hours:
+            parts.append(f"{seconds} sec")
+        return " ".join(parts) if parts else f"{ms} ms"
     
     def start_update_checker(self):
         self.stop_update_checker()
@@ -3054,11 +3090,27 @@ class ZapretLauncher:
 
     def _schedule_update_check(self):
         interval = CHECK_UPDATES_INTERVAL
+        next_check_time = datetime.now().timestamp() + (interval / 1000)
+        next_check_str = datetime.fromtimestamp(next_check_time).strftime("%H:%M:%S")
+
+        self.log_event("info", f"Next update check in {self._format_interval_ms(interval)} " f"(at {next_check_str})")
         self.update_check_timer_id = self.root.after(interval, self._do_update_check)
 
     def _do_update_check(self):
-        threading.Thread(target=self.check_for_updates, daemon=True).start()
-        self._schedule_update_check()
+        self.log_event("info", "Update check started")
+        threading.Thread(target=self._do_update_check_thread, daemon=True).start()
+
+    def _do_update_check_thread(self):
+        try:
+            has_update = self.check_for_updates()
+            if has_update:
+                self.log_event("info", "Update check finished: update available")
+            else:
+                self.log_event("info", "Update check finished: no updates")
+        except Exception as e:
+            self.log_event("info", f"Update check failed: {e}")
+        finally:
+            self.root.after(0, self._schedule_update_check)
 
     def load_logs(self) -> list:
         logs = []
