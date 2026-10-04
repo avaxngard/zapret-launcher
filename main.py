@@ -566,6 +566,8 @@ class ZapretLauncher:
         self._update_source = 'main'
 
         self._current_notification = None
+        self._current_mode_key = None
+        self._last_progress_time = 0
 
         self.update_intervals = [1]
         self.update_interval_index = 0
@@ -633,6 +635,7 @@ class ZapretLauncher:
         
         self.zapret = ZapretCore(self)
         self.user_stats = user_stats
+        self.user_stats.fetch_user_stats()
         
         self.languages = get_languages()
         self.load_settings()
@@ -667,9 +670,9 @@ class ZapretLauncher:
         self.update_check_timer_id = None
         
         self.root.after(500, self.check_lists_for_duplicates)
-        self.root.after(500, self.check_initial_status)
+        self.root.after(1000, self.check_initial_status)
         saved_page = getattr(self, '_initial_page', 'main')
-        if saved_page not in ['main', 'service', 'lists', 'traffic', 'hosts', 'logs', 'settings']:
+        if saved_page not in ['main', 'service', 'lists', 'stats', 'traffic', 'hosts', 'logs', 'settings']:
             saved_page = 'main'
         
         self.pages.show_page(saved_page)
@@ -895,6 +898,16 @@ class ZapretLauncher:
 
     def quit_from_tray(self):
         self.save_settings()
+        try:
+            self._send_session_progress(force=True)
+        except Exception:
+            pass
+
+        try:
+            time.sleep(0.5)
+        except Exception:
+            pass
+
         self._stop_windivert_before_restart()
         self.zapret.stop_current_strategy()
         if hasattr(self, 'tg_proxy'):
@@ -995,7 +1008,29 @@ class ZapretLauncher:
         except Exception as e:
             self.log_event("info", f"_schedule_heartbeat: {e}")
 
-        self.root.after(300000, self._schedule_heartbeat)
+        try:
+            self._send_session_progress()
+        except Exception:
+            pass
+
+        self.root.after(600000, self._schedule_heartbeat)
+
+    def _send_session_progress(self, force=False):
+        if not self.is_connected:
+            return
+
+        try:
+            now = time.time()
+            if not force and now - getattr(self, '_last_progress_time', 0) < 300:
+                return
+            self._last_progress_time = now
+
+            if hasattr(self, 'stats') and hasattr(self, 'user_stats'):
+                session_seconds = int(self.stats.get_session_time())
+                mode = getattr(self, '_current_mode_key', None)
+                self.user_stats.on_disconnect(mode, session_seconds)
+        except Exception as e:
+            self.log_event("info", f"_send_session_progress: {e}")
 
     def toggle_auto_update(self):
         self._auto_update_enabled = not self._auto_update_enabled
@@ -1075,6 +1110,7 @@ class ZapretLauncher:
             (tr('main_title'), self.show_main_page),
             (tr('service_title'), self.show_service_page),
             (tr('lists_title'), self.show_lists_page),
+            (tr('stats_title'), self.show_stats_page),
             (tr('traffic_title'), self.show_traffic_page),
             (tr('hosts_title'), self.show_hosts_page),
             (tr('logs_title'), self.show_logs_page)
@@ -1564,6 +1600,7 @@ class ZapretLauncher:
             self.force_tray_menu_update()
             self.update_tray_icon_state()
 
+            self._current_mode_key = "Telegram Proxy"
             try:
                 if hasattr(self, 'user_stats'):
                     self.user_stats.on_connect("Telegram Proxy")
@@ -1621,6 +1658,11 @@ class ZapretLauncher:
                 rtt = self.measure_rtt()
                 if rtt > 0:
                     self.stats_rtt_label.config(text=f"{rtt:.0f} {tr('stats_rtt_ms')}", fg=self.colors['accent'])
+                    try:
+                        if hasattr(self, 'user_stats'):
+                            self.user_stats.send_ping(rtt)
+                    except Exception:
+                        pass
                 else:
                     self.stats_rtt_label.config(text="-- ms", fg=self.colors['text_secondary'])
         except (tk.TclError, AttributeError):
@@ -2095,6 +2137,13 @@ class ZapretLauncher:
         mode_name = strategy.replace(".bat", "").replace("general", "").strip() or "Стандартный"
         self.log_event("connect", "", mode_name)
 
+        self._current_mode_key = "Standard"
+        try:
+            if hasattr(self, 'user_stats'):
+                self.user_stats.on_connect("Standard")
+        except Exception:
+            pass
+
         self._connecting = False
         self.force_tray_menu_update()
 
@@ -2170,6 +2219,15 @@ class ZapretLauncher:
     def finish_disconnect(self):
         try:
             self._cached_processes = []
+
+            try:
+                if hasattr(self, 'user_stats') and hasattr(self, 'stats'):
+                    session_seconds = int(self.stats.get_session_time())
+                    mode = getattr(self, '_current_mode_key', None)
+                    self.user_stats.on_disconnect(mode, session_seconds)
+                    self._current_mode_key = None
+            except Exception:
+                pass
 
             if hasattr(self, 'mode_label') and self.mode_label and self.mode_label.winfo_exists():
                 self.mode_label.config(text=tr('mode_not_selected'), fg=self.colors['text_secondary'])
@@ -2325,7 +2383,7 @@ class ZapretLauncher:
                     self._auto_update_lists_enabled = data.get('auto_update_lists_enabled', False)
                     saved_page = data.get('current_page', 'main')
                     self._update_source = data.get('update_source', 'main')
-                    if saved_page in ['main', 'service', 'lists', 'traffic', 'hosts', 'logs', 'settings']:
+                    if saved_page in ['main', 'service', 'lists', 'stats', 'traffic', 'hosts', 'logs', 'settings']:
                         self.current_page = saved_page
                     else:
                         self.current_page = 'main'
@@ -2401,6 +2459,10 @@ class ZapretLauncher:
     def show_lists_page(self):
         self.current_page = "lists"
         self.pages.show_page_with_animation("lists")
+
+    def show_stats_page(self):
+        self.current_page = "stats"
+        self.pages.show_page_with_animation("stats")
 
     def show_settings_page(self):
         self.current_page = "settings"
@@ -3018,6 +3080,7 @@ class ZapretLauncher:
             pass
         
     def _on_combined_start_success(self, mode_name):
+        self._current_mode_key = "Combined"
         if hasattr(self, 'mode_label') and self.mode_label:
             strategy = getattr(self, 'current_strategy', None)
             if strategy:
@@ -3042,7 +3105,7 @@ class ZapretLauncher:
 
         try:
             if hasattr(self, 'user_stats'):
-                self.user_stats.on_connect(mode_name)
+                self.user_stats.on_connect(self._current_mode_key)
         except Exception:
             pass
         
