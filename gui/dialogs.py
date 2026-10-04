@@ -81,12 +81,9 @@ class Dialogs:
         canvas.pack(side="left", fill="both", expand=True)
         
         modes = [
-            {"name": tr('mode_standard'), "desc": tr('mode_standard_desc'), 
-            "zapret": True, "tgproxy": False},
-            {"name": "Telegram Proxy", "desc": tr('mode_tgproxy_desc'), 
-            "zapret": False, "tgproxy": True},
-            {"name": tr('mode_zapret_tgproxy'), "desc": tr('mode_zapret_tgproxy_desc'), 
-            "zapret": True, "tgproxy": True}
+            {"name": tr('mode_standard'), "key": "Standard", "desc": tr('mode_standard_desc'), "zapret": True, "tgproxy": False},
+            {"name": "Telegram Proxy", "key": "Telegram Proxy", "desc": tr('mode_tgproxy_desc'), "zapret": False, "tgproxy": True},
+            {"name": tr('mode_zapret_tgproxy'), "key": "Combined", "desc": tr('mode_zapret_tgproxy_desc'), "zapret": True, "tgproxy": True}
         ]
         
         selected_index = [-1]
@@ -529,6 +526,7 @@ class Dialogs:
                     self.app.stats.start_session()
                     self.app.start_stats_monitoring()
                     
+                    self.app._current_mode_key = mode["key"]
                     self.app.root.after(0, lambda: self.app._on_combined_start_success(mode["name"]))
                 
                 threading.Thread(target=start_combined, daemon=True).start()
@@ -566,9 +564,10 @@ class Dialogs:
                 if hasattr(self.app, 'connect_btn') and self.app.connect_btn:
                     self.app.connect_btn.set_enabled(True)
 
+                self.app._current_mode_key = mode["key"]
                 try:
                     if hasattr(self.app, 'user_stats'):
-                        self.app.user_stats.on_connect(mode["name"])
+                        self.app.user_stats.on_connect(mode["key"])
                 except Exception as e:
                     self._log("user_stats.on_connect", e)
 
