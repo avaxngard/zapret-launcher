@@ -14,6 +14,7 @@ from .page.traffic_page import TrafficPage
 from .page.hosts_page import HostsPage
 from .page.logs_page import LogsPage
 from .page.settings_page import SettingsPage
+from .page.stats_page import StatsPage
 
 class Pages:
     def __init__(self, app):
@@ -45,6 +46,9 @@ class Pages:
         
         self.settings_page_obj = SettingsPage(app.content_panel, app)
         self.settings_page = self.settings_page_obj.get_frame()
+
+        self.stats_page_obj = StatsPage(app.content_panel, app)
+        self.stats_page = self.stats_page_obj.get_frame()
         
         self.pages = {
             "main": self.main_page,
@@ -53,7 +57,8 @@ class Pages:
             "traffic": self.traffic_page,
             "hosts": self.hosts_page,
             "logs": self.logs_page,
-            "settings": self.settings_page
+            "settings": self.settings_page,
+            "stats": self.stats_page
         }
     
     def show_page(self, page_name):
