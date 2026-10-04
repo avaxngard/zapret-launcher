@@ -13,6 +13,7 @@ from .traffic_page import TrafficPage
 from .hosts_page import HostsPage
 from .logs_page import LogsPage
 from .settings_page import SettingsPage
+from .stats_page import StatsPage
 
 __all__ = [
     'MainPage',
@@ -21,5 +22,6 @@ __all__ = [
     'TrafficPage',
     'HostsPage',
     'LogsPage',
-    'SettingsPage'
+    'SettingsPage',
+    'StatsPage'
 ]
