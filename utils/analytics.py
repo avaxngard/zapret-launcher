@@ -27,6 +27,7 @@ class UserStats:
         self._is_active = False
         self._heartbeat_timer = None
         self.os_info = self._get_os_info()
+        self.cached_stats = None
 
     def set_enabled(self, enabled):
         self._enabled = enabled
@@ -174,6 +175,18 @@ class UserStats:
             extra_data['mode'] = mode
         
         self._send('connect', extra_data)
+
+    def on_disconnect(self, mode=None, duration_seconds=0):
+        if not self._enabled:
+            return
+
+        extra_data = {
+            'duration': int(duration_seconds),
+        }
+        if mode:
+            extra_data['mode'] = mode
+
+        self._send('disconnect', extra_data)
     
     def start(self):
         if not self._enabled or self._is_active:
@@ -189,13 +202,70 @@ class UserStats:
             self._heartbeat_timer.cancel()
             self._heartbeat_timer = None
         self._send('logout')
+
+    def fetch_user_stats(self):
+        if self.cached_stats is not None:
+            return
+
+        def worker():
+            try:
+                payload = {
+                    'install_id': self.install_id,
+                    'action': 'get_user_stats',
+                }
+                resp = requests.post(
+                    self.api_stats_url,
+                    json=payload,
+                    timeout=5,
+                    headers={'User-Agent': f'Zapret-Launcher/{CURRENT_VERSION}'}
+                )
+                data = resp.json()
+                if data.get('success'):
+                    self.cached_stats = data.get('stats')
+            except Exception:
+                pass
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    def send_session_progress(self, mode=None, duration_seconds=0):
+        if not self._enabled or duration_seconds <= 0:
+            return
+
+        extra_data = {
+            'duration': int(duration_seconds),
+        }
+        if mode:
+            extra_data['mode'] = mode
+
+        self._send('disconnect', extra_data)
+
+    def send_ping(self, ping_ms):
+        if not self._enabled or ping_ms <= 0:
+            return
+
+        def worker():
+            try:
+                payload = {
+                    'install_id': self.install_id,
+                    'action': 'ping',
+                    'ping': int(ping_ms),
+                }
+                requests.post(
+                    self.api_stats_url,
+                    json=payload,
+                    timeout=5,
+                    headers={'User-Agent': f'Zapret-Launcher/{CURRENT_VERSION}'}
+                )
+            except Exception:
+                pass
+
+        threading.Thread(target=worker, daemon=True).start()
     
     def _schedule_heartbeat(self):
         if not self._is_active or not self._enabled:
             return
         
         self._send('heartbeat')
-        
         self._heartbeat_timer = threading.Timer(30, self._schedule_heartbeat)
         self._heartbeat_timer.daemon = True
         self._heartbeat_timer.start()
