@@ -1,3 +1,11 @@
+# Zapret Launcher - Bypass restrictions
+# Copyright (C) 2026 avaxngard corp
+#
+# This is free software: you can redistribute it and/or modify it
+# under the terms of the GNU GPL v3 or any later version.
+#
+# Distributed WITHOUT ANY WARRANTY.
+
 import logging
 import os
 import string
@@ -13,7 +21,8 @@ from .utils import build_github_opener
 log = logging.getLogger('tg-mtproto-proxy')
 
 CFPROXY_DOMAINS_URL = (
-    "https://zapret-launcher.ru/updater/docs/cfproxy-domains.txt"
+    "https://raw.githubusercontent.com/Flowseal/tg-ws-proxy/main"
+    "/.github/cfproxy-domains.txt"
 )
 
 _CFPROXY_ENC: List[str] = [
@@ -41,7 +50,6 @@ _CFPROXY_ENC: List[str] = [
 _S = ''.join(chr(c) for c in (46, 99, 111, 46, 117, 107))
 
 def _dd(s: str) -> str:
-    """Only for decoding CF proxy domains"""
     if not s[-4:] == '.com':
         return s
     p, n = s[:-4], sum(c.isalpha() for c in s[:-4])
@@ -58,15 +66,24 @@ class ProxyConfig:
     port: int = 1443
     host: str = '127.0.0.1'
     secret: str = field(default_factory=lambda: os.urandom(16).hex())
-    dc_redirects: Dict[int, str] = field(default_factory=lambda: {2: '149.154.167.220', 4: '149.154.167.220'})
+    dc_redirects: Dict[int, str] = field(
+        default_factory=lambda: {2: '149.154.167.220', 4: '149.154.167.220'}
+    )
     buffer_size: int = 256 * 1024
     pool_size: int = 4
     fallback_cfproxy: bool = True
     cfproxy_user_domains: List[str] = field(default_factory=list)
     cfproxy_worker_domains: List[str] = field(default_factory=list)
+    cfproxy_h2_media: bool = True
+    disable_secure: bool = False
     fake_tls_domain: str = ''
     proxy_protocol: bool = False
     force_test_dc: bool = False
+
+    @property
+    def h2_enabled(self) -> bool:
+        return (self.cfproxy_h2_media and self.fallback_cfproxy
+                and not self.disable_secure and not self.force_test_dc)
 
 proxy_config = ProxyConfig()
 
@@ -95,8 +112,11 @@ def coerce_domain_list(value) -> List[str]:
 
 def _fetch_cfproxy_domain_list() -> List[str]:
     try:
-        req = Request(CFPROXY_DOMAINS_URL + "?" + "".join(random.choices(string.ascii_letters, k=7)),
-                       headers={'User-Agent': 'tg-ws-proxy'})
+        req = Request(
+            CFPROXY_DOMAINS_URL + "?" + "".join(
+                random.choices(string.ascii_letters, k=7)),
+            headers={'User-Agent': 'tg-ws-proxy'}
+        )
         with build_github_opener().open(req, timeout=10) as resp:
             text = resp.read().decode('utf-8', errors='replace')
         encoded = [
@@ -123,7 +143,6 @@ def _is_valid_domain(domain: str) -> bool:
             return False
         if not all(ch.isalnum() or ch == '-' for ch in label):
             return False
-    # TLD should contain letters and be at least 2 chars.
     tld = labels[-1]
     if len(tld) < 2 or not any(ch.isalpha() for ch in tld):
         return False
@@ -150,7 +169,7 @@ def refresh_cfproxy_domains() -> None:
     pool = _normalize_domain_pool(fetched)
     if len(pool) >= _CFPROXY_MIN_VALID_DOMAINS:
         balancer.update_domains_list(pool)
-        log.info("CF proxy domain pool updated from GitHub (%d domains)", len(pool))
+        log.info("CF proxy domain pool updated from remote (%d domains)", len(pool))
         return
 
     if fetched:
@@ -164,7 +183,6 @@ def refresh_cfproxy_domains() -> None:
             "CF proxy domain refresh failed or empty response; "
             "keeping current domain pool",
         )
-
 
 _refresh_stop: threading.Event = threading.Event()
 
@@ -181,7 +199,9 @@ def start_cfproxy_domain_refresh() -> None:
         while not stop.wait(timeout=3600):
             refresh_cfproxy_domains()
 
-    threading.Thread(target=_loop, daemon=True, name='cfproxy-domains-refresh').start()
+    threading.Thread(
+        target=_loop, daemon=True, name='cfproxy-domains-refresh'
+    ).start()
 
 def parse_dc_ip_list(dc_ip_list: List[str]) -> Dict[int, str]:
     dc_redirects: Dict[int, str] = {}
