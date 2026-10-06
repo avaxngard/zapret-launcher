@@ -1,12 +1,22 @@
+# Zapret Launcher - Bypass restrictions
+# Copyright (C) 2026 avaxngard corp
+#
+# This is free software: you can redistribute it and/or modify it
+# under the terms of the GNU GPL v3 or any later version.
+#
+# Distributed WITHOUT ANY WARRANTY.
+
 import os
-import ssl
-import certifi
+import logging
 import base64
 import struct
 import asyncio
 import socket as _socket
 from typing import List, Optional, Tuple
 from .config import proxy_config
+from .utils import create_ssl_context
+
+log = logging.getLogger('tg-mtproto-proxy')
 
 _st_BB = struct.Struct('>BB')
 _st_BBH = struct.Struct('>BBH')
@@ -17,14 +27,13 @@ _st_BBQ4s = struct.Struct('>BBQ4s')
 _st_H = struct.Struct('>H')
 _st_Q = struct.Struct('>Q')
 
-_ssl_ctx = ssl.create_default_context(cafile=certifi.where())
-_ssl_ctx_fronting = ssl.create_default_context(cafile=certifi.where())
-_ssl_ctx.check_hostname = False
-_ssl_ctx.verify_mode = ssl.CERT_NONE
+_ssl_ctx = create_ssl_context()
+_ssl_ctx_fronting = create_ssl_context(check_hostname=False)
 
 class WsHandshakeError(Exception):
     def __init__(self, status_code: int, status_line: str,
-                 headers: dict = None, location: str = None):
+                 headers: Optional[dict] = None,
+                 location: Optional[str] = None):
         self.status_code = status_code
         self.status_line = status_line
         self.headers = headers or {}
@@ -47,12 +56,10 @@ def set_sock_opts(transport, buffer_size):
     sock = transport.get_extra_info('socket')
     if sock is None:
         return
-    
     try:
         sock.setsockopt(_socket.IPPROTO_TCP, _socket.TCP_NODELAY, 1)
     except (OSError, AttributeError):
         pass
-    
     try:
         sock.setsockopt(_socket.SOL_SOCKET, _socket.SO_RCVBUF, buffer_size)
         sock.setsockopt(_socket.SOL_SOCKET, _socket.SO_SNDBUF, buffer_size)
@@ -60,48 +67,63 @@ def set_sock_opts(transport, buffer_size):
         pass
 
 class RawWebSocket:
-    __slots__ = ('reader', 'writer', '_closed')
+    __slots__ = ('reader', 'writer', '_closed', '_frag')
 
+    OP_CONT = 0x0
     OP_BINARY = 0x2
     OP_CLOSE = 0x8
     OP_PING = 0x9
     OP_PONG = 0xA
+
+    MAX_MESSAGE_LEN = 16 * 1024 * 1024
 
     def __init__(self, reader: asyncio.StreamReader,
                  writer: asyncio.StreamWriter):
         self.reader = reader
         self.writer = writer
         self._closed = False
+        self._frag = bytearray()
 
     @staticmethod
-    async def connect(host: str, domain: str, timeout: float = 10.0) -> 'RawWebSocket':
+    async def connect(host: str, domain: str, timeout: float = 10.0,
+                      path: str = '/apiws', *,
+                      sni: Optional[str] = None,
+                      secure: bool = True) -> 'RawWebSocket':
+        ssl_context = _ssl_ctx_fronting if sni else _ssl_ctx
+        if sni is None:
+            sni = domain
+
         reader, writer = await asyncio.wait_for(
-            asyncio.open_connection(host, 443, ssl=_ssl_ctx,
-                                    server_hostname=domain),
-            timeout=min(timeout, 30))
-        
-        set_sock_opts(writer.transport, proxy_config.buffer_size)
-
-        ws_key = base64.b64encode(os.urandom(16)).decode()
-
-        req = (
-            f'GET /apiws HTTP/1.1\r\n'
-            f'Host: {domain}\r\n'
-            f'Upgrade: websocket\r\n'
-            f'Connection: Upgrade\r\n'
-            f'Sec-WebSocket-Key: {ws_key}\r\n'
-            f'Sec-WebSocket-Version: 13\r\n'
-            f'Sec-WebSocket-Protocol: binary\r\n'
-            f'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
-            f'AppleWebKit/537.36 (KHTML, like Gecko) '
-            f'Chrome/131.0.0.0 Safari/537.36\r\n'
-            f'\r\n'
+            (
+                asyncio.open_connection(
+                    host, 443, ssl=ssl_context, server_hostname=sni,
+                )
+                if secure
+                else asyncio.open_connection(host, 80)
+            ),
+            timeout=min(timeout, 10),
         )
-        writer.write(req.encode())
-        await writer.drain()
 
-        response_lines: list[str] = []
         try:
+            set_sock_opts(writer.transport, proxy_config.buffer_size)
+
+            ws_key = base64.b64encode(os.urandom(16)).decode()
+
+            req = (
+                f'GET {path} HTTP/1.1\r\n'
+                f'Host: {domain}\r\n'
+                f'Upgrade: websocket\r\n'
+                f'Connection: Upgrade\r\n'
+                f'Sec-WebSocket-Key: {ws_key}\r\n'
+                f'Sec-WebSocket-Version: 13\r\n'
+                f'Sec-WebSocket-Protocol: binary\r\n'
+                f'\r\n'
+            )
+
+            writer.write(req.encode())
+            await writer.drain()
+
+            response_lines: list[str] = []
             while True:
                 line = await asyncio.wait_for(reader.readline(),
                                               timeout=timeout)
@@ -109,33 +131,32 @@ class RawWebSocket:
                     break
                 response_lines.append(
                     line.decode('utf-8', errors='replace').strip())
-        except asyncio.TimeoutError:
+
+            if not response_lines:
+                raise WsHandshakeError(0, 'empty response')
+
+            first_line = response_lines[0]
+            parts = first_line.split(' ', 2)
+            try:
+                status_code = int(parts[1]) if len(parts) >= 2 else 0
+            except ValueError:
+                status_code = 0
+
+            if status_code == 101:
+                return RawWebSocket(reader, writer)
+
+            headers: dict[str, str] = {}
+            for hl in response_lines[1:]:
+                if ':' in hl:
+                    k, v = hl.split(':', 1)
+                    headers[k.strip().lower()] = v.strip()
+
+            raise WsHandshakeError(
+                status_code, first_line, headers,
+                location=headers.get('location'))
+        except BaseException:
             writer.close()
             raise
-
-        if not response_lines:
-            writer.close()
-            raise WsHandshakeError(0, 'empty response')
-
-        first_line = response_lines[0]
-        parts = first_line.split(' ', 2)
-        try:
-            status_code = int(parts[1]) if len(parts) >= 2 else 0
-        except ValueError:
-            status_code = 0
-
-        if status_code == 101:
-            return RawWebSocket(reader, writer)
-
-        headers: dict[str, str] = {}
-        for hl in response_lines[1:]:
-            if ':' in hl:
-                k, v = hl.split(':', 1)
-                headers[k.strip().lower()] = v.strip()
-
-        writer.close()
-        raise WsHandshakeError(status_code, first_line, headers,
-                                location=headers.get('location'))
 
     async def send(self, data: bytes):
         if self._closed:
@@ -154,11 +175,13 @@ class RawWebSocket:
 
     async def recv(self) -> Optional[bytes]:
         while not self._closed:
-            self.reader._limit = 100 * 1024 * 1024
-            opcode, payload = await self._read_frame()
+            opcode, payload, fin = await self._read_frame()
 
             if opcode == self.OP_CLOSE:
                 self._closed = True
+                code, reason = self._parse_close(payload)
+                log.debug("WS OP_CLOSE from upstream: code=%s reason=%r",
+                          code, reason)
                 try:
                     self.writer.write(self._build_frame(
                         self.OP_CLOSE,
@@ -180,8 +203,18 @@ class RawWebSocket:
             if opcode == self.OP_PONG:
                 continue
 
-            if opcode in (0x1, 0x2):
-                return payload
+            if opcode in (self.OP_CONT, 0x1, self.OP_BINARY):
+                if fin and not self._frag:
+                    return payload
+                self._frag.extend(payload)
+                if len(self._frag) > self.MAX_MESSAGE_LEN:
+                    raise ConnectionError(
+                        f"WS message too large: {len(self._frag)} bytes")
+                if not fin:
+                    continue
+                message = bytes(self._frag)
+                self._frag.clear()
+                return message
             continue
         return None
 
@@ -201,8 +234,28 @@ class RawWebSocket:
         except Exception:
             pass
 
+    _WS_CLOSE_REASONS = {
+        1000: 'normal', 1001: 'going_away', 1002: 'protocol_error',
+        1003: 'unsupported_data', 1006: 'abnormal', 1007: 'bad_data',
+        1008: 'policy_violation', 1009: 'too_big', 1010: 'missing_extension',
+        1011: 'internal_error',
+    }
+
+    @classmethod
+    def _parse_close(cls, payload: Optional[bytes]) -> Tuple[Optional[int], str]:
+        if not payload or len(payload) < 2:
+            return None, ''
+        try:
+            code = int.from_bytes(payload[:2], 'big')
+            text = payload[2:].decode('utf-8', errors='replace')
+            name = cls._WS_CLOSE_REASONS.get(code)
+            return code, f"{text} ({name})" if name else text
+        except Exception:
+            return None, ''
+
     @staticmethod
-    def _build_frame(opcode: int, data: bytes, mask: bool = False) -> bytes:
+    def _build_frame(opcode: int, data: bytes,
+                     mask: bool = False) -> bytes:
         length = len(data)
         fb = 0x80 | opcode
         if not mask:
@@ -219,17 +272,20 @@ class RawWebSocket:
             return _st_BBH4s.pack(fb, 0x80 | 126, length, mask_key) + masked
         return _st_BBQ4s.pack(fb, 0x80 | 127, length, mask_key) + masked
 
-    async def _read_frame(self) -> Tuple[int, bytes]:
+    async def _read_frame(self) -> Tuple[int, bytes, bool]:
         hdr = await self.reader.readexactly(2)
+        fin = bool(hdr[0] & 0x80)
         opcode = hdr[0] & 0x0F
         length = hdr[1] & 0x7F
         if length == 126:
             length = _st_H.unpack(await self.reader.readexactly(2))[0]
         elif length == 127:
             length = _st_Q.unpack(await self.reader.readexactly(8))[0]
+        if length > self.MAX_MESSAGE_LEN:
+            raise ConnectionError(f"WS frame too large: {length} bytes")
         if hdr[1] & 0x80:
             mask_key = await self.reader.readexactly(4)
             payload = await self.reader.readexactly(length)
-            return opcode, _xor_mask(payload, mask_key)
+            return opcode, _xor_mask(payload, mask_key), fin
         payload = await self.reader.readexactly(length)
-        return opcode, payload
+        return opcode, payload, fin
