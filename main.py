@@ -60,9 +60,7 @@ def is_admin():
 
 def run_as_admin():
     try:
-        ctypes.windll.shell32.ShellExecuteW(
-            None, "runas", sys.executable, " ".join(sys.argv), None, 1
-        )
+        ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
     except Exception as e:
         messagebox.showerror(tr('error_no_connection'), f"{tr('error_admin_required')}: {e}")
     sys.exit(0)
