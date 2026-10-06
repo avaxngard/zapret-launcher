@@ -386,8 +386,8 @@ class MainPage:
         
         icons = [
             ("tg.png", "https://t.me/zapret_launcher"),
-            ("star.png", "https://github.com/avaxngard/zapret-launcher"),
-            ("star2.png", "https://gitlab.com/tweenkrage/zapret-launcher")
+            ("star.png", "https://github.com/avaxngard/zapret-launcher")
+            #("star2.png", "https://gitlab.com/tweenkrage/zapret-launcher")
         ]
         
         for icon_file, url in icons:
