@@ -57,7 +57,6 @@ def build_exe():
     print()
 
     manifest_path = create_manifest()
-    
     pyinstaller_paths = [r"C:\Users\trima\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\Scripts\pyinstaller.exe"]
     
     pyinstaller = None
@@ -96,6 +95,12 @@ def build_exe():
         '--hidden-import', 'tkinter',
         '--hidden-import', 'asyncio',
         '--hidden-import', 'ctypes',
+        '--collect-all', 'httpx',
+        '--collect-all', 'httpcore',
+        '--collect-all', 'h2',
+        '--collect-all', 'hpack',
+        '--collect-all', 'hyperframe',
+        '--collect-all', 'certifi',
     ]
     cmd.extend(hidden_imports)
     
