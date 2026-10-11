@@ -1,3 +1,12 @@
+# Zapret Launcher - Bypass restrictions
+# Copyright (C) 2026 avaxngard corp
+#
+# This is free software: you can redistribute it and/or modify it
+# under the terms of the GNU GPL v3 or any later version.
+#
+# Distributed WITHOUT ANY WARRANTY.
+
+
 """
 AES-CTR shim.
 
