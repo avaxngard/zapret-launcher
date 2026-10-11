@@ -154,7 +154,7 @@ class Languages:
             'splash_update_blocked': 'Обновление заблокировано',
             'update_blocked': 'Подпись обновления не совпадает',
 
-            'dialog_settings_tgproxy': 'Настройки Telegram proxy',
+            'dialog_settings_tgproxy': 'Настройки прокси',
             'dialog_settings_chooselang': 'Выбор языка',
             'dialog_settings_choosetheme': 'Выбор оформления',
                         
@@ -506,7 +506,7 @@ class Languages:
             'splash_update_blocked': 'Update blocked',
             'update_blocked': 'Update signature does not match',
 
-            'dialog_settings_tgproxy': 'Telegram proxy settings',
+            'dialog_settings_tgproxy': 'Proxy settings',
             'dialog_settings_chooselang': 'Choosing a language',
             'dialog_settings_choosetheme': 'Choosing a theme',
                         
