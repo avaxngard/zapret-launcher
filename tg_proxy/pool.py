@@ -12,7 +12,7 @@ import random
 import time
 from collections import deque
 from urllib.parse import urlencode
-from typing import Dict, List, Optional, Tuple, Set
+from typing import Dict, List, Optional, Tuple
 from .raw_websocket import RawWebSocket, WsHandshakeError
 from .stats import stats
 from .config import proxy_config
@@ -251,7 +251,7 @@ class _CfWorkerPool:
 
     def __init__(self):
         self._idle: Dict[int, deque] = {}
-        self._refilling: Set[int] = set()
+        self._refilling: Dict[int, asyncio.Task] = {}
         self._exhausted_until: Dict[str, float] = {}
 
     async def get(self, dc: int, fallback_dst: str,
@@ -283,8 +283,7 @@ class _CfWorkerPool:
     def _schedule_refill(self, dc, fallback_dst, worker_domains):
         if dc in self._refilling:
             return
-        self._refilling.add(dc)
-        asyncio.create_task(self._refill(
+        self._refilling[dc] = asyncio.create_task(self._refill(
             dc, fallback_dst, list(worker_domains)))
 
     async def _refill(self, dc, fallback_dst, worker_domains):
@@ -301,11 +300,15 @@ class _CfWorkerPool:
                 if connected is None:
                     break
                 ws, worker_domain = connected
+                if self._refilling.get(dc) is not asyncio.current_task():
+                    await self._quiet_close(ws)
+                    return
                 bucket.append((ws, time.monotonic(), worker_domain))
             log.debug("CF worker pool refilled DC%d: %d ready",
                       dc, len(bucket))
         finally:
-            self._refilling.discard(dc)
+            if self._refilling.get(dc) is asyncio.current_task():
+                self._refilling.pop(dc, None)
 
     async def _connect_one(self, worker_domains, fallback_dst, dc):
         query = urlencode({
@@ -364,9 +367,24 @@ class _CfWorkerPool:
                  len(cf_fallbacks))
 
     def reset(self):
+        loop = asyncio.get_running_loop()
+        for task in self._refilling.values():
+            if not task.done() and task.get_loop() is loop:
+                task.cancel()
+        for bucket in self._idle.values():
+            for ws, _, _ in bucket:
+                try:
+                    ws.writer.close()
+                except Exception as exc:
+                    log.debug("CF worker pool close failed: %r", exc)
         self._idle.clear()
         self._refilling.clear()
         self._exhausted_until.clear()
+
+    async def close(self):
+        tasks = list(self._refilling.values())
+        self.reset()
+        await asyncio.gather(*tasks, return_exceptions=True)
 
 ws_pool = _WsPool()
 cf_worker_pool = _CfWorkerPool()
