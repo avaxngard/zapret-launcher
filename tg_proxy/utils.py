@@ -1,17 +1,11 @@
-# Zapret Launcher - Bypass restrictions
-# Copyright (C) 2026 avaxngard corp
-#
-# This is free software: you can redistribute it and/or modify it
-# under the terms of the GNU GPL v3 or any later version.
-#
-# Distributed WITHOUT ANY WARRANTY.
-
 import socket as _socket
 import urllib.request
 import http.client
 import ssl
 import logging
+import os
 import re
+import sys
 import certifi
 from typing import Optional, Dict, List
 from urllib.request import Request
@@ -34,11 +28,10 @@ PROTO_INTERMEDIATE_INT = 0xEEEEEEEE
 PROTO_PADDED_INTERMEDIATE_INT = 0xDDDDDDDD
 
 RESERVED_FIRST_BYTES = {0xEF}
-RESERVED_STARTS = {
-    b'\x48\x45\x41\x44', b'\x50\x4F\x53\x54',
-    b'\x47\x45\x54\x20', b'\xee\xee\xee\xee',
-    b'\xdd\xdd\xdd\xdd', b'\x16\x03\x01\x02',
-}
+RESERVED_STARTS = {b'\x48\x45\x41\x44', b'\x50\x4F\x53\x54',
+                    b'\x47\x45\x54\x20', b'\xee\xee\xee\xee',
+                    b'\xdd\xdd\xdd\xdd', b'\x16\x03\x01\x02',
+                    b'\x4F\x50\x54\x49'}
 RESERVED_CONTINUE = b'\x00\x00\x00\x00'
 
 _GITHUB_IPS: Dict[str, str] = {
@@ -52,7 +45,7 @@ DC_DEFAULT_IPS: Dict[int, str] = {
     3: '149.154.175.100',
     4: '149.154.167.91',
     5: '149.154.171.5',
-    203: '91.105.192.100',
+    203: '91.105.192.100'
 }
 
 DC_TEST_IPS: Dict[int, str] = {
@@ -71,12 +64,14 @@ def ws_domains(dc: int, is_media: bool) -> List[str]:
         return [f'kws{dc}.web.telegram.org']
     return [f'kws{dc}-1.web.telegram.org', f'kws{dc}.web.telegram.org']
 
+
 def human_bytes(n: int) -> str:
     for unit in ('B', 'KB', 'MB', 'GB'):
         if abs(n) < 1024:
             return f"{n:.1f}{unit}"
         n /= 1024  # type: ignore
     return f"{n:.1f}TB"
+
 
 def get_link_host(host: str) -> Optional[str]:
     if host == '0.0.0.0':
@@ -87,7 +82,8 @@ def get_link_host(host: str) -> Optional[str]:
         except OSError:
             link_host = '127.0.0.1'
         return link_host
-    return host
+    else:
+        return host
 
 class DomainCensorFilter(logging.Filter):
     domain_pattern = re.compile(
@@ -98,9 +94,7 @@ class DomainCensorFilter(logging.Filter):
     def _censor_match(self, match):
         domain = match.group()
         normalized = domain.casefold().rstrip('.')
-        if (normalized == 'telegram.org'
-                or normalized.endswith('.telegram.org')
-                or normalized.endswith('.log')):
+        if normalized == 'telegram.org' or normalized.endswith('.telegram.org') or normalized.endswith('.log'):
             return domain
         parts = domain.split('.')
         if len(parts) < 2:
@@ -112,8 +106,7 @@ class DomainCensorFilter(logging.Filter):
         )
 
     def filter(self, record):
-        record.msg = self.domain_pattern.sub(
-            self._censor_match, record.getMessage())
+        record.msg = self.domain_pattern.sub(self._censor_match, record.getMessage())
         record.args = ()
         return True
 
@@ -135,8 +128,7 @@ class _PinnedHTTPSHandler(urllib.request.HTTPSHandler):
                 if self._tunnel_host:
                     self._tunnel()
                 self.sock = self._context.wrap_socket(
-                    self.sock,
-                    server_hostname=self._tunnel_host or self.host,
+                    self.sock, server_hostname=self._tunnel_host or self.host
                 )
 
         try:
@@ -145,7 +137,10 @@ class _PinnedHTTPSHandler(urllib.request.HTTPSHandler):
             return super().https_open(req)
 
 def create_ssl_context(*, check_hostname: bool = True) -> ssl.SSLContext:
-    context = ssl.create_default_context(cafile=certifi.where())
+    bundle_dir = getattr(sys, '_MEIPASS', None)
+    cafile = (os.path.join(bundle_dir, 'certifi', 'cacert.pem')
+              if bundle_dir else certifi.where())
+    context = ssl.create_default_context(cafile=cafile)
     context.load_default_certs()
     context.check_hostname = check_hostname
     return context
