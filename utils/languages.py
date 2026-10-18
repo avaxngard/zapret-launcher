@@ -254,6 +254,8 @@ class Languages:
             'edit_title_window': 'Редактирование',
 
             'expected_folder': 'Ожидаемая папка:',
+            'strategy_search_placeholder': 'Нажмите для поиска',
+            'badge_last': 'последняя',
             
             'error_update_check': 'Не удалось проверить обновления',
             'error_no_strategies': 'Нет доступных стратегий zapret',
@@ -607,6 +609,8 @@ class Languages:
             'edit_title_window': 'Editing',
 
             'expected_folder': 'Expected folder:',
+            'strategy_search_placeholder': 'Click to search',
+            'badge_last': 'last used',
             
             'error_update_check': 'Failed to check for updates',
             'error_no_strategies': 'No zapret strategies available',
