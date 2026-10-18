@@ -334,7 +334,6 @@ class Dialogs:
         fs_btn    = scale_size(10, self.scale_factor)
         fs_card   = scale_size(11, self.scale_factor)
         fs_badge  = scale_size(8,  self.scale_factor)
-        fs_log    = scale_size(9,  self.scale_factor)
         btn_h     = scale_size(36, self.scale_factor)
         btn_rad   = scale_size(8,  self.scale_factor)
 
@@ -358,7 +357,8 @@ class Dialogs:
         dialog.protocol("WM_DELETE_WINDOW", on_close)
 
         header = tk.Frame(dialog, bg=self.colors['bg_medium'])
-        header.pack(fill=tk.X, padx=padx, pady=(scale_size(16, self.scale_factor), scale_size(6, self.scale_factor)))
+        header.pack(fill=tk.X, padx=padx,
+                    pady=(scale_size(16, self.scale_factor), scale_size(6, self.scale_factor)))
 
         tk.Label(
             header, text=tr('select_strategy'),
@@ -374,7 +374,8 @@ class Dialogs:
                             highlightthickness=1,
                             highlightbackground=self.colors['bg_light'],
                             highlightcolor=self.colors['accent'])
-        search_wrap.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, scale_size(8, self.scale_factor)))
+        search_wrap.pack(side=tk.LEFT, fill=tk.X, expand=True,
+                        padx=(0, scale_size(8, self.scale_factor)))
 
         search_var = tk.StringVar()
         search_entry = tk.Entry(
@@ -385,20 +386,92 @@ class Dialogs:
             relief=tk.FLAT, bd=0
         )
         search_entry.pack(side=tk.LEFT, fill=tk.X, expand=True,
-                        ipady=scale_size(8, self.scale_factor),
-                        padx=(scale_size(12, self.scale_factor), scale_size(12, self.scale_factor)))
+                          ipady=scale_size(8, self.scale_factor),
+                          padx=(scale_size(12, self.scale_factor), scale_size(12, self.scale_factor)))
 
-        def on_search_focus_in(_):
+        placeholder_label = tk.Label(
+            search_wrap,
+            text=tr('strategy_search_placeholder'),
+            font=("Segoe UI Variable", fs_input),
+            fg=self.colors['text_secondary'],
+            bg=self.colors['bg_light'],
+            anchor='w',
+            cursor="xterm"
+        )
+        placeholder_label.place(in_=search_entry, x=0, rely=0.5, anchor='w')
+
+        def _place_placeholder():
+            placeholder_label.place(in_=search_entry, x=0, rely=0.5, anchor='w')
+
+        def _remove_placeholder():
+            placeholder_label.place_forget()
+
+        def _on_var_write(*_):
+            if search_var.get():
+                _remove_placeholder()
+            else:
+                _place_placeholder()
+
+        def _on_focus_in(_):
             search_wrap.configure(highlightbackground=self.colors['accent'])
+            _remove_placeholder()
 
-        def on_search_focus_out(_):
+        def _on_focus_out(_):
             search_wrap.configure(highlightbackground=self.colors['bg_light'])
+            if not search_var.get():
+                _place_placeholder()
 
-        search_entry.bind("<FocusIn>", on_search_focus_in)
-        search_entry.bind("<FocusOut>", on_search_focus_out)
+        def _on_placeholder_click(_):
+            search_entry.focus_set()
 
-        footer = tk.Frame(dialog, bg=self.colors['bg_medium'],
-                        highlightthickness=1, highlightbackground=self.colors['separator'])
+        placeholder_label.bind("<Button-1>", _on_placeholder_click)
+        search_var.trace_add("write", _on_var_write)
+        search_entry.bind("<FocusIn>", _on_focus_in)
+        search_entry.bind("<FocusOut>", _on_focus_out)
+
+        def _is_descendant(widget, ancestor):
+            w = widget
+            while w is not None:
+                if w == ancestor:
+                    return True
+                try:
+                    w = w.master
+                except Exception:
+                    return False
+            return False
+
+        def _blur_search_entry():
+            try:
+                focused = dialog.focus_get()
+            except Exception:
+                focused = None
+            if focused is search_entry:
+                dialog.focus_force()
+
+        def _on_any_click(event):
+            try:
+                clicked = event.widget
+            except Exception:
+                return
+            if clicked is None:
+                return
+            if not _is_descendant(clicked, dialog):
+                return
+            if _is_descendant(clicked, search_wrap):
+                return
+            _blur_search_entry()
+
+        def _bind_click_to_all(widget):
+            try:
+                widget.bind("<Button-1>", _on_any_click, add="+")
+            except Exception:
+                pass
+            for child in widget.winfo_children():
+                _bind_click_to_all(child)
+
+        _bind_click_to_all(dialog)
+
+        footer = tk.Frame(dialog, bg=self.colors['bg_medium'], highlightthickness=1, highlightbackground=self.colors['separator'])
         footer.pack(fill=tk.X, side=tk.BOTTOM)
 
         footer_inner = tk.Frame(footer, bg=self.colors['bg_medium'])
@@ -506,11 +579,10 @@ class Dialogs:
 
             wrapper = tk.Frame(parent, bg=self.colors['bg_medium'], height=card_h)
             wrapper.pack(fill=tk.X, padx=scale_size(6, self.scale_factor),
-                        pady=scale_size(3, self.scale_factor))
+                         pady=scale_size(3, self.scale_factor))
             wrapper.pack_propagate(False)
 
-            cv = tk.Canvas(wrapper, bg=self.colors['bg_medium'],
-                        highlightthickness=0, bd=0, cursor="hand2")
+            cv = tk.Canvas(wrapper, bg=self.colors['bg_medium'], highlightthickness=0, bd=0, cursor="hand2")
             cv.pack(fill=tk.BOTH, expand=True)
 
             card = tk.Frame(cv, bg=self.colors['bg_light'], cursor="hand2")
@@ -521,8 +593,8 @@ class Dialogs:
 
             name_box = tk.Frame(inner_row, bg=self.colors['bg_light'])
             name_box.pack(side=tk.LEFT, fill=tk.X, expand=True,
-                        padx=scale_size(10, self.scale_factor),
-                        pady=scale_size(6, self.scale_factor))
+                          padx=scale_size(10, self.scale_factor),
+                          pady=scale_size(6, self.scale_factor))
 
             q = query.strip()
             labels = []
@@ -582,13 +654,12 @@ class Dialogs:
             badge_bg_state = {'color': None}
 
             if is_last:
-                badge_text = "последняя"
+                badge_text = tr('badge_last')
                 badge_padx = scale_size(8, self.scale_factor)
                 badge_pady = scale_size(2, self.scale_factor)
                 badge_r = scale_size(8, self.scale_factor)
 
-                _tmp = tk.Label(inner_row, text=badge_text,
-                                font=("Segoe UI Variable", fs_badge, "bold"))
+                _tmp = tk.Label(inner_row, text=badge_text, font=("Segoe UI Variable", fs_badge, "bold"))
                 _tmp.update_idletasks()
                 tw = _tmp.winfo_reqwidth()
                 th = _tmp.winfo_reqheight()
@@ -774,8 +845,8 @@ class Dialogs:
                 w.destroy()
             card_widgets.clear()
 
-            filtered[:] = ordered_list(search_var.get())
             query = search_var.get()
+            filtered[:] = ordered_list(query)
 
             if not filtered:
                 list_outer.pack_forget()
@@ -977,7 +1048,7 @@ class Dialogs:
             self.app.force_tray_menu_update()
 
         redraw_list()
-        search_entry.focus_set()
+        _bind_click_to_all(dialog)
         dialog.deiconify()
         dialog.update_idletasks()
 
