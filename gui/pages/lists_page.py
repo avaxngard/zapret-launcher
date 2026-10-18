@@ -52,6 +52,7 @@ class ListsPage:
         self.font_medium = app.font_medium
         self.font_bold = app.font_bold
         self.scale_factor = getattr(app, 'scale_factor', 1.0)
+        self._card_widgets = {}
 
         font_size_title    = scale_size(20, self.scale_factor)
         font_size_desc     = scale_size(10, self.scale_factor)
@@ -139,11 +140,11 @@ class ListsPage:
     def _render_cards(self):
         for w in self.grid_frame.winfo_children():
             w.destroy()
+        self._card_widgets.clear()
 
         for idx, (key, filename, ctype) in enumerate(self.LIST_DEFS):
             row = idx // 2
             col = idx % 2
-
             padx_left  = 0 if col == 0 else self.grid_gap // 2
             padx_right = self.grid_gap // 2 if col == 0 else 0
 
@@ -157,6 +158,37 @@ class ListsPage:
                 padx=(padx_left, padx_right),
                 pady=(0, self.grid_gap // 2),
             )
+
+    def _update_cards(self):
+        for key, filename, ctype in self.LIST_DEFS:
+            data = self._card_widgets.get(filename)
+            if not data:
+                continue
+
+            lines = self._get_lines_count(filename)
+            duplicates = self._get_duplicates_count(filename)
+            status = self._get_status(filename)
+
+            try:
+                data['lines'].config(
+                    text=tr_plural(lines, 'lists_lines_one', 'lists_lines_few', 'lists_lines_many')
+                )
+            except Exception:
+                pass
+
+            try:
+                if status == "ok":
+                    data['badge'].config(
+                        text=tr('lists_status_clean'),
+                        fg=self.colors['accent_green'],
+                    )
+                else:
+                    data['badge'].config(
+                        text=f"{tr('lists_status_duplicates')} ({duplicates})",
+                        fg=self.colors['accent_red'],
+                    )
+            except Exception:
+                pass
 
     def _create_card(self, parent, row, col, name, filename, lines,
                      duplicates, status, padx, pady):
@@ -284,6 +316,19 @@ class ListsPage:
             w.bind("<Leave>", on_leave)
             w.bind("<Button-1>", on_click)
 
+        self._card_widgets[filename] = {
+            'wrapper': wrapper,
+            'canvas': canvas,
+            'card': card,
+            'inner': inner,
+            'left': left,
+            'right': right,
+            'name': name_label,
+            'file': file_label,
+            'lines': lines_label,
+            'badge': badge_label,
+            'draw_bg': draw_rounded_bg,
+        }
         return wrapper
 
     def edit_list_file(self, filename):
@@ -297,7 +342,7 @@ class ListsPage:
     def refresh(self):
         self.colors = self.app.colors
         self.refresh_stats()
-        self._render_cards()
+        self._update_cards()
 
     def get_frame(self):
         return self.frame
