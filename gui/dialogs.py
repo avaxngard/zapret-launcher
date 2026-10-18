@@ -551,6 +551,16 @@ class Dialogs:
         )
         cancel_btn.pack(side=tk.RIGHT, padx=(0, scale_size(8, self.scale_factor)))
 
+        strategies_count_label = tk.Label(
+            footer_inner,
+            text="",
+            font=("Segoe UI Variable", scale_size(9, self.scale_factor)),
+            fg=self.colors['text_secondary'],
+            bg=self.colors['bg_medium'],
+            anchor='w'
+        )
+        strategies_count_label.pack(side=tk.LEFT)
+
         gen_btn = RoundedButton(
             search_row,
             text=tr('generate'),
@@ -873,6 +883,19 @@ class Dialogs:
                 apply_selection_style(i, selected=(i == selected_idx[0]))
 
             update_start_btn()
+            update_strategies_count()
+
+        def update_strategies_count():
+            total = len(all_strategies)
+            shown = len(filtered)
+            if shown == total:
+                text = f"{tr('strategies_count')}: {total}"
+            else:
+                text = f"{tr('strategies_count')}: {shown} / {total}"
+            try:
+                strategies_count_label.config(text=text)
+            except Exception:
+                pass
 
         def _ensure_visible(idx: int):
             if not (0 <= idx < len(card_widgets)):
