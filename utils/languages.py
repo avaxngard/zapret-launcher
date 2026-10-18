@@ -364,7 +364,7 @@ class Languages:
             'is_empty': 'пустой',
             'not_found': 'отсутствует',
             'files': 'файлов',
-            'strategies_count': 'Стратегии',
+            'strategies_count': 'Всего стратегий',
         },
         
         'English': {
@@ -719,7 +719,7 @@ class Languages:
             'success': 'Success',
             'not_found': 'is missing',
             'files': 'files',
-            'strategies_count': 'Strategies',
+            'strategies_count': 'Total strategies',
         }
     }
     
