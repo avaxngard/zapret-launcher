@@ -33,6 +33,7 @@ class Languages:
             'update_available': 'Доступно обновление',
             'information_desc': 'Информация',
             'dev': 'В разработке',
+            'generate': 'Сгенерировать',
             
             'service_title': 'Сервис',
             'service_desc': 'Инструменты лаунчера',
@@ -262,6 +263,7 @@ class Languages:
             'error_tgproxy_timeout': 'Таймаут запуска',
             'error_admin_required': 'Требуются права администратора!',
             'error_strategy_not_found': 'Стратегия не найдена:',
+            'strategy_not_found': 'Ничего не найдено',
             'error_winws_not_found': 'Стратегия запущена, но winws.exe не обнаружен',
             'error_secret_not_found': 'Секрет-ключ не найден',
             'error_secret_not_generate': 'Секрет-ключ не сгенерирован',
@@ -385,6 +387,7 @@ class Languages:
             'update_available': 'Update available',
             'information_desc': 'Information',
             'dev': 'In development',
+            'generate': 'Generate',
             
             'service_title': 'Service',
             'service_desc': 'Launcher tools',
@@ -613,6 +616,7 @@ class Languages:
             'error_tgproxy_timeout': 'Startup timeout',
             'error_admin_required': 'Administrator rights required!',
             'error_strategy_not_found': 'Strategy not found:',
+            'strategy_not_found': 'Nothing found',
             'error_winws_not_found': 'Strategy started but winws.exe not detected',
             'error_secret_not_found': 'Secret-key not found',
             'error_secret_not_generate': 'The secret key was not generated',
