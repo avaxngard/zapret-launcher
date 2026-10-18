@@ -16,6 +16,7 @@ from utils.languages import tr
 from gui.theme import get_theme_display_name
 import requests
 import psutil
+import time
 import threading
 import os
 
@@ -325,275 +326,673 @@ class Dialogs:
         dialog.deiconify()
         
     def show_strategy_selector(self, mode_name):
-        dialog_width = scale_size(550, self.scale_factor)
-        dialog_height = scale_size(550, self.scale_factor)
-        font_size_title = scale_size(18, self.scale_factor)
-        font_size_sub = scale_size(12, self.scale_factor)
-        font_size_desc = scale_size(9, self.scale_factor)
-        font_size_list = scale_size(10, self.scale_factor)
-        font_size_btn = scale_size(10, self.scale_factor)
-        btn_width = scale_size(100, self.scale_factor)
-        btn_height = scale_size(35, self.scale_factor)
-        btn_width_cancel = scale_size(90, self.scale_factor)
-        btn_radius = scale_size(8, self.scale_factor)
-        padx = scale_size(25, self.scale_factor)
-        pady = scale_size(5, self.scale_factor)
-        
+        dialog_width  = scale_size(520, self.scale_factor)
+        dialog_height = scale_size(620, self.scale_factor)
+        padx          = scale_size(20, self.scale_factor)
+        fs_title  = scale_size(16, self.scale_factor)
+        fs_input  = scale_size(11, self.scale_factor)
+        fs_btn    = scale_size(10, self.scale_factor)
+        fs_card   = scale_size(11, self.scale_factor)
+        fs_badge  = scale_size(8,  self.scale_factor)
+        fs_log    = scale_size(9,  self.scale_factor)
+        btn_h     = scale_size(36, self.scale_factor)
+        btn_rad   = scale_size(8,  self.scale_factor)
+
         dialog = tk.Toplevel(self.app.root)
         dialog.title(tr('select_strategy_title'))
         dialog.resizable(False, False)
         dialog.configure(bg=self.colors['bg_medium'])
         dialog.transient(self.app.root)
         dialog.grab_set()
-        dialog.focus_force()
-        
-        x = self.app.root.winfo_x() + (self.app.root.winfo_width() // 2) - dialog_width // 2
-        y = self.app.root.winfo_y() + (self.app.root.winfo_height() // 2) - dialog_height // 2
-        
-        dialog.geometry(f"{dialog_width}x{dialog_height}+{x}+{y}")
         dialog.withdraw()
+        dialog.attributes('-alpha', 0.0)
+
+        x = self.app.root.winfo_x() + (self.app.root.winfo_width()  // 2) - dialog_width  // 2
+        y = self.app.root.winfo_y() + (self.app.root.winfo_height() // 2) - dialog_height // 2
+        dialog.geometry(f"{dialog_width}x{dialog_height}+{x}+{y}")
         self.app.set_dialog_header_color(dialog)
-        dialog.update_idletasks()
-        
-        if mode_name == tr('mode_zapret_tgproxy'):
-            title_text = f"{tr('select_strategy')}"
-            desc_text = ""
-        else:
-            title_text = tr('select_strategy')
-            desc_text = ""
-        
-        tk.Label(dialog, text=title_text, font=("Segoe UI Variable", font_size_title, "bold"),
-                fg=self.colors['text_primary'], bg=self.colors['bg_medium']).pack(pady=(scale_size(25, self.scale_factor), scale_size(15, self.scale_factor)))
-        
-        if desc_text:
-            tk.Label(dialog, text=desc_text, font=("Segoe UI Variable", font_size_sub),
-                    fg=self.colors['text_secondary'], bg=self.colors['bg_medium'],
-                    wraplength=scale_size(450, self.scale_factor)).pack(pady=(0, scale_size(15, self.scale_factor)))
-        
-        main_frame = tk.Frame(dialog, bg=self.colors['bg_medium'])
-        main_frame.pack(fill=tk.BOTH, expand=True, padx=padx, pady=pady)
-        
-        list_card = tk.Frame(main_frame, bg=self.colors['bg_light'], relief=tk.FLAT, bd=0)
-        list_card.pack(fill=tk.BOTH, expand=True)
-        
-        list_inner = tk.Frame(list_card, bg=self.colors['bg_light'])
-        list_inner.pack(fill=tk.BOTH, expand=True, padx=scale_size(15, self.scale_factor), pady=scale_size(12, self.scale_factor))
-        
-        tk.Label(list_inner, text=tr('available_strategies'), font=("Segoe UI Variable", font_size_sub, "bold"),
-                fg=self.colors['accent'], bg=self.colors['bg_light']).pack(anchor='w', pady=(0, scale_size(10, self.scale_factor)))
-        
-        list_frame = tk.Frame(list_inner, bg=self.colors['bg_light'])
-        list_frame.pack(fill=tk.BOTH, expand=True)
-        
-        scrollbar = ttk.Scrollbar(list_frame, style="Custom.Vertical.TScrollbar")
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        
-        strategy_listbox = tk.Listbox(list_frame, height=10, font=("Segoe UI Variable", font_size_list),
-                                    bg=self.colors['bg_light'], fg=self.colors['text_primary'],
-                                    selectbackground=self.colors['accent'],
-                                    yscrollcommand=scrollbar.set)
-        strategy_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        scrollbar.config(command=strategy_listbox.yview)
-        
-        for s in self.app.zapret.available_strategies:
-            strategy_listbox.insert(tk.END, s)
-        
-        desc_label = tk.Label(dialog, text="", font=("Segoe UI Variable", font_size_desc if 'font_size_desc' in locals() else scale_size(9, self.scale_factor)),
-                            fg=self.colors['text_secondary'], bg=self.colors['bg_medium'],
-                            wraplength=scale_size(400, self.scale_factor), justify=tk.LEFT)
-        desc_label.pack(pady=scale_size(5, self.scale_factor), padx=scale_size(20, self.scale_factor))
-        
-        is_processing = False
-        
-        def on_select(event):
-            selection = strategy_listbox.curselection()
-            if selection:
-                strategy = self.app.zapret.available_strategies[selection[0]]
-                desc_label.config(text=f"{tr('selected')} {strategy}")
-        
-        strategy_listbox.bind("<<ListboxSelect>>", on_select)
-        
-        if self.app.current_strategy:
-            try:
-                idx = self.app.zapret.available_strategies.index(self.app.current_strategy)
-                strategy_listbox.selection_set(idx)
-                strategy_listbox.see(idx)
-                desc_label.config(text=f"{tr('selected')} {self.app.current_strategy}")
-            except ValueError as e:
-                self._log("show_strategy_selector", e)
-        
-        def move_selection(delta):
-            nonlocal is_processing
-            if is_processing:
-                return
-            is_processing = True
-            
-            try:
-                current = strategy_listbox.curselection()
-                if current:
-                    new_idx = current[0] + delta
-                else:
-                    new_idx = 0 if delta > 0 else len(self.app.zapret.available_strategies) - 1
-                
-                if 0 <= new_idx < len(self.app.zapret.available_strategies):
-                    strategy_listbox.selection_clear(0, tk.END)
-                    strategy_listbox.selection_set(new_idx)
-                    strategy_listbox.see(new_idx)
-                    strategy = self.app.zapret.available_strategies[new_idx]
-                    desc_label.config(text=f"{tr('selected')} {strategy}")
-            finally:
-                dialog.after(100, lambda: setattr(move_selection, 'processing', False))
-                is_processing = False
-        
-        def on_key_press(event):
-            if event.keysym == 'Up':
-                move_selection(-1)
-                return "break"
-            elif event.keysym == 'Down':
-                move_selection(1)
-                return "break"
-            elif event.keysym == 'Return':
-                start_with_strategy()
-                return "break"
-            elif event.keysym == 'Escape':
-                self.app._cancel_strategy_selection(dialog)
-                return "break"
-            
+
         def on_close():
             self.app._cancel_strategy_selection(dialog)
 
         dialog.protocol("WM_DELETE_WINDOW", on_close)
-        
-        def on_double_click(event):
-            start_with_strategy()
-        
-        dialog.bind('<Up>', on_key_press)
-        dialog.bind('<Down>', on_key_press)
-        dialog.bind('<Return>', on_key_press)
-        dialog.bind('<Escape>', on_key_press)
 
-        strategy_listbox.bind('<Up>', on_key_press)
-        strategy_listbox.bind('<Down>', on_key_press)
-        strategy_listbox.bind('<Return>', on_key_press)
-        strategy_listbox.bind('<Escape>', on_key_press)
-        strategy_listbox.bind('<Double-Button-1>', on_double_click)
-        strategy_listbox.focus_set()
-        
-        btn_frame = tk.Frame(dialog, bg=self.colors['bg_medium'])
-        btn_frame.pack(pady=scale_size(20, self.scale_factor))
-        
-        def start_with_strategy():
-            selection = strategy_listbox.curselection()
-            if not selection:
-                messagebox.showerror(tr('error'), tr('error_select_strategy'))
-                self.app._connecting = False
-                self.app.force_tray_menu_update()
+        header = tk.Frame(dialog, bg=self.colors['bg_medium'])
+        header.pack(fill=tk.X, padx=padx, pady=(scale_size(16, self.scale_factor), scale_size(6, self.scale_factor)))
+
+        tk.Label(
+            header, text=tr('select_strategy'),
+            font=("Segoe UI Variable", fs_title, "bold"),
+            fg=self.colors['text_primary'], bg=self.colors['bg_medium'],
+            anchor='center'
+        ).pack(anchor='center')
+
+        search_row = tk.Frame(dialog, bg=self.colors['bg_medium'])
+        search_row.pack(fill=tk.X, padx=padx, pady=(0, scale_size(10, self.scale_factor)))
+
+        search_wrap = tk.Frame(search_row, bg=self.colors['bg_light'],
+                            highlightthickness=1,
+                            highlightbackground=self.colors['bg_light'],
+                            highlightcolor=self.colors['accent'])
+        search_wrap.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, scale_size(8, self.scale_factor)))
+
+        search_var = tk.StringVar()
+        search_entry = tk.Entry(
+            search_wrap, textvariable=search_var,
+            font=("Segoe UI Variable", fs_input),
+            bg=self.colors['bg_light'], fg=self.colors['text_primary'],
+            insertbackground=self.colors['text_primary'],
+            relief=tk.FLAT, bd=0
+        )
+        search_entry.pack(side=tk.LEFT, fill=tk.X, expand=True,
+                        ipady=scale_size(8, self.scale_factor),
+                        padx=(scale_size(12, self.scale_factor), scale_size(12, self.scale_factor)))
+
+        def on_search_focus_in(_):
+            search_wrap.configure(highlightbackground=self.colors['accent'])
+
+        def on_search_focus_out(_):
+            search_wrap.configure(highlightbackground=self.colors['bg_light'])
+
+        search_entry.bind("<FocusIn>", on_search_focus_in)
+        search_entry.bind("<FocusOut>", on_search_focus_out)
+
+        footer = tk.Frame(dialog, bg=self.colors['bg_medium'],
+                        highlightthickness=1, highlightbackground=self.colors['separator'])
+        footer.pack(fill=tk.X, side=tk.BOTTOM)
+
+        footer_inner = tk.Frame(footer, bg=self.colors['bg_medium'])
+        footer_inner.pack(fill=tk.X, padx=padx, pady=scale_size(12, self.scale_factor))
+
+        list_outer = tk.Frame(dialog, bg=self.colors['bg_medium'])
+
+        canvas = tk.Canvas(list_outer, bg=self.colors['bg_medium'], highlightthickness=0)
+        vsb = ttk.Scrollbar(list_outer, orient=tk.VERTICAL, command=canvas.yview, style="Custom.Vertical.TScrollbar")
+        canvas.configure(yscrollcommand=vsb.set)
+        vsb.pack(side=tk.RIGHT, fill=tk.Y)
+        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        inner = tk.Frame(canvas, bg=self.colors['bg_medium'])
+        inner_id = canvas.create_window((0, 0), window=inner, anchor="nw")
+
+        def _sync_scrollregion(_=None):
+            canvas.configure(scrollregion=canvas.bbox("all"))
+        inner.bind("<Configure>", _sync_scrollregion)
+
+        def _sync_inner_width(event):
+            canvas.itemconfig(inner_id, width=event.width)
+        canvas.bind("<Configure>", _sync_inner_width)
+
+        def _on_mousewheel(event):
+            canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+
+        def _bind_wheel(_):
+            canvas.bind_all("<MouseWheel>", _on_mousewheel)
+
+        def _unbind_wheel(_):
+            try:
+                canvas.unbind_all("<MouseWheel>")
+            except Exception:
+                pass
+
+        canvas.bind("<Enter>", _bind_wheel)
+        canvas.bind("<Leave>", _unbind_wheel)
+        dialog.bind("<Destroy>", lambda e: _unbind_wheel(None) if e.widget is dialog else None)
+
+        empty_frame = tk.Frame(dialog, bg=self.colors['bg_medium'])
+        tk.Label(
+            empty_frame,
+            text=tr('strategy_not_found'),
+            font=("Segoe UI Variable", fs_card),
+            fg=self.colors['text_secondary'], bg=self.colors['bg_medium']
+        ).pack(pady=(scale_size(30, self.scale_factor), scale_size(8, self.scale_factor)))
+
+        all_strategies = list(self.app.zapret.available_strategies)
+        last_used = getattr(self.app, 'current_strategy', None)
+
+        filtered = []
+        selected_idx = [-1]
+        card_widgets = []
+        search_after_id = [None]
+
+        start_btn = RoundedButton(
+            footer_inner, text=tr('button_start'),
+            command=lambda: launch_selected(),
+            width=scale_size(110, self.scale_factor), height=btn_h,
+            bg=self.colors['accent'], fg=self.colors['button_text_hover'],
+            hover_fg=self.colors['button_text_hover'],
+            font=("Segoe UI Variable", fs_btn),
+            corner_radius=btn_rad, hover_color=self.colors['accent'],
+            theme_name=self.current_theme
+        )
+        start_btn.pack(side=tk.RIGHT)
+
+        cancel_btn = RoundedButton(
+            footer_inner, text=tr('mode_cancel'), command=on_close,
+            width=scale_size(90, self.scale_factor), height=btn_h,
+            bg=self.colors['button_bg'], fg=self.colors['button_text'],
+            hover_fg=self.colors['button_text_hover'],
+            font=("Segoe UI Variable", fs_btn),
+            corner_radius=btn_rad, hover_color=self.colors['accent'],
+            theme_name=self.current_theme
+        )
+        cancel_btn.pack(side=tk.RIGHT, padx=(0, scale_size(8, self.scale_factor)))
+
+        gen_btn = RoundedButton(
+            search_row,
+            text=tr('generate'),
+            command=lambda: messagebox.showinfo(tr('information_desc'), tr('dev')),
+            width=scale_size(140, self.scale_factor), height=btn_h,
+            bg=self.colors['accent'], fg=self.colors['button_text_hover'],
+            hover_fg=self.colors['button_text_hover'],
+            font=("Segoe UI Variable", fs_btn),
+            corner_radius=btn_rad, hover_color=self.colors['accent'],
+            theme_name=self.current_theme
+        )
+        gen_btn.pack(side=tk.RIGHT)
+
+        def ordered_list(query: str):
+            q = query.strip().lower()
+            base = [s for s in all_strategies if (not q or q in s.lower())]
+            if last_used and last_used in base:
+                base = [last_used] + [s for s in base if s != last_used]
+            return base
+
+        def make_card(parent, name: str, idx: int, is_last: bool, query: str):
+            corner_radius = scale_size(10, self.scale_factor)
+            card_padx = scale_size(10, self.scale_factor)
+            card_pady = scale_size(6, self.scale_factor)
+            card_h = scale_size(46, self.scale_factor)
+
+            wrapper = tk.Frame(parent, bg=self.colors['bg_medium'], height=card_h)
+            wrapper.pack(fill=tk.X, padx=scale_size(6, self.scale_factor),
+                        pady=scale_size(3, self.scale_factor))
+            wrapper.pack_propagate(False)
+
+            cv = tk.Canvas(wrapper, bg=self.colors['bg_medium'],
+                        highlightthickness=0, bd=0, cursor="hand2")
+            cv.pack(fill=tk.BOTH, expand=True)
+
+            card = tk.Frame(cv, bg=self.colors['bg_light'], cursor="hand2")
+            card_win = cv.create_window((card_padx, card_pady), window=card, anchor='nw')
+
+            inner_row = tk.Frame(card, bg=self.colors['bg_light'])
+            inner_row.pack(fill=tk.BOTH, expand=True)
+
+            name_box = tk.Frame(inner_row, bg=self.colors['bg_light'])
+            name_box.pack(side=tk.LEFT, fill=tk.X, expand=True,
+                        padx=scale_size(10, self.scale_factor),
+                        pady=scale_size(6, self.scale_factor))
+
+            q = query.strip()
+            labels = []
+            chunks_frame = None
+
+            if not q:
+                lbl = tk.Label(name_box, text=name, anchor='w',
+                            font=("Segoe UI Variable", fs_card, "bold"),
+                            fg=self.colors['accent_hover'], bg=self.colors['bg_light'])
+                lbl.pack(anchor='w', fill=tk.X)
+                labels.append(lbl)
+            else:
+                chunks_frame = tk.Frame(name_box, bg=self.colors['bg_light'])
+                chunks_frame.pack(anchor='w', fill=tk.X)
+
+                low = name.lower()
+                qlow = q.lower()
+                q_len = len(qlow)
+                pos = 0
+                n_len = len(name)
+
+                while pos < n_len:
+                    found = low.find(qlow, pos)
+                    if found == -1:
+                        chunk = name[pos:]
+                        if chunk:
+                            lbl = tk.Label(chunks_frame, text=chunk, anchor='w',
+                                        font=("Segoe UI Variable", fs_card, "bold"),
+                                        fg=self.colors['accent_hover'],
+                                        bg=self.colors['bg_light'])
+                            lbl.pack(side=tk.LEFT)
+                            labels.append(lbl)
+                        break
+
+                    if found > pos:
+                        chunk = name[pos:found]
+                        lbl = tk.Label(chunks_frame, text=chunk, anchor='w',
+                                    font=("Segoe UI Variable", fs_card, "bold"),
+                                    fg=self.colors['accent_hover'],
+                                    bg=self.colors['bg_light'])
+                        lbl.pack(side=tk.LEFT)
+                        labels.append(lbl)
+
+                    match_chunk = name[found:found + q_len]
+                    lbl = tk.Label(chunks_frame, text=match_chunk, anchor='w',
+                                font=("Segoe UI Variable", fs_card, "bold"),
+                                fg=self.colors['accent_green'],
+                                bg=self.colors['bg_light'])
+                    lbl.pack(side=tk.LEFT)
+                    labels.append(lbl)
+
+                    pos = found + q_len
+
+            badge_lbl = None
+            badge_canvas = None
+            badge_draw = None
+            badge_bg_state = {'color': None}
+
+            if is_last:
+                badge_text = "последняя"
+                badge_padx = scale_size(8, self.scale_factor)
+                badge_pady = scale_size(2, self.scale_factor)
+                badge_r = scale_size(8, self.scale_factor)
+
+                _tmp = tk.Label(inner_row, text=badge_text,
+                                font=("Segoe UI Variable", fs_badge, "bold"))
+                _tmp.update_idletasks()
+                tw = _tmp.winfo_reqwidth()
+                th = _tmp.winfo_reqheight()
+                _tmp.destroy()
+
+                badge_w = tw + badge_padx * 2
+                badge_h = th + badge_pady * 2
+
+                badge_canvas = tk.Canvas(
+                    inner_row, width=badge_w, height=badge_h,
+                    bg=self.colors['bg_light'], highlightthickness=0, bd=0
+                )
+                badge_canvas.pack(side=tk.RIGHT,
+                                padx=(0, scale_size(10, self.scale_factor)),
+                                pady=scale_size(6, self.scale_factor))
+
+                badge_lbl = tk.Label(
+                    badge_canvas, text=badge_text,
+                    font=("Segoe UI Variable", fs_badge, "bold"),
+                    fg=self.colors['bg_dark'], bg=self.colors['accent_green']
+                )
+                badge_lbl.place(relx=0.5, rely=0.5, anchor='center')
+
+                def badge_draw(bg_outer, force=False):
+                    if not force and badge_bg_state['color'] == bg_outer:
+                        return
+                    badge_bg_state['color'] = bg_outer
+                    badge_canvas.delete("badge")
+                    badge_canvas.configure(bg=bg_outer)
+                    r = badge_r
+                    pts = [r, 0, badge_w - r, 0, badge_w, 0, badge_w, r,
+                        badge_w, badge_h - r, badge_w, badge_h,
+                        badge_w - r, badge_h, r, badge_h,
+                        0, badge_h, 0, badge_h - r,
+                        0, r, 0, 0]
+                    badge_canvas.create_polygon(pts, smooth=True,
+                                                fill=self.colors['accent_green'],
+                                                outline='', tags="badge")
+                    badge_canvas.tag_lower("badge")
+
+                badge_draw(self.colors['bg_light'], force=True)
+
+            state = {'color': None, 'size': (0, 0)}
+
+            def draw_bg(color, force=False):
+                w, h = cv.winfo_width(), cv.winfo_height()
+                if w <= 1 or h <= 1:
+                    return
+                size = (w, h)
+                if not force and state['color'] == color and state['size'] == size:
+                    return
+                state['color'] = color
+                state['size'] = size
+                cv.delete("bg")
+                r = corner_radius
+                pts = [r, 0, w - r, 0, w, 0, w, r,
+                    w, h - r, w, h, w - r, h,
+                    r, h, 0, h, 0, h - r,
+                    0, r, 0, 0]
+                cv.create_polygon(pts, smooth=True, fill=color, outline='', tags="bg")
+                cv.tag_lower("bg")
+
+            def on_canvas_resize(event):
+                cv.itemconfig(card_win,
+                            width=event.width - card_padx * 2,
+                            height=event.height - card_pady * 2)
+                draw_bg(state['color'] or self.colors['bg_light'])
+
+            cv.bind("<Configure>", on_canvas_resize)
+
+            def _set_bg(color):
+                for w in (card, inner_row, name_box, chunks_frame):
+                    if w is None:
+                        continue
+                    try:
+                        w.configure(bg=color)
+                    except Exception:
+                        pass
+                for l in labels:
+                    try:
+                        l.configure(bg=color)
+                    except Exception:
+                        pass
+                if badge_draw is not None:
+                    try:
+                        badge_draw(color)
+                    except Exception:
+                        pass
+
+            def on_enter(_e):
+                if selected_idx[0] == idx:
+                    return
+                draw_bg(self.colors['bg_light_hover'])
+                _set_bg(self.colors['bg_light_hover'])
+
+            def on_leave(_e):
+                if selected_idx[0] == idx:
+                    return
+                draw_bg(self.colors['bg_light'])
+                _set_bg(self.colors['bg_light'])
+
+            def on_click(_e=None):
+                select_index(idx)
+
+            def on_dbl(_e=None):
+                select_index(idx)
+                launch_selected()
+
+            click_widgets = [cv, wrapper, card, inner_row, name_box]
+            if chunks_frame is not None:
+                click_widgets.append(chunks_frame)
+            click_widgets += labels
+            if badge_canvas is not None:
+                click_widgets.append(badge_canvas)
+            if badge_lbl is not None:
+                click_widgets.append(badge_lbl)
+
+            for w in click_widgets:
+                w.bind("<Enter>", on_enter)
+                w.bind("<Leave>", on_leave)
+                w.bind("<Button-1>", on_click)
+                w.bind("<Double-Button-1>", on_dbl)
+
+            wrapper.after(1, lambda: draw_bg(self.colors['bg_light'], force=True))
+
+            return {
+                'name': name,
+                'frame': wrapper,
+                'canvas': cv,
+                'card': card,
+                'inner': inner_row,
+                'name_box': name_box,
+                'chunks_frame': chunks_frame,
+                'labels': labels,
+                'badge': badge_lbl,
+                'badge_canvas': badge_canvas,
+                'badge_draw': badge_draw,
+                'draw_bg': draw_bg,
+                'set_bg': _set_bg,
+            }
+
+        def apply_selection_style(idx: int, selected: bool):
+            if not (0 <= idx < len(card_widgets)):
                 return
-            
-            selected_strategy = self.app.zapret.available_strategies[selection[0]]
-            self.app.strategy_var.set(selected_strategy)
-            dialog.destroy()
-            
+            data = card_widgets[idx]
+            bg = self.colors['accent'] if selected else self.colors['bg_light']
+            try:
+                data['draw_bg'](bg)
+                data['set_bg'](bg)
+            except Exception:
+                pass
+
+            fg = self.colors['button_text_hover'] if selected else self.colors['accent_hover']
+            for l in data['labels']:
+                try:
+                    l.configure(fg=fg)
+                except Exception:
+                    pass
+
+        def select_index(idx: int):
+            if not (0 <= idx < len(card_widgets)):
+                return
+            for i in range(len(card_widgets)):
+                apply_selection_style(i, selected=(i == idx))
+            selected_idx[0] = idx
+            update_start_btn()
+
+        def update_start_btn():
+            enabled = (0 <= selected_idx[0] < len(filtered))
+            if enabled:
+                start_btn.set_enabled(True)
+                start_btn.update_colors(self.colors['accent'], '#FFFFFF', self.colors['accent'])
+                start_btn.config(cursor="hand2")
+            else:
+                start_btn.set_enabled(False)
+                start_btn.update_colors(self.colors['button_bg'],
+                                        self.colors['text_secondary'],
+                                        self.colors['button_bg'])
+                start_btn.config(cursor="arrow")
+
+        def redraw_list():
+            for w in inner.winfo_children():
+                w.destroy()
+            card_widgets.clear()
+
+            filtered[:] = ordered_list(search_var.get())
+            query = search_var.get()
+
+            if not filtered:
+                list_outer.pack_forget()
+                empty_frame.pack(fill=tk.BOTH, expand=True,
+                                pady=scale_size(20, self.scale_factor))
+                update_start_btn()
+                return
+
+            empty_frame.pack_forget()
+            if not list_outer.winfo_ismapped():
+                list_outer.pack(fill=tk.BOTH, expand=True,
+                                padx=scale_size(14, self.scale_factor),
+                                pady=(0, scale_size(6, self.scale_factor)),
+                                before=footer)
+
+            if selected_idx[0] >= len(filtered):
+                selected_idx[0] = -1
+
+            for i, name in enumerate(filtered):
+                is_last = (name == last_used)
+                card_widgets.append(make_card(inner, name, i, is_last, query))
+
+            for i in range(len(card_widgets)):
+                apply_selection_style(i, selected=(i == selected_idx[0]))
+
+            update_start_btn()
+
+        def _ensure_visible(idx: int):
+            if not (0 <= idx < len(card_widgets)):
+                return
+            try:
+                inner.update_idletasks()
+                canvas.update_idletasks()
+
+                frame = card_widgets[idx]['frame']
+                card_y = frame.winfo_y()
+                card_h = frame.winfo_height()
+
+                inner_h = max(1, inner.winfo_height())
+                canvas_h = canvas.winfo_height()
+
+                top_frac, bottom_frac = canvas.yview()
+                view_top = top_frac * inner_h
+                view_bottom = bottom_frac * inner_h
+
+                card_top = card_y
+                card_bottom = card_y + card_h
+
+                if card_top < view_top:
+                    new_top = max(0, card_top - card_h * 0.2)
+                    canvas.yview_moveto(new_top / inner_h)
+                elif card_bottom > view_bottom:
+                    new_top = max(0, card_bottom - canvas_h + card_h * 0.2)
+                    canvas.yview_moveto(new_top / inner_h)
+            except Exception:
+                pass
+
+        def on_search_change(*_):
+            if search_after_id[0]:
+                dialog.after_cancel(search_after_id[0])
+            search_after_id[0] = dialog.after(200, do_filter)
+
+        def do_filter():
+            search_after_id[0] = None
+            selected_idx[0] = -1
+            redraw_list()
+
+        search_var.trace_add("write", on_search_change)
+
+        def on_key(event):
+            if event.keysym == 'Escape':
+                on_close()
+                return "break"
+            if event.keysym in ('Down', 'Up'):
+                n = len(filtered)
+                if not n:
+                    return "break"
+                cur = selected_idx[0]
+                if event.keysym == 'Down':
+                    new_idx = 0 if cur < 0 else min(cur + 1, n - 1)
+                else:
+                    new_idx = n - 1 if cur < 0 else max(cur - 1, 0)
+                select_index(new_idx)
+                _ensure_visible(new_idx)
+                return "break"
+            if event.keysym == 'Return':
+                if 0 <= selected_idx[0] < len(filtered):
+                    launch_selected()
+                return "break"
+            return None
+
+        dialog.bind('<Escape>', on_key)
+        dialog.bind('<Down>', on_key)
+        dialog.bind('<Up>', on_key)
+        dialog.bind('<Return>', on_key)
+        search_entry.bind('<Escape>', on_key)
+        search_entry.bind('<Down>', on_key)
+        search_entry.bind('<Up>', on_key)
+        search_entry.bind('<Return>', on_key)
+
+        def set_last_used(name: str):
+            nonlocal last_used
+            last_used = name
+            try:
+                self.app.current_strategy = name
+                self.app.save_settings()
+            except Exception as e:
+                self._log("set_last_used save", e)
+
+        def launch_selected():
+            if not (0 <= selected_idx[0] < len(filtered)):
+                return
+
+            name = filtered[selected_idx[0]]
+            set_last_used(name)
+
             mode = self.app._pending_mode
+            dialog.destroy()
+            self.app._connecting = False
+            self.app.force_tray_menu_update()
+
+            self.app.strategy_var.set(name)
             self.app.update_status(f"{tr('status_starting')}", self.colors['accent'])
             if hasattr(self.app, 'connect_btn') and self.app.connect_btn:
                 self.app.connect_btn.set_enabled(False)
             self.app.root.update()
-            
-            if mode["name"] == tr('mode_zapret_tgproxy'):
+
+            if mode and mode.get("name") == tr('mode_zapret_tgproxy'):
                 def start_combined():
-                    success, msg = self.app.zapret.run_strategy(selected_strategy)
+                    success, msg = self.app.zapret.run_strategy(name)
                     if not success:
                         self.app.root.after(0, lambda: self.app._on_combined_start_failed(msg))
                         return
-                    
-                    self.app.current_strategy = selected_strategy
+
+                    self.app.current_strategy = name
                     self.app.save_settings()
-                    
+
                     tg_success = self.app.tg_proxy.start()
                     if not tg_success:
                         self.app.zapret.stop_current_strategy()
                         self.app.root.after(0, lambda: self.app._on_combined_start_failed(tr('error_tgproxy_start')))
                         return
-                    
+
                     if not self.app.tg_proxy.wait_for_start(8):
                         self.app.zapret.stop_current_strategy()
                         self.app.tg_proxy.stop()
                         self.app.root.after(0, lambda: self.app._on_combined_start_failed(tr('error_tgproxy_timeout')))
                         return
-                    
+
                     self.app.is_connected = True
                     self.app.stats.start_session()
                     self.app.start_stats_monitoring()
-                    
+
                     self.app._current_mode_key = mode["key"]
                     self.app.root.after(0, lambda: self.app._on_combined_start_success(mode["name"]))
-                
+
                 threading.Thread(target=start_combined, daemon=True).start()
-            else:
-                success, msg = self.app.zapret.run_strategy(selected_strategy)
-                if not success:
-                    self.app.update_status(tr('status_error'), self.colors['accent_red'])
-                    messagebox.showerror(tr('error_startup'), msg)
-                    if hasattr(self.app, 'connect_btn') and self.app.connect_btn:
-                        self.app.connect_btn.set_enabled(True)
-                    self.app._connecting = False
-                    self.app.force_tray_menu_update()
-                    return
-                
-                self.app.current_strategy = selected_strategy
-                self.app.save_settings()
-                
-                if mode.get("tgproxy", False):
-                    self.app.tg_proxy.start()
-                
-                self.app.is_connected = True
-                self.app.stats.start_session()
-                self.app.start_stats_monitoring()
-                
-                if hasattr(self.app, 'mode_label') and self.app.mode_label:
-                    strategy_display = self.app.zapret.get_strategy_display_name(selected_strategy)
-                    self.app.mode_label.config(
-                        text=f"{mode['name']} ({strategy_display})",
-                        fg=self.colors['accent_green']
-                    )
-                self.app.update_status(f"{tr('status_connected')}", self.colors['accent_green'])
-                self.app.update_ui_state()
-                self.app.save_settings()
-                self.app.root.after(500, self.app.update_tray_icon_state)
+                return
+
+            success, msg = self.app.zapret.run_strategy(name)
+            if not success:
+                self.app.update_status(tr('status_error'), self.colors['accent_red'])
+                messagebox.showerror(tr('error_startup'), msg)
                 if hasattr(self.app, 'connect_btn') and self.app.connect_btn:
                     self.app.connect_btn.set_enabled(True)
+                return
 
+            self.app.current_strategy = name
+            self.app.save_settings()
+
+            if mode and mode.get("tgproxy", False):
+                self.app.tg_proxy.start()
+
+            self.app.is_connected = True
+            self.app.stats.start_session()
+            self.app.start_stats_monitoring()
+
+            if hasattr(self.app, 'mode_label') and self.app.mode_label and mode:
+                strategy_display = self.app.zapret.get_strategy_display_name(name)
+                self.app.mode_label.config(
+                    text=f"{mode['name']} ({strategy_display})",
+                    fg=self.colors['accent_green']
+                )
+            self.app.update_status(f"{tr('status_connected')}", self.colors['accent_green'])
+            self.app.update_ui_state()
+            self.app.save_settings()
+            self.app.root.after(500, self.app.update_tray_icon_state)
+            if hasattr(self.app, 'connect_btn') and self.app.connect_btn:
+                self.app.connect_btn.set_enabled(True)
+
+            if mode:
                 self.app._current_mode_key = mode["key"]
-                try:
-                    if hasattr(self.app, 'user_stats'):
-                        self.app.user_stats.on_connect(mode["key"])
-                except Exception as e:
-                    self._log("user_stats.on_connect", e)
+            try:
+                if hasattr(self.app, 'user_stats') and mode:
+                    self.app.user_stats.on_connect(mode["key"])
+            except Exception as e:
+                self._log("user_stats.on_connect", e)
 
-                self.app._connecting = False
-                self.app.force_tray_menu_update()
-        
-        start_btn = RoundedButton(
-            btn_frame, text=tr('button_start'), command=start_with_strategy,
-            width=btn_width, height=btn_height, bg=self.colors['accent'],
-            fg=self.colors['button_text_hover'],
-            hover_fg=self.colors['button_text_hover'],
-            font=("Segoe UI Variable", font_size_btn), corner_radius=btn_radius,
-            hover_color=self.colors['accent'], theme_name=self.current_theme
-        )
-        start_btn.pack(side=tk.LEFT, padx=scale_size(5, self.scale_factor))
-        
-        cancel_btn = RoundedButton(
-            btn_frame, text=tr('mode_cancel'), command=lambda: self.app._cancel_strategy_selection(dialog),
-            width=btn_width_cancel, height=btn_height, bg=self.colors['button_bg'],
-            fg=self.colors['button_text'],
-            hover_fg=self.colors['button_text_hover'],
-            font=("Segoe UI Variable", font_size_btn), corner_radius=btn_radius,
-            hover_color=self.colors['accent'], theme_name=self.current_theme
-        )
-        cancel_btn.pack(side=tk.LEFT, padx=scale_size(5, self.scale_factor))
+            self.app.force_tray_menu_update()
+
+        redraw_list()
+        search_entry.focus_set()
         dialog.deiconify()
+        dialog.update_idletasks()
+
+        def _fade(alpha=0.0):
+            if not dialog.winfo_exists():
+                return
+            alpha = min(1.0, alpha + 0.2)
+            try:
+                dialog.attributes('-alpha', alpha)
+            except Exception:
+                return
+            if alpha < 1.0:
+                dialog.after(10, lambda: _fade(alpha))
+
+        _fade()
 
     def show_tg_proxy_instruction(self):
         dialog_width = scale_size(500, self.scale_factor)
