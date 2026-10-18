@@ -328,6 +328,13 @@ class ListEditor:
 
             messagebox.showinfo(tr('success'), f"{tr('editor_success')}\n{tr('restart_zapret')}")
             self.dialog.destroy()
+
+            try:
+                if self.app and hasattr(self.app, 'pages') and hasattr(self.app.pages, 'lists_page_obj'):
+                    self.app.pages.lists_page_obj.refresh()
+            except Exception as e:
+                self._log("refresh lists page", e)
+            self.dialog.destroy()
         except Exception as e:
             self._log(f"save_content {os.path.basename(self.file_path)}", e)
             messagebox.showerror(tr('error_no_connection'), f"{tr('editor_error_save')}: {str(e)}")
