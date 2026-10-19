@@ -9,6 +9,7 @@
 import tkinter as tk
 from utils.scaling import scale_size
 from utils.languages import tr, tr_plural
+from tkinter import messagebox
 
 MODE_TRANSLATION_KEYS = {
     "Standard": "mode_standard",
@@ -87,6 +88,23 @@ class StatsPage(tk.Frame):
             fg=c["text_secondary"], bg=c["bg_medium"],
         )
         self._labels["hero_sub"].pack(anchor="w", pady=(scale_size(6, sf), 0))
+
+        id_frame = tk.Frame(outer, bg=c["bg_dark"])
+        id_frame.pack(fill=tk.X, pady=(scale_size(12, sf), 0))
+
+        self._id_link = tk.Label(
+            id_frame,
+            text=tr("stats_your_install_id"),
+            font=("Segoe UI Variable", scale_size(10, sf)),
+            fg=c["accent"],
+            bg=c["bg_dark"],
+            cursor="hand2",
+        )
+        self._id_link.pack(anchor="w")
+
+        self._id_link.bind("<Enter>", lambda e: self._id_link.config(fg=c["accent_hover"]))
+        self._id_link.bind("<Leave>", lambda e: self._id_link.config(fg=c["accent"]))
+        self._id_link.bind("<Button-1>", self._on_install_id_click)
 
         grid = tk.Frame(outer, bg=c["bg_dark"])
         grid.pack(fill=tk.X, pady=(scale_size(20, sf), 0))
@@ -238,3 +256,37 @@ class StatsPage(tk.Frame):
         v1.config(text=str(min_p) if min_p is not None else "—")
         v2.config(text=str(max_p) if max_p is not None else "—")
         self._labels["current_strategy"]["sub"].config(text=tr("stats_ping_minmax"))
+
+    def _on_install_id_click(self, event=None):
+        if not messagebox.askyesno(
+            tr("error_warning"),
+            tr("stats_install_id_warning_message"),
+            icon=messagebox.WARNING
+        ):
+            return
+        self._show_install_id()
+
+    def _show_install_id(self):
+        try:
+            iid = getattr(self.app, "user_stats", None)
+            iid = iid.install_id if iid else None
+        except Exception:
+            iid = None
+
+        if not iid:
+            messagebox.showerror(tr("error"), tr("stats_install_id_not_available"))
+            return
+
+        try:
+            self.app.root.clipboard_clear()
+            self.app.root.clipboard_append(iid)
+            self.app.root.update()
+            copied = True
+        except Exception:
+            copied = False
+
+        body = iid
+        if copied:
+            body += "\n\n" + tr("notification_install_id_copied")
+
+        messagebox.showinfo(tr("information_desc"), body)
