@@ -80,6 +80,17 @@ class Languages:
             'stats_sessions_word_one': 'сессия',
             'stats_sessions_word_few': 'сессии',
             'stats_sessions_word_many': 'сессий',
+            'stats_your_install_id': 'Узнать свой Install id',
+            'stats_install_id_warning_title': 'Показать Install id?',
+            'stats_install_id_warning_message': (
+                'Install id - это уникальный идентификатор вашего лаунчера\n'
+                'Не показывайте его на стримах, в демонстрации экрана, '
+                'на скриншотах или в публичных чатах\n\n'
+                'Зная ваш Install id, злоумышленник может попытаться '
+                'испортить вашу статистику или выдать себя за вас\n\n'
+                'Продолжить?'
+            ),
+            'stats_install_id_not_available': 'Install ID ещё не создан. Попробуйте позже',
             
             'traffic_title': 'Трафик',
             'traffic_desc': 'Мониторинг сетевого трафика по процессам',
@@ -210,6 +221,7 @@ class Languages:
             'notification_save_settings': 'Перезапустите Telegram Proxy',
             'notification_copied': 'Ссылка скопирована',
             'notification_copied_secret': 'Секрет-ключ скопирован',
+            'notification_install_id_copied': 'Install id скопирован',
             'notification_updated_secret': 'Секрет-ключ обновлен',
             
             'dialog_exit': 'Выход',
@@ -436,6 +448,17 @@ class Languages:
             'stats_sessions_word_one': 'session',
             'stats_sessions_word_few': 'sessions',
             'stats_sessions_word_many': 'sessions',
+            'stats_your_install_id': 'Find your Install id',
+            'stats_install_id_warning_title': 'Show Install id?',
+            'stats_install_id_warning_message': (
+                'Install id is a unique identifier of your launcher\n'
+                'Do not show it on streams, screen sharing, '
+                'screenshots or public chats\n\n'
+                'Knowing your Install id, an attacker may try to '
+                'corrupt your statistics or impersonate you\n\n'
+                'Continue?'
+            ),
+            'stats_install_id_not_available': 'Install id is not created yet. Try again later',
             
             'traffic_title': 'Traffic',
             'traffic_desc': 'Network traffic monitoring by process',
@@ -566,6 +589,7 @@ class Languages:
             'notification_save_settings': 'Restart Telegram Proxy',
             'notification_copied': 'Link copied',
             'notification_copied_secret': 'Secret-key copied',
+            'notification_install_id_copied': 'Install id copied',
             'notification_updated_secret': 'Secret-key updated',
             
             'dialog_exit': 'Exit',
