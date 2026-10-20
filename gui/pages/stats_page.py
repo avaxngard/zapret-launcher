@@ -7,7 +7,7 @@
 # Distributed WITHOUT ANY WARRANTY.
 
 import tkinter as tk
-from utils.scaling import scale_size
+from utils.scaling import scale_size, scale_font
 from utils.languages import tr, tr_plural
 from tkinter import messagebox
 
@@ -128,6 +128,7 @@ class StatsPage(tk.Frame):
     def _make_card(self, parent, label, value, sub, vtype, col):
         c = self.colors
         sf = self.sf
+        SOF = 0.2 
 
         card = tk.Frame(
             parent, bg=c["bg_medium"],
@@ -138,7 +139,7 @@ class StatsPage(tk.Frame):
 
         tk.Label(
             card, text=label.upper(),
-            font=("Segoe UI Variable", scale_size(9, sf)),
+            font=("Segoe UI Variable", scale_font(9, sf, softness=SOF)),
             fg=c["text_secondary"], bg=c["bg_medium"], anchor="w",
         ).pack(fill=tk.X)
 
@@ -147,26 +148,27 @@ class StatsPage(tk.Frame):
             row.pack(fill=tk.X, anchor="w", pady=(scale_size(10, sf), 0))
 
             v1 = tk.Label(row, text=value,
-                          font=("Segoe UI Variable", scale_size(18, sf), "bold"),
+                          font=("Segoe UI Variable", scale_font(18, sf, softness=SOF), "bold"),
                           fg=c["accent"], bg=c["bg_medium"])
             v1.pack(side=tk.LEFT)
 
             tk.Label(row, text="/",
-                     font=("Segoe UI Variable", scale_size(16, sf)),
+                     font=("Segoe UI Variable", scale_font(16, sf, softness=SOF)),
                      fg=c["text_secondary"], bg=c["bg_medium"],
                      ).pack(side=tk.LEFT, padx=scale_size(6, sf))
 
             v2 = tk.Label(row, text="—",
-                          font=("Segoe UI Variable", scale_size(18, sf), "bold"),
+                          font=("Segoe UI Variable", scale_font(18, sf, softness=SOF), "bold"),
                           fg=c["accent"], bg=c["bg_medium"])
             v2.pack(side=tk.LEFT)
 
             value_label = (v1, v2)
         else:
             color = c["accent"] if vtype == "accent" else c["accent"]
+            
             value_label = tk.Label(
                 card, text=value,
-                font=("Segoe UI Variable", scale_size(18, sf), "bold"),
+                font=("Segoe UI Variable", scale_font(18, sf, softness=SOF), "bold"),
                 fg=color, bg=c["bg_medium"], anchor="w",
             )
             value_label.pack(fill=tk.X, pady=(scale_size(10, sf), 0))
