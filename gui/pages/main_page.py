@@ -14,7 +14,7 @@ from pathlib import Path
 from PIL import Image, ImageTk, ImageEnhance
 import sys
 from utils.languages import tr
-from utils.scaling import scale_size
+from utils.scaling import scale_size, scale_font
 
 class MainPage:
     def __init__(self, parent, app):
@@ -257,10 +257,25 @@ class MainPage:
         row1 = tk.Frame(inner, bg=self.colors['bg_light'])
         row1.pack(fill=tk.X, pady=(0, scale_size(8, self.scale_factor)))
         
+        port_frame = tk.Frame(row1, bg=self.colors['bg_light'])
+        port_frame.pack(side=tk.RIGHT)
+        
+        tk.Label(port_frame, text=tr('main_page_tg_proxy_port'), font=("Segoe UI Variable", scale_font(9, self.scale_factor)),
+                fg=self.colors['text_secondary'], bg=self.colors['bg_light'], anchor='w').pack(anchor='w')
+        
+        self.tg_port_entry = tk.Entry(port_frame, font=("Segoe UI Variable", scale_size(10, self.scale_factor)),
+                                    bg=self.colors['bg_light'], fg=self.colors['text_primary'],
+                                    relief=tk.FLAT, highlightthickness=1,
+                                    highlightcolor=self.colors['accent'],
+                                    highlightbackground=self.colors['separator'],
+                                    width=scale_size(6, self.scale_factor))
+        self.tg_port_entry.pack(pady=(scale_size(2, self.scale_factor), 0), ipady=scale_size(4, self.scale_factor))
+        self.tg_port_entry.insert(0, "1443")
+        
         host_frame = tk.Frame(row1, bg=self.colors['bg_light'])
         host_frame.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, scale_size(10, self.scale_factor)))
         
-        tk.Label(host_frame, text=tr('main_page_tg_proxy_host'), font=("Segoe UI Variable", scale_size(9, self.scale_factor)),
+        tk.Label(host_frame, text=tr('main_page_tg_proxy_host'), font=("Segoe UI Variable", scale_font(9, self.scale_factor)),
                 fg=self.colors['text_secondary'], bg=self.colors['bg_light'], anchor='w').pack(anchor='w')
         
         self.tg_host_entry = tk.Entry(host_frame, font=("Segoe UI Variable", scale_size(10, self.scale_factor)),
@@ -270,21 +285,6 @@ class MainPage:
                                     highlightbackground=self.colors['separator'])
         self.tg_host_entry.pack(fill=tk.X, pady=(scale_size(2, self.scale_factor), 0), ipady=scale_size(4, self.scale_factor))
         self.tg_host_entry.insert(0, "127.0.0.1")
-        
-        port_frame = tk.Frame(row1, bg=self.colors['bg_light'])
-        port_frame.pack(side=tk.RIGHT)
-        
-        tk.Label(port_frame, text=tr('main_page_tg_proxy_port'), font=("Segoe UI Variable", scale_size(9, self.scale_factor)),
-                fg=self.colors['text_secondary'], bg=self.colors['bg_light'], anchor='w').pack(anchor='w')
-        
-        self.tg_port_entry = tk.Entry(port_frame, font=("Segoe UI Variable", scale_size(10, self.scale_factor)),
-                                    bg=self.colors['bg_light'], fg=self.colors['text_primary'],
-                                    relief=tk.FLAT, highlightthickness=1,
-                                    highlightcolor=self.colors['accent'],
-                                    highlightbackground=self.colors['separator'],
-                                    width=scale_size(7, self.scale_factor))
-        self.tg_port_entry.pack(pady=(scale_size(2, self.scale_factor), 0), ipady=scale_size(4, self.scale_factor))
-        self.tg_port_entry.insert(0, "1443")
         
         row2 = tk.Frame(inner, bg=self.colors['bg_light'])
         row2.pack(fill=tk.X, pady=(0, scale_size(8, self.scale_factor)))
@@ -318,10 +318,12 @@ class MainPage:
         row3 = tk.Frame(inner, bg=self.colors['bg_light'])
         row3.pack(fill=tk.X, pady=(0, scale_size(10, self.scale_factor)))
         
-        tk.Label(row3, text=tr('main_page_tg_proxy_domain'), font=("Segoe UI Variable", scale_size(9, self.scale_factor)),
-                fg=self.colors['text_secondary'], bg=self.colors['bg_light'], width=scale_size(8, self.scale_factor), anchor='w').pack(side=tk.LEFT)
+        tk.Label(row3, text=tr('main_page_tg_proxy_domain'),
+         font=("Segoe UI Variable", scale_font(9, self.scale_factor)),
+         fg=self.colors['text_secondary'], bg=self.colors['bg_light'],
+         width=scale_size(8, self.scale_factor), anchor='w').pack(side=tk.LEFT)
         
-        self.tg_domain_entry = tk.Entry(row3, font=("Segoe UI Variable", scale_size(10, self.scale_factor)),
+        self.tg_domain_entry = tk.Entry(row3, font=("Segoe UI Variable", scale_font(10, self.scale_factor, softness=0.4)),
                                         bg=self.colors['bg_light'], fg=self.colors['text_primary'],
                                         relief=tk.FLAT, highlightthickness=1,
                                         highlightcolor=self.colors['accent'],
@@ -333,11 +335,11 @@ class MainPage:
             inner,
             text=tr('button_apply'),
             command=self.save_tg_proxy_settings,
-            width=scale_size(200, self.scale_factor), height=scale_size(32, self.scale_factor),
+            width=scale_size(200, self.scale_factor), height=scale_font(32, self.scale_factor),
             bg=self.colors['accent'],
             fg=self.colors['button_text_hover'],
             hover_fg=self.colors['button_text_hover'],
-            font=("Segoe UI Variable", scale_size(10, self.scale_factor)),
+            font=("Segoe UI Variable", scale_font(10, self.scale_factor, softness=0.4)),
             corner_radius=scale_size(8, self.scale_factor),
             hover_color=self.colors['accent'],
             theme_name=self.app.current_theme
@@ -348,11 +350,11 @@ class MainPage:
             inner,
             text=tr('tg_copy_secret'),
             command=self.copy_current_link,
-            width=scale_size(200, self.scale_factor), height=scale_size(32, self.scale_factor),
+            width=scale_size(200, self.scale_factor), height=scale_font(32, self.scale_factor),
             bg=self.colors['button_bg'],
             fg=self.colors['button_text'],
             hover_fg=self.colors['button_text_hover'],
-            font=("Segoe UI Variable", scale_size(10, self.scale_factor)),
+            font=("Segoe UI Variable", scale_font(10, self.scale_factor, softness=0.4)),
             corner_radius=scale_size(8, self.scale_factor),
             hover_color=self.colors['accent'],
             theme_name=self.app.current_theme
