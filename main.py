@@ -48,7 +48,7 @@ import re
 import ctypes
 import urllib.request
 from utils.version import compare_builds, compare_zapret_versions
-from utils.scaling import set_dpi_awareness, get_optimal_scale, scale_size
+from utils.scaling import set_dpi_awareness, get_optimal_scale, scale_size, scale_font
 from utils.stats import StatsMonitor
 from config import CURRENT_VERSION, CURRENT_BUILD, APPDATA_DIR, CONFIG_FILE, ZAPRET_CORE_DIR, LISTS_DIR, TG_HOST, TG_PORT, TG_FAKE_TLS, TG_FAKE_TLS_DOMAIN, BUILDNUMBER_URL, ZAPRET_VERSION_URL, VERSION_URL, ICON_PATH, PNG_ICON_PATH, CHECK_UPDATES_INTERVAL
 
@@ -1075,29 +1075,28 @@ class ZapretLauncher:
         left_panel.pack(side=tk.LEFT, fill=tk.Y)
         left_panel.pack_propagate(False)
         
-        logo_height = scale_size(140, self.scale_factor)
+        icon_size = scale_size(140, self.scale_factor)
+        logo_height = icon_size + scale_size(30, self.scale_factor)
         logo_frame = tk.Frame(left_panel, bg=self.colors['bg_medium'], height=logo_height)
         logo_frame.pack(fill=tk.X, pady=(scale_size(40, self.scale_factor), scale_size(20, self.scale_factor)))
         logo_frame.pack_propagate(False)
         self.left_panel = left_panel
-        
+
         try:
+            from PIL import Image, ImageTk
             icon_path = [PNG_ICON_PATH]
             icon_image = None
             for path in icon_path:
                 if path and path.exists():
-                    icon_image = tk.PhotoImage(file=str(path))
+                    img = Image.open(path).convert("RGBA")
+                    img = img.resize((icon_size, icon_size), Image.Resampling.LANCZOS)
+                    icon_image = ImageTk.PhotoImage(img)
                     break
-            
+
             if icon_image:
-                icon_size = scale_size(120, self.scale_factor)
-                if icon_image.width() > 0 and icon_image.height() > 0:
-                    resize_ratio = max(icon_image.width() // icon_size, icon_image.height() // icon_size)
-                    if resize_ratio > 1:
-                        icon_image = icon_image.subsample(resize_ratio, resize_ratio)
                 icon_label = tk.Label(logo_frame, image=icon_image, bg=self.colors['bg_medium'])
                 icon_label.image = icon_image
-                icon_label.pack(expand=True, pady=scale_size(10, self.scale_factor))
+                icon_label.pack(expand=True)
             else:
                 raise Exception("Error: File icon not found")
         except Exception:
