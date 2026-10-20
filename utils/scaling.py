@@ -17,46 +17,53 @@ def set_dpi_awareness():
         except AttributeError:
             pass
 
-def get_scale_factor():
+def get_dpi_scale():
     try:
         hdc = ctypes.windll.user32.GetDC(0)
         dpi_x = ctypes.windll.gdi32.GetDeviceCaps(hdc, 88)
         ctypes.windll.user32.ReleaseDC(0, hdc)
-        
-        base_dpi = 96
-        scale = dpi_x / base_dpi
-        scale = max(0.8, min(2.0, scale))
-        return scale
+        if dpi_x <= 0:
+            return 1.0
+        scale = dpi_x / 96.0
+        return max(0.75, min(3.0, scale))
     except Exception:
         return 1.0
 
+def get_scale_factor():
+    return get_dpi_scale()
+
 def get_optimal_scale():
+    dpi_scale = get_dpi_scale()
+
     try:
         user32 = ctypes.windll.user32
-        screen_width = user32.GetSystemMetrics(0)
-        screen_height = user32.GetSystemMetrics(1)
-        
-        base_width = 1920
-        base_height = 1080
-        
-        scale_w = screen_width / base_width
-        scale_h = screen_height / base_height
-        scale = min(scale_w, scale_h)
-        scale = max(0.8, min(1.5, scale))
-        
-        if screen_width >= 3840 and screen_height >= 2160:
-            scale = 1.25
-        elif screen_width >= 2560 and screen_height >= 1440:
+        screen_w = user32.GetSystemMetrics(0)
+        screen_h = user32.GetSystemMetrics(1)
+
+        base_w, base_h = 1200, 800
+        max_scale_w = (screen_w * 0.92) / base_w
+        max_scale_h = (screen_h * 0.92) / base_h
+        max_scale = min(max_scale_w, max_scale_h)
+
+        scale = min(dpi_scale, max_scale)
+
+        if screen_w >= 2560 and screen_h >= 1440 and scale < 1.0:
             scale = 1.0
-        elif screen_width <= 1920 and screen_height <= 1080:
-            scale = 1.0
-        
+
+        if screen_w >= 3840 and screen_h >= 2160 and dpi_scale <= 1.0:
+            scale = max(scale, 1.25)
+
+        scale = max(0.75, min(2.5, scale))
         return scale
     except Exception:
-        return 1.0
+        return dpi_scale if dpi_scale else 1.0
 
 def scale_size(size, scale_factor):
     return int(size * scale_factor)
 
 def scale_value(value, scale_factor):
     return int(round(value * scale_factor))
+
+def scale_font(size, scale_factor, softness=0.6):
+    eff = 1.0 + (scale_factor - 1.0) * softness
+    return max(1, int(round(size * eff)))
