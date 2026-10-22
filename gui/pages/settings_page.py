@@ -771,6 +771,7 @@ class SettingsPage:
                     
                     bat_files_to_delete = [
                         "service.bat",
+                        "service_en.bat",
                         "general.bat",
                         "general (ALT).bat",
                         "general (ALT2).bat",
