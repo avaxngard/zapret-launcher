@@ -1,5 +1,5 @@
 @echo off
-set "LOCAL_VERSION=2.3.0"
+set "LOCAL_VERSION=2.3.1"
 
 :: External commands
 if "%~1"=="status_zapret" (
@@ -520,9 +520,9 @@ if not exist "%BIN_PATH%\*.sys" (
 
 :: VPN
 set "VPN_SERVICES="
-sc query | findstr /I "VPN" > nul
+sc query | findstr /I "VPN HappService" > nul
 if !errorlevel!==0 (
-    for /f "tokens=2 delims=:" %%A in ('sc query ^| findstr /I "VPN"') do (
+    for /f "tokens=2 delims=:" %%A in ('sc query ^| findstr /I "VPN HappService"') do (
         if not defined VPN_SERVICES (
             set "VPN_SERVICES=!VPN_SERVICES!%%A"
         ) else (
@@ -1074,76 +1074,6 @@ echo Finished
 
 pause
 goto menu
-
-
-:: HOSTS UPDATE =======================
-:hosts_update
-chcp 437 > nul
-cls
-
-set "hostsFile=%SystemRoot%\System32\drivers\etc\hosts"
-set "hostsUrl=https://raw.githubusercontent.com/Flowseal/zapret-discord-youtube/refs/heads/main/.service/hosts"
-set "tempFile=%TEMP%\zapret_hosts.txt"
-set "needsUpdate=0"
-
-set "cacheBuster=%RANDOM%%RANDOM%%RANDOM%"
-set "requestUrl=%hostsUrl%?t=%cacheBuster%"
-
-echo Checking hosts file...
-
-if exist "%SystemRoot%\System32\curl.exe" (
-    curl -L -s -f -o "%tempFile%" "%requestUrl%"
-) else (
-    powershell -NoProfile -Command ^
-        "$url = '%requestUrl%';" ^
-        "$out = '%tempFile%';" ^
-        "$res = Invoke-WebRequest -Uri $url -TimeoutSec 10 -UseBasicParsing;" ^
-        "if ($res.StatusCode -eq 200) { $res.Content | Out-File -FilePath $out -Encoding UTF8 } else { exit 1 }"
-)
-if not exist "%tempFile%" (
-    call :PrintRed "Failed to download hosts file from repository"
-    call :PrintYellow "Copy hosts file manually from %hostsUrl%"
-    pause
-    goto menu
-)
-
-set "firstLine="
-set "lastLine="
-for /f "usebackq delims=" %%a in ("%tempFile%") do (
-    if not defined firstLine (
-        set "firstLine=%%a"
-    )
-    set "lastLine=%%a"
-)
-
-findstr /C:"!firstLine!" "%hostsFile%" >nul 2>&1
-if !errorlevel! neq 0 (
-    echo First line from repository not found in hosts file
-    set "needsUpdate=1"
-)
-
-findstr /C:"!lastLine!" "%hostsFile%" >nul 2>&1
-if !errorlevel! neq 0 (
-    echo Last line from repository not found in hosts file
-    set "needsUpdate=1"
-)
-
-if "%needsUpdate%"=="1" (
-    echo:
-    call :PrintYellow "Hosts file needs to be updated"
-    call :PrintYellow "Please manually copy the content from the downloaded file to your hosts file"
-    
-    start notepad "%tempFile%"
-    explorer /select,"%hostsFile%"
-) else (
-    call :PrintGreen "Hosts file is up to date"
-    if exist "%tempFile%" del /f /q "%tempFile%"
-)
-
-echo:
-pause
-goto menu
-
 
 :: RUN TESTS =============================
 :run_tests
