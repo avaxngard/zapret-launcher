@@ -17,8 +17,7 @@ from gui.theme import get_theme
 from utils.update_verifier import is_safe_to_install
 from utils.version import compare_builds, compare_zapret_versions
 from update_source import get_source, get_all_sources, normalize_source_name
-from config import APPDATA_DIR, ZAPRET_VERSION_URL, ZAPRET_CORE_URL, ZIP_URL, EXE_URL, BUILDNUMBER_URL, INSTALLER_URL, ICON_PATH
-from config import GITHUB_ZAPRET_VERSION_URL, GITHUB_ZAPRET_CORE_URL, GITHUB_BUILDNUMBER_URL, GITHUB_INSTALLER_URL, GITHUB_EXE_URL, GITHUB_ZIP_URL
+from config import APPDATA_DIR, ICON_PATH
 import urllib.request
 import subprocess
 import sys
@@ -88,6 +87,13 @@ class SplashWindow:
 
         self._target_progress = 0
         self._animation_id = None
+
+        self._launched = False
+
+        self._update_check_done = False
+        self._update_check_timer_id = None
+        self._update_check_timeout_ms = 10000
+        self._update_check_error_display_ms = 2000
 
         self.setup_window()
         self.setup_ui()
@@ -365,9 +371,15 @@ class SplashWindow:
         if not self.is_admin():
             self.run_as_admin()
             return
-        
+
         threading.Thread(target=self.cleanup_old_internal_folders, daemon=True).start()
-    
+
+        self._update_check_done = False
+        if self.auto_update_enabled:
+            self._update_check_timer_id = self.window.after(
+                self._update_check_timeout_ms, self._on_update_check_timeout
+            )
+
         self._check_internet()
         self.window.mainloop()
 
@@ -380,7 +392,7 @@ class SplashWindow:
                     return
 
                 req = urllib.request.Request("https://www.google.com/generate_204", headers={'User-Agent': 'Mozilla/5.0', 'Connection': 'close'})
-                urllib.request.urlopen(req, timeout=5)
+                urllib.request.urlopen(req, timeout=3)
                 
                 if self.auto_update_enabled:
                     self.after(0, self._check_for_update)
@@ -465,6 +477,14 @@ class SplashWindow:
             self._log("_run_strategy_and_restart", e)
 
     def _show_no_internet_dialog(self):
+        if self._update_check_timer_id:
+            try:
+                self.window.after_cancel(self._update_check_timer_id)
+            except Exception:
+                pass
+            self._update_check_timer_id = None
+        self._update_check_done = True
+
         strategy = self._get_current_strategy()
         
         if strategy:
@@ -504,68 +524,110 @@ class SplashWindow:
                 continue
         raise Exception(f"Failed to download {url_type} from all sources")
 
+    def _on_update_check_timeout(self):
+        if self._update_check_done:
+            return
+        self._update_check_done = True
+        self._update_check_timer_id = None
+
+        try:
+            self.update_status(tr('splash_update_check_failed'), 100)
+        except Exception as e:
+            self._log("_on_update_check_timeout status", e)
+
+        def _launch_after_error():
+            if self._is_closing:
+                return
+            self._launch_main_app()
+
+        self.after(self._update_check_error_display_ms, _launch_after_error)
+
     def _check_for_update(self):
         self.update_status(tr('splash_check_updates'), 30)
-        
+
+        def _finish_check():
+            if self._update_check_done:
+                return False
+            self._update_check_done = True
+            if self._update_check_timer_id:
+                try:
+                    self.window.after_cancel(self._update_check_timer_id)
+                except Exception:
+                    pass
+                self._update_check_timer_id = None
+            return True
+
         def check():
             order = list(range(self.current_source_index, len(self._source_names))) + \
                     list(range(0, self.current_source_index))
-            
+
             for source_index in order:
+                if self._update_check_done or self._is_closing:
+                    return
                 try:
                     source_name = self._get_source_name(source_index)
                     current_source = source_name
-                    
+
                     if source_index == self.current_source_index:
                         self.after(0, lambda: self.update_status(tr('splash_check_updates'), 30))
                     else:
                         self.after(0, lambda: self.update_status(
                             tr('splash_trying_source').format(source=current_source), 30))
-                    
+
                     url = get_source(self._source_names[source_index]).build_number_url
                     req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0', 'Connection': 'close'})
-                    with urllib.request.urlopen(req, timeout=15) as response:
+                    with urllib.request.urlopen(req, timeout=10) as response:
                         latest_build = response.read().decode('utf-8').strip()
                         latest_build = re.sub(r'[^\d]', '', latest_build)
                         current_build = self.current_build
                         need_launcher_update = compare_builds(current_build, latest_build)
-                        
+
                         self.current_source_index = source_index
+                        if self._update_check_done or self._is_closing:
+                            return
                         need_zapret_update, latest_zapret = self._check_zapret_core_update()
-                        
+
+                        if not _finish_check():
+                            return
+
                         if need_launcher_update:
-                            self.after(1000, lambda: self._start_update(latest_build))
+                            self.after(0, lambda: self._start_update(latest_build))
                         elif need_zapret_update:
-                            self.after(1000, lambda: self._update_zapret_core_only(latest_zapret))
+                            self.after(0, lambda: self._update_zapret_core_only(latest_zapret))
                         else:
                             self.after(0, lambda: self.update_status(tr('splash_starting_exe'), 100))
                             self.after(1000, self._launch_main_app)
                         return
-                        
+
                 except Exception as e:
-                    if source_index != order[-1]:
-                        continue
-                    else:
+                    self._log(f"_check_for_update source={source_index}", e)
+                    if self._update_check_done or self._is_closing:
+                        return
+                    if source_index == order[-1]:
+                        if not _finish_check():
+                            return
                         self.after(0, lambda: self.update_status(tr('splash_all_sources_failed'), 100))
                         self.after(1000, self._launch_main_app)
                         return
-        
+
         threading.Thread(target=check, daemon=True).start()
 
     def _check_zapret_core_update(self) -> tuple[bool, Optional[str]]:
         order = list(range(self.current_source_index, len(self._source_names))) + \
                 list(range(0, self.current_source_index))
-        
+
         for source_index in order:
+            if self._update_check_done or self._is_closing:
+                return False, None
             try:
                 source_name = self._get_source_name(source_index)
                 if source_index != self.current_source_index:
                     self.after(0, lambda: self.update_status(
                         tr('splash_trying_zapret_source').format(source=source_name), 40))
-                
+
                 url = get_source(self._source_names[source_index]).zapret_version_url
                 req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0', 'Connection': 'close'})
-                with urllib.request.urlopen(req, timeout=15) as response:
+                with urllib.request.urlopen(req, timeout=10) as response:
                     latest_version = response.read().decode('utf-8').strip()
                     self.current_source_index = source_index
                     current_version = self.get_current_zapret_version()
@@ -959,8 +1021,9 @@ class SplashWindow:
             self._log("cleanup_old_internal_folders", e)
 
     def _launch_main_app(self):
-        if self._is_closing:
+        if self._is_closing or self._launched:
             return
+        self._launched = True
         
         zapret_dir = self.appdata_path / "zapret_core"
         if not zapret_dir.exists() or not (zapret_dir / "bin" / "winws.exe").exists():
@@ -988,6 +1051,13 @@ class SplashWindow:
             except Exception as e:
                 self._log("close after_cancel", e)
             self._animation_id = None
+
+        if self._update_check_timer_id:
+            try:
+                self.window.after_cancel(self._update_check_timer_id)
+            except Exception:
+                pass
+            self._update_check_timer_id = None
         
         self._is_closing = True
         try:
