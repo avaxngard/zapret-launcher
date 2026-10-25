@@ -16,6 +16,7 @@ import tkinter as tk
 import urllib.request
 import threading
 import re
+from update_source import get_source
 from utils.version import compare_builds, compare_zapret_versions
 from config import CURRENT_BUILD, BUILDNUMBER_URL, ZAPRET_VERSION_URL, ICON_PATH, CHECK_UPDATES_INTERVAL
 
@@ -326,8 +327,9 @@ class ModernSystemTray:
             return
         
         try:
-            buildnumber_url = BUILDNUMBER_URL
-            req = urllib.request.Request(buildnumber_url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
+            src = get_source(getattr(self.app, '_update_source', 'main'))
+
+            req = urllib.request.Request(src.build_number_url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
             with urllib.request.urlopen(req, timeout=10) as response:
                 latest_build = response.read().decode('utf-8').strip()
             
@@ -342,8 +344,7 @@ class ModernSystemTray:
                 return
             
             try:
-                zapret_version_url = ZAPRET_VERSION_URL
-                req_zapret = urllib.request.Request(zapret_version_url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
+                req_zapret = urllib.request.Request(src.zapret_version_url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
                 with urllib.request.urlopen(req_zapret, timeout=10) as response:
                     latest_zapret = response.read().decode('utf-8').strip()
                 
@@ -589,7 +590,7 @@ class ModernSystemTray:
         if self.app.is_connected:
             self.app.disconnect()
         else:
-            self.app.show_mode_selector()
+            self.app.dialogs.show_mode_selector()
 
     def get_rtt(self):
         try:
