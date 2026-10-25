@@ -14,11 +14,10 @@ from gui.theme import get_theme_names
 from utils.scaling import scale_size
 from utils.languages import tr
 from gui.theme import get_theme_display_name
-import requests
+from update_source import normalize_source_name
+from utils import hosts_pack
 import psutil
-import time
 import threading
-import os
 
 class Dialogs:
     def __init__(self, app):
@@ -1721,109 +1720,52 @@ class Dialogs:
         def download_template_direct(template):
             if not messagebox.askyesno(tr('confirm_title'), f"{tr('hosts_confirm_download')}\n\n{template['desc']}"):
                 return
-            
-            try:
-                response = requests.get(template['url'], timeout=30)
-                response.encoding = 'utf-8'
-                
-                if response.status_code != 200:
-                    messagebox.showerror(tr('error'), f"HTTP {response.status_code}")
+
+            def confirm_changes(added, updated, skipped, name):
+                if added == 0 and updated == 0:
+                    messagebox.showinfo(
+                        tr('information_desc'),
+                        f"{tr('hosts_pack')} {name} {tr('hosts_already_exists')}"
+                    )
+                    return False
+
+                text = (
+                    f"{tr('hosts_pack')} {name}\n\n"
+                    f"{tr('hosts_add_text')} {added}\n"
+                    f"{tr('hosts_update_text')} {updated}\n"
+                    f"{tr('hosts_skipped_text')} {skipped}"
+                )
+                return messagebox.askyesno(tr('hosts_update_title'), text)
+
+            result = hosts_pack.install_pack(
+                url=template['url'],
+                pack_id=template['id'],
+                pack_name=template['name'],
+                confirm_callback=confirm_changes,
+            )
+
+            if result.ok:
+                if result.added or result.updated:
+                    hosts_page_obj = self.app.pages.hosts_page_obj
+                    hosts_page_obj.load_hosts()
+
+                    self.app.log_event(
+                        "information_desc",
+                        f"Installed pack {template['id']}: "
+                        f"+{result.added} ~{result.updated} ={result.skipped}"
+                    )
+                    messagebox.showinfo(
+                        tr('information_desc'),
+                        f"{tr('hosts_pack')} {template['name']} {tr('hosts_installed')}"
+                    )
+            else:
+                if result.error == "cancelled":
                     return
-                
-                template_content = response.text
-                
-                if not template_content.strip():
-                    messagebox.showerror(tr('error'), tr('hosts_empty_content'))
-                    return
-                
-                hosts_page_obj = self.app.pages.hosts_page_obj
-                hosts_path = hosts_page_obj.hosts_path
-                
-                current_content = ""
-                if hosts_path.exists():
-                    with open(hosts_path, 'r', encoding='utf-8') as f:
-                        current_content = f.read()
-                
-                template_entries = []
-                for line in template_content.split('\n'):
-                    line = line.strip()
-                    if line and not line.startswith('#'):
-                        parts = line.split()
-                        if len(parts) >= 2:
-                            ip = parts[0]
-                            domains = parts[1:]
-                            for domain in domains:
-                                template_entries.append({'ip': ip, 'domain': domain})
-                
-                existing_entries = []
-                for line in current_content.split('\n'):
-                    line = line.strip()
-                    if line and not line.startswith('#'):
-                        parts = line.split()
-                        if len(parts) >= 2:
-                            ip = parts[0]
-                            domains = parts[1:]
-                            for domain in domains:
-                                existing_entries.append({'ip': ip, 'domain': domain})
-                
-                existing_set = {(e['ip'], e['domain']) for e in existing_entries}
-                template_set = {(e['ip'], e['domain']) for e in template_entries}
-                
-                missing_entries = template_set - existing_set
-                
-                if not missing_entries:
-                    messagebox.showinfo(tr('information_desc'), f"{tr('hosts_pack')} {template['name']} {tr('hosts_already_exists')}")
-                    return
-                
-                has_any = bool(template_set & existing_set)
-                
-                if has_any:
-                    missing_list = list(missing_entries)
-                    if messagebox.askyesno(
-                        tr('hosts_update_title'), 
-                        f"{tr('hosts_pack')} {template['name']} {tr('hosts_partial_exists')}\n\n"
-                        f"{tr('hosts_missing_entries')}:\n" + 
-                        "\n".join([f"{ip} {domain}" for ip, domain in missing_list[:5]]) + 
-                        (f"\n... {tr('and')} {len(missing_list) - 5}" if len(missing_list) > 5 else "") + 
-                        f"\n\n{tr('hosts_update_question')}"
-                    ):
-                        with open(hosts_path, 'a', encoding='utf-8') as f:
-                            if current_content and not current_content.endswith('\n'):
-                                f.write('\n')
-                            f.write(f'\n# Added by Zapret Launcher - {template["name"]} (update)\n')
-                            for ip, domain in missing_list:
-                                f.write(f"{ip} {domain}\n")
-                        
-                        hosts_page_obj.load_hosts()
-                        self.app.log_event("information_desc", f"Updated template: {template['name']}")
-                        messagebox.showinfo(tr('information_desc'), f"{tr('hosts_pack')} {template['name']} {tr('hosts_updated')}")
-                        return
-                    else:
-                        return
-                
-                os.makedirs(os.path.dirname(hosts_path), exist_ok=True)
-                
-                with open(hosts_path, 'a', encoding='utf-8') as f:
-                    if current_content and not current_content.endswith('\n'):
-                        f.write('\n')
-                    
-                    f.write(f'\n# Added by Zapret Launcher - {template["name"]}\n')
-                    f.write(template_content)
-                    if not template_content.endswith('\n'):
-                        f.write('\n')
-                
-                hosts_page_obj.load_hosts()
-                
-                self.app.log_event("information_desc", f"Installed template: {template['name']}")
-                messagebox.showinfo(tr('information_desc'), f"{tr('hosts_pack')} {template['name']} {tr('hosts_installed')}")
-                
-            except requests.exceptions.ConnectionError:
-                messagebox.showerror(tr('error'), tr('error_no_connection'))
-            except requests.exceptions.Timeout:
-                messagebox.showerror(tr('error'), tr('error_timeout'))
-            except Exception as e:
-                messagebox.showerror(tr('error'), f"{tr('error')}: {str(e)}")
-                self.app.log_event("error", f"Error downloading template: {e}")
+                messagebox.showerror(tr('error'), f"{tr('error')}: {result.error}")
+                self.app.log_event(
+                    "error",
+                    f"Error installing pack {template['id']}: {result.error}"
+                )
         
         for idx, template in enumerate(templates):
             card_canvas = tk.Canvas(
@@ -2210,9 +2152,11 @@ class Dialogs:
         dialog.deiconify()
 
     def _apply_update_source(self, source_id: str, dialog):
-        current = getattr(self.app, '_update_source', 'main')
-        if source_id != current:
-            self.app._update_source = source_id
+        new_source = normalize_source_name(source_id)
+        current = normalize_source_name(getattr(self.app, '_update_source', 'main'))
+
+        if new_source != current:
+            self.app._update_source = new_source
             try:
                 self.app.save_settings()
             except Exception as e:
@@ -2223,6 +2167,29 @@ class Dialogs:
                 if hasattr(page, '_refresh_update_source_card'):
                     page._refresh_update_source_card()
             except Exception as e:
-                self._log("_apply_update_source refresh", e)
+                self._log("_apply_update_source refresh card", e)
+
+            try:
+                tray = getattr(self.app, 'tray_icon', None)
+                if tray:
+                    tray.update_available = False
+                    tray.zapret_update_available = False
+                    try:
+                        tray.update_icon_state()
+                    except Exception as e:
+                        self._log("_apply_update_source tray state", e)
+            except Exception as e:
+                self._log("_apply_update_source tray", e)
+
+            try:
+                if hasattr(self.app, 'hide_update_label'):
+                    self.app.hide_update_label()
+            except Exception as e:
+                self._log("_apply_update_source hide label", e)
+
+            try:
+                threading.Thread(target=self.app.check_for_updates, daemon=True).start()
+            except Exception as e:
+                self._log("_apply_update_source recheck", e)
 
         dialog.destroy()
