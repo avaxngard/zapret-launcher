@@ -47,8 +47,10 @@ import sys
 import re
 import ctypes
 import urllib.request
+from PIL import Image, ImageTk
 from utils.version import compare_builds, compare_zapret_versions
-from utils.scaling import set_dpi_awareness, get_optimal_scale, scale_size, scale_font
+from utils.scaling import set_dpi_awareness, get_optimal_scale, scale_size
+from update_source import get_source, get_url, normalize_source_name
 from utils.stats import StatsMonitor
 from config import CURRENT_VERSION, CURRENT_BUILD, APPDATA_DIR, CONFIG_FILE, ZAPRET_CORE_DIR, LISTS_DIR, TG_HOST, TG_PORT, TG_FAKE_TLS, TG_FAKE_TLS_DOMAIN, BUILDNUMBER_URL, ZAPRET_VERSION_URL, VERSION_URL, ICON_PATH, PNG_ICON_PATH, CHECK_UPDATES_INTERVAL
 
@@ -312,17 +314,69 @@ class ZapretCore:
         if not is_admin():
             return False, tr('error_admin_required')
         
-        subprocess.run(['sc', 'stop', 'WinDivert'], capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW)
-        time.sleep(0.5)
-        subprocess.run(['sc', 'start', 'WinDivert'], capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW)
-            
         if not check_zapret_folder():
             return False, tr('error_zapret_folder')
 
         strategy_path = self.zapret_dir / strategy_name
         if not strategy_path.exists():
             return False, f"{tr('error_strategy_not_found')} {strategy_name}"
+
+        winws_path = self.bin_dir / "winws.exe"
+        if not winws_path.exists():
+            return False, tr('error_winws_missing')
+
+        try:
+            file_size = strategy_path.stat().st_size
+            if file_size < 100:
+                return False, f"{tr('error_strategy_corrupted_size')}: {strategy_name}"
+
+            content = strategy_path.read_text(encoding='utf-8', errors='ignore')
             
+            if "winws.exe" not in content:
+                return False, f"{tr('error_strategy_corrupted_content')}: {strategy_name}"
+
+            content_lower = content.lower()
+            
+            dangerous_patterns = [
+                r"\bdel\b", r"\berase\b", r"\brmdir\b", r"\brd\s+/s\b", r"\bformat\b", r"\bdiskpart\b",
+                r"\bcipher\b", r"\bwbadmin\b", r"\bvssadmin\b", r"\bfsutil\b",
+                
+                r"\breg\s+add\b", r"\breg\s+delete\b", r"\breg\s+import\b", r"\bregedit\b", 
+                r"\bschtasks\b", r"\bsc\s+create\b", r"\bsc\s+delete\b", r"\bsc\s+stop\b",
+                r"\bsecedit\b", r"\bauditpol\b", r"\bbcdedit\b",
+                
+                r"\bcertutil\b", r"\bbitsadmin\b", r"\bcurl\b", r"\bwget\b", 
+                r"\bmshta\b", r"\brundll32\b", r"\bregsvr32\b", r"\besentutl\b",
+                r"\bexpand\b", r"\bextrac32\b", r"\bmakecab\b", r"\bforfiles\b",
+                r"\bpcalua\b", r"\bwscript\b", r"\bcscript\b", r"\brpcping\b", r"\breplace\b",
+                r"\binvoke-webrequest\b", r"\bdownloadstring\b", r"\biex\b", r"\bencodedcommand\b",
+                
+                r"\bnet\s+user\b", r"\bnet\s+localgroup\b", r"\bnet\s+start\b", r"\bnet\s+stop\b",
+                r"\bnetsh\b", r"\btasklist\b", r"\btaskkill\b", r"\bwhoami\b", r"\bsysteminfo\b",
+                
+                r"\bshutdown\b", r"\blogoff\b", r"\brestart\b", r"\bpowercfg\b",
+                r"\btakeown\b", r"\bicacls\b", r"\bcacls\b", r"\bwmic\b", r"\battrib\b", r"\bfltmc\b",
+                
+                r"%0",
+                r"\bstart\s+cmd\b"
+            ]
+            
+            for pattern in dangerous_patterns:
+                if re.search(pattern, content_lower):
+                    self.log_event("info", f"Strategy {strategy_name} contains a prohibited command: {pattern}")
+                    return False, f"{tr('error_strategy_dangerous_command')}: {pattern}"
+                    
+        except Exception as e:
+            self.log_event("info", f"Strategy validation error {strategy_name}: {e}")
+            return False, f"{tr('error_strategy_read')}: {strategy_name}"
+
+        try:
+            subprocess.run(['sc', 'stop', 'WinDivert'], capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW)
+            time.sleep(0.5)
+            subprocess.run(['sc', 'start', 'WinDivert'], capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW)
+        except Exception as e:
+            self.log_event("info", f"WinDivert restart error: {e}")
+
         try:
             self.stop_current_strategy()
             self.current_process = subprocess.Popen(
@@ -334,11 +388,22 @@ class ZapretCore:
             )
             
             time.sleep(1.0)
+            winws_started = False
             for _ in range(10):
                 if self.is_winws_running():
-                    return True, f"{tr('status_strategy_started')} {self.get_strategy_display_name(strategy_name)}"
+                    winws_started = True
+                    break
                 time.sleep(0.5)
-            return False, tr('error_winws_not_found')
+                
+            if not winws_started:
+                return False, tr('error_winws_not_found')
+
+            time.sleep(2.0)
+            if not self.is_winws_running():
+                return False, tr('error_winws_crashed')
+
+            return True, f"{tr('status_strategy_started')} {self.get_strategy_display_name(strategy_name)}"
+            
         except Exception as e:
             self.log_event("info", f"Error starting strategy {strategy_name} {str(e)}")
             return False, f"{tr('error_startup')} {str(e)}"
@@ -1083,7 +1148,6 @@ class ZapretLauncher:
         self.left_panel = left_panel
 
         try:
-            from PIL import Image, ImageTk
             icon_path = [PNG_ICON_PATH]
             icon_image = None
             for path in icon_path:
@@ -1235,8 +1299,8 @@ class ZapretLauncher:
                 'Connection': 'close',
             }
 
-            buildnumber_url = BUILDNUMBER_URL
-            req = urllib.request.Request(buildnumber_url, headers=headers)
+            src = get_source(getattr(self, '_update_source', 'main'))
+            req = urllib.request.Request(src.build_number_url, headers=headers)
 
             with urllib.request.urlopen(req, timeout=10) as response:
                 latest_build = response.read().decode('utf-8').strip()
@@ -1256,8 +1320,7 @@ class ZapretLauncher:
             latest_zapret_version = None
 
             try:
-                zapret_version_url = ZAPRET_VERSION_URL
-                req_zapret = urllib.request.Request(zapret_version_url, headers=headers)
+                req_zapret = urllib.request.Request(src.zapret_version_url, headers=headers)
 
                 with urllib.request.urlopen(req_zapret, timeout=10) as response:
                     latest_zapret_version = response.read().decode('utf-8').strip()
@@ -1340,9 +1403,10 @@ class ZapretLauncher:
         try:
             latest_zapret_version = None
             headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)', 'Accept': 'text/plain', 'Connection': 'close'}
+            src = get_source(getattr(self, '_update_source', 'main'))
             
             try:
-                req_zapret = urllib.request.Request(ZAPRET_VERSION_URL, headers=headers)
+                req_zapret = urllib.request.Request(src.zapret_version_url, headers=headers)
                 with urllib.request.urlopen(req_zapret, timeout=5) as response:
                     latest_zapret_version = response.read().decode('utf-8').strip()
             except Exception:
@@ -1383,16 +1447,17 @@ class ZapretLauncher:
             latest_build = None
             
             headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)', 'Accept': 'text/plain', 'Connection': 'close'}
+            src = get_source(getattr(self, '_update_source', 'main'))
             
             try:
-                req_version = urllib.request.Request(VERSION_URL, headers=headers)
+                req_version = urllib.request.Request(src.launcher_version_url, headers=headers)
                 with urllib.request.urlopen(req_version, timeout=5) as response:
                     latest_version = response.read().decode('utf-8').strip()
             except Exception:
                 latest_version = "?"
             
             try:
-                req_build = urllib.request.Request(BUILDNUMBER_URL, headers=headers)
+                req_build = urllib.request.Request(src.build_number_url, headers=headers)
                 with urllib.request.urlopen(req_build, timeout=5) as response:
                     latest_build = response.read().decode('utf-8').strip()
             except Exception:
