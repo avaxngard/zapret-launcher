@@ -16,7 +16,8 @@ import psutil
 import zipfile
 import subprocess
 import urllib.request
-from config import APPDATA_DIR, ZAPRET_CORE_URL
+from config import APPDATA_DIR
+from update_source import get_source
 from pathlib import Path
 from tkinter import messagebox
 from utils.languages import tr
@@ -758,7 +759,8 @@ class SettingsPage:
                         with open(white_user_file, 'r', encoding='utf-8') as f:
                             saved_custom_files['ipset-white-user.txt'] = f.read()
                 
-                req = urllib.request.Request(ZAPRET_CORE_URL, headers={'User-Agent': 'Mozilla/5.0'})
+                src = get_source(getattr(self.app, '_update_source', 'main'))
+                req = urllib.request.Request(src.zapret_core_url, headers={'User-Agent': 'Mozilla/5.0'})
                 with urllib.request.urlopen(req, timeout=30) as response:
                     temp_zip = tempfile.mktemp(suffix='.zip')
                     with open(temp_zip, 'wb') as f:
