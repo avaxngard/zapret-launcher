@@ -352,6 +352,12 @@ class Dialogs:
 
         def on_close():
             self.app._cancel_strategy_selection(dialog)
+            try:
+                if dialog.winfo_exists():
+                    dialog.destroy()
+            except Exception:
+                pass
+            self.app.dialogs.show_mode_selector()
 
         dialog.protocol("WM_DELETE_WINDOW", on_close)
 
@@ -1034,6 +1040,7 @@ class Dialogs:
                 messagebox.showerror(tr('error_startup'), msg)
                 if hasattr(self.app, 'connect_btn') and self.app.connect_btn:
                     self.app.connect_btn.set_enabled(True)
+                self.app.dialogs.show_mode_selector()
                 return
 
             self.app.current_strategy = name
