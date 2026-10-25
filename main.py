@@ -2030,13 +2030,19 @@ class ZapretLauncher:
             self.log_event("info", f"finish_disconnect: {e}")
             self._disconnecting = False
 
-    def run_service_command(self, command):
+    def run_service_command(self, command, callback=None):
         if not check_zapret_folder():
             return
         
         success, result = self.zapret.run_service_command(command)
+        
         if success:
-            messagebox.showinfo(tr('success'), result)
+            messagebox.showinfo(tr('information_desc'), result)
+            if callback:
+                try:
+                    callback()
+                except Exception as e:
+                    self.log_event("info", f"run_service_command callback: {e}")
         else:
             messagebox.showerror(tr('error_occurred'), result)
 
