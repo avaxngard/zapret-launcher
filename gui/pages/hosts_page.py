@@ -348,11 +348,11 @@ class HostsPage:
             content = self.text_area.get('1.0', tk.END).strip()
             
             if not content:
-                if not messagebox.askyesno(tr('warning'), tr('hosts_empty_warning')):
+                if not messagebox.askyesno(tr('error_warning'), tr('hosts_empty_warning')):
                     return
             
             if not os.access(str(self.hosts_path), os.W_OK):
-                if not messagebox.askyesno(tr('warning'), tr('hosts_admin_warning')):
+                if not messagebox.askyesno(tr('error_warning'), tr('hosts_admin_warning')):
                     return
             
             os.makedirs(os.path.dirname(self.hosts_path), exist_ok=True)
