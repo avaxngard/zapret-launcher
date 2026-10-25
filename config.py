@@ -17,6 +17,7 @@ ZAPRET_CORE_DIR = APPDATA_DIR / "zapret_core"
 ICON_PATH = BASE_DIR / "resources" / "icon.ico"
 PNG_ICON_PATH = BASE_DIR / "resources" / "icon.png"
 HOSTS_PATH = Path(r"C:\Windows\System32\drivers\etc\hosts")
+BACKUP_DIR = APPDATA_DIR / "hosts_backups"
 
 CURRENT_VERSION = "3.2.3.4"
 CURRENT_BUILD = "3504"
@@ -31,9 +32,12 @@ TG_FAKE_TLS_DOMAIN = "www.google.com"
 API_URL_STATS = "https://zapret-launcher.ru/api/stats.php"
 API_URL_NEWS = "https://zapret-launcher.ru/api/news.php"
 
+DONATION_URL = "https://www.donationalerts.com/r/tweenkedrage"
+
 # Site
 ZAPRET_VERSION_URL = "https://zapret-launcher.ru/updater/docs/zapret_version.txt"
 ZAPRET_CORE_URL = "https://zapret-launcher.ru/updater/zapret_core.zip"
+ZAPRET_CORE_SIG_URL = "https://zapret-launcher.ru/updater/zapret_core.zip.sig"
 BUILDNUMBER_URL = "https://zapret-launcher.ru/updater/docs/build_number.txt"
 VERSION_URL = "https://zapret-launcher.ru/updater/docs/version_launcher.txt"
 EXE_URL = "https://zapret-launcher.ru/updater/updater.exe"
@@ -43,6 +47,7 @@ INSTALLER_URL = "https://zapret-launcher.ru/updater/zapret-launcher-installer-wi
 # GitHub
 GITHUB_ZAPRET_VERSION_URL = "https://raw.githubusercontent.com/avaxngard/zapret-launcher/main/docs/zapret_version.txt"
 GITHUB_ZAPRET_CORE_URL = "https://raw.githubusercontent.com/avaxngard/zapret-launcher/main/updater/zapret_core.zip"
+GITHUB_ZAPRET_CORE_SIG_URL = "https://raw.githubusercontent.com/avaxngard/zapret-launcher/main/updater/zapret_core.zip.sig"
 GITHUB_BUILDNUMBER_URL = "https://raw.githubusercontent.com/avaxngard/zapret-launcher/main/docs/build_number.txt"
 GITHUB_VERSION_URL = "https://raw.githubusercontent.com/avaxngard/zapret-launcher/main/docs/version.txt"
 GITHUB_EXE_URL = "https://raw.githubusercontent.com/avaxngard/zapret-launcher/main/updater/updater.exe"
