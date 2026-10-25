@@ -159,7 +159,6 @@ class ZapretCore:
 
             content_lower = content.lower()
 
-            # --- ЗАЩИТА 1: Белый список префиксов строк ---
             allowed_prefixes = (
                 "@echo", "chcp", "::", "cd ", "set ", "call ", 
                 "echo", "powershell", "start ", "exit", "rem "
@@ -174,7 +173,6 @@ class ZapretCore:
                     self.log_event("info", f"Strategy {strategy_name} contains invalid command: {line_stripped[:30]}")
                     return False, f"{tr('error_strategy_invalid_command')}: {line_stripped[:30]}"
 
-            # --- ЗАЩИТА 2: Черный список опасных команд ---
             dangerous_patterns = [
                 r"\bdel\b", r"\berase\b", r"\brmdir\b", r"\brd\s+/s\b", r"\bformat\b", r"\bdiskpart\b",
                 r"\bcipher\b", r"\bwbadmin\b", r"\bvssadmin\b", r"\bfsutil\b",
@@ -208,7 +206,6 @@ class ZapretCore:
             self.log_event("info", f"Strategy validation error {strategy_name}: {e}")
             return False, f"{tr('error_strategy_read')}: {strategy_name}"
 
-        # --- ЗАЩИТА 3: Перезапуск WinDivert ---
         try:
             subprocess.run(['sc', 'stop', 'WinDivert'], capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW)
             time.sleep(0.5)
@@ -216,7 +213,6 @@ class ZapretCore:
         except Exception as e:
             self.log_event("info", f"WinDivert restart error: {e}")
 
-        # --- ЗАПУСК СТРАТЕГИИ ---
         try:
             self.stop_current_strategy()
             self.current_process = subprocess.Popen(
