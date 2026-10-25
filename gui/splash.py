@@ -16,6 +16,7 @@ from typing import Optional
 from gui.theme import get_theme
 from utils.update_verifier import is_safe_to_install
 from utils.version import compare_builds, compare_zapret_versions
+from update_source import get_source, get_all_sources, normalize_source_name
 from config import APPDATA_DIR, ZAPRET_VERSION_URL, ZAPRET_CORE_URL, ZIP_URL, EXE_URL, BUILDNUMBER_URL, INSTALLER_URL, ICON_PATH
 from config import GITHUB_ZAPRET_VERSION_URL, GITHUB_ZAPRET_CORE_URL, GITHUB_BUILDNUMBER_URL, GITHUB_INSTALLER_URL, GITHUB_EXE_URL, GITHUB_ZIP_URL
 import urllib.request
@@ -75,29 +76,12 @@ class SplashWindow:
         self._is_closing = False
 
         self.auto_update_enabled = auto_update_enabled
+        self._source_names = [normalize_source_name(update_source)]
+        for s in get_all_sources():
+            if s.name not in self._source_names:
+                self._source_names.append(s.name)
 
-        self.sources = [
-            {
-                'name': 'main',
-                'zapret_version': ZAPRET_VERSION_URL,
-                'build': BUILDNUMBER_URL,
-                'exe': EXE_URL,
-                'zip': ZIP_URL,
-                'zapret': ZAPRET_CORE_URL,
-                'installer': INSTALLER_URL
-            },
-            {
-                'name': 'github',
-                'zapret_version': GITHUB_ZAPRET_VERSION_URL,
-                'build': GITHUB_BUILDNUMBER_URL,
-                'exe': GITHUB_EXE_URL,
-                'zip': GITHUB_ZIP_URL,
-                'zapret': GITHUB_ZAPRET_CORE_URL,
-                'installer': GITHUB_INSTALLER_URL
-            }
-        ]
-
-        self.current_source_index = 1 if update_source == 'github' else 0
+        self.current_source_index = 0
         
         self.appdata_path = APPDATA_DIR
         self.internal_path = self.appdata_path / "_internal"
@@ -129,20 +113,14 @@ class SplashWindow:
         return None
 
     def _get_url(self, url_type):
-        if 0 <= self.current_source_index < len(self.sources):
-            return self.sources[self.current_source_index][url_type]
+        if 0 <= self.current_source_index < len(self._source_names):
+            return get_source(self._source_names[self.current_source_index]).get(url_type)
         return None
 
     def _get_source_name(self, index):
-        if 0 <= index < len(self.sources):
-            return self.sources[index]['name'].capitalize()
+        if 0 <= index < len(self._source_names):
+            return self._source_names[index].capitalize()
         return "Unknown"
-
-    def _switch_to_next_source(self):
-        if self.current_source_index < len(self.sources) - 1:
-            self.current_source_index += 1
-            return True
-        return False
         
     def setup_window(self):
         self.window.overrideredirect(False)
@@ -260,7 +238,9 @@ class SplashWindow:
             manual_label.config(fg=self.colors['text_secondary'])
         
         def on_click_manual(event):
-            url = self._get_url('installer') or INSTALLER_URL
+            url = self._get_url('installer')
+            if not url:
+                url = get_source('main').installer_url
             webbrowser.open(url)
         
         manual_label.bind("<Enter>", on_enter_manual)
@@ -380,22 +360,6 @@ class SplashWindow:
         self.progress_var.set(int(new_value))
         self._draw_progress(new_value)
         self._animation_id = self.window.after(16, self._animate_progress)
-    
-    def _update_progress_bar(self, value):
-        try:
-            if hasattr(self, 'progress_fill') and self.progress_fill.winfo_exists():
-                width_ratio = max(0.0, min(1.0, value / 100.0))
-                self.progress_fill.place_configure(relwidth=width_ratio)
-        except Exception as e:
-            self._log("_update_progress_bar", e)
-    
-    def _update_top_bar(self, value):
-        try:
-            if hasattr(self, 'top_bar_fill') and self.top_bar_fill.winfo_exists():
-                width_ratio = max(0.0, min(1.0, value / 100.0))
-                self.top_bar_fill.place_configure(relwidth=width_ratio)
-        except Exception as e:
-            self._log("_update_top_bar", e)
     
     def start(self):
         if not self.is_admin():
@@ -520,7 +484,7 @@ class SplashWindow:
             self._launch_main_app()
 
     def _download_file_with_fallback(self, url_type, dest_path, start_progress=0, end_progress=100):
-        order = list(range(self.current_source_index, len(self.sources))) + \
+        order = list(range(self.current_source_index, len(self._source_names))) + \
                 list(range(0, self.current_source_index))
         
         for i in order:
@@ -531,7 +495,7 @@ class SplashWindow:
                     self.after(0, lambda: self.update_status(
                         tr('splash_trying_source').format(source=current_source), start_progress))
                 
-                url = self.sources[i][url_type]
+                url = get_source(self._source_names[i]).get(url_type)
                 result = self._download_with_progress(url, dest_path, start_progress, end_progress)
                 if result:
                     self.current_source_index = i
@@ -544,7 +508,7 @@ class SplashWindow:
         self.update_status(tr('splash_check_updates'), 30)
         
         def check():
-            order = list(range(self.current_source_index, len(self.sources))) + \
+            order = list(range(self.current_source_index, len(self._source_names))) + \
                     list(range(0, self.current_source_index))
             
             for source_index in order:
@@ -558,7 +522,7 @@ class SplashWindow:
                         self.after(0, lambda: self.update_status(
                             tr('splash_trying_source').format(source=current_source), 30))
                     
-                    url = self.sources[source_index]['build']
+                    url = get_source(self._source_names[source_index]).build_number_url
                     req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0', 'Connection': 'close'})
                     with urllib.request.urlopen(req, timeout=15) as response:
                         latest_build = response.read().decode('utf-8').strip()
@@ -589,7 +553,7 @@ class SplashWindow:
         threading.Thread(target=check, daemon=True).start()
 
     def _check_zapret_core_update(self) -> tuple[bool, Optional[str]]:
-        order = list(range(self.current_source_index, len(self.sources))) + \
+        order = list(range(self.current_source_index, len(self._source_names))) + \
                 list(range(0, self.current_source_index))
         
         for source_index in order:
@@ -599,7 +563,7 @@ class SplashWindow:
                     self.after(0, lambda: self.update_status(
                         tr('splash_trying_zapret_source').format(source=source_name), 40))
                 
-                url = self.sources[source_index]['zapret_version']
+                url = get_source(self._source_names[source_index]).zapret_version_url
                 req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0', 'Connection': 'close'})
                 with urllib.request.urlopen(req, timeout=15) as response:
                     latest_version = response.read().decode('utf-8').strip()
