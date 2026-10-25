@@ -274,6 +274,8 @@ class Languages:
             'strategy_search_placeholder': 'Нажмите для поиска',
             'badge_last': 'последняя',
 
+            'error_strategy_invalid_command': 'Стратегия содержит запрещенную команду',
+            'error_version_missing': 'Версия ядра не найдена в ресурсах лаунчера',
             'error_winws_missing': 'Критическая ошибка: файл winws.exe не найден в папке bin',
             'error_strategy_corrupted_size': 'Стратегия повреждена (файл слишком мал)',
             'error_strategy_corrupted_content': 'Стратегия повреждена (отсутствует вызов winws.exe)',
@@ -652,6 +654,8 @@ class Languages:
             'strategy_search_placeholder': 'Click to search',
             'badge_last': 'last used',
 
+            'error_strategy_invalid_command': 'Strategy contains a forbidden command',
+            'error_version_missing': 'Core version not found in launcher resources',
             'error_winws_missing': 'Critical error: winws.exe not found in bin folder',
             'error_strategy_corrupted_size': 'Strategy is corrupted (file is too small)',
             'error_strategy_corrupted_content': 'Strategy is corrupted (missing winws.exe call)',
