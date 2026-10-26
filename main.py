@@ -23,6 +23,7 @@ from gui.theme import get_theme, get_theme_names
 from datetime import datetime
 from utils.check_lists import check_lists_for_duplicates
 from gui.splash import SplashWindow
+from pathlib import Path
 from gui.widgets import RoundedButton
 from utils.zapret_core import ZapretCore
 try:
@@ -36,7 +37,6 @@ import subprocess
 import os
 import json
 import time
-import shutil
 import threading
 import webbrowser
 import asyncio
@@ -52,7 +52,7 @@ from utils.version import compare_builds, compare_zapret_versions
 from utils.scaling import set_dpi_awareness, get_optimal_scale, scale_size
 from update_source import get_source
 from utils.stats import StatsMonitor
-from config import CURRENT_VERSION, CURRENT_BUILD, APPDATA_DIR, CONFIG_FILE, ZAPRET_CORE_DIR, LISTS_DIR, TG_HOST, TG_PORT, TG_FAKE_TLS, TG_FAKE_TLS_DOMAIN, ICON_PATH, PNG_ICON_PATH, CHECK_UPDATES_INTERVAL
+from config import CURRENT_VERSION, CURRENT_BUILD, APPDATA_DIR, CONFIG_FILE, ZAPRET_CORE_DIR, LISTS_DIR, TG_HOST, TG_PORT, TG_FAKE_TLS, TG_FAKE_TLS_DOMAIN, ICON_PATH, PNG_ICON_PATH, CHECK_UPDATES_INTERVAL, THEME_ICON_FILES
 
 def is_admin():
     try:
@@ -336,15 +336,11 @@ class ZapretLauncher:
         self.root.configure(bg=self.colors['bg_dark'])
 
         try:
-            icon_path = [ICON_PATH]
-            for path in icon_path:
-                if path and path.exists():
-                    try:
-                        if path.suffix.lower() == '.ico':
-                            self.root.iconbitmap(default=str(path))
-                            break
-                    except:
-                        continue
+            if ICON_PATH and Path(ICON_PATH).exists() and str(ICON_PATH).lower().endswith('.ico'):
+                try:
+                    self.root.iconbitmap(default=str(ICON_PATH))
+                except Exception:
+                    pass
         except Exception:
             pass
 
@@ -354,6 +350,7 @@ class ZapretLauncher:
         self.current_page = "main"
 
         self.ensure_appdata_dir()
+        self._cleanup_legacy_install_id()
         self.ensure_custom_list_file()
         self.ensure_ipset_user_list_file()
         
@@ -502,6 +499,22 @@ class ZapretLauncher:
             except Exception as e:
                 self.log_event("info", f"ensure_ipset_user_list_file: {e}")
 
+    def _get_theme_icon_path(self):
+        name = THEME_ICON_FILES.get(getattr(self, 'current_theme', 'Dark'), 'icon.png')
+        candidates = [
+            ICON_PATH.parent / name,
+            PNG_ICON_PATH.parent / name,
+            ICON_PATH.parent / 'icon.png',
+            PNG_ICON_PATH.parent / 'icon.png',
+        ]
+        for p in candidates:
+            try:
+                if p and Path(p).exists():
+                    return p
+            except Exception:
+                continue
+        return PNG_ICON_PATH
+
     def update_tray_icon_state(self):
         if hasattr(self, 'tray_icon') and self.tray_icon:
             try:
@@ -567,7 +580,7 @@ class ZapretLauncher:
         if hasattr(self, 'pages') and self.pages:
             self.pages.colors = self.colors
             
-            for page_name in ['main_page', 'service_page', 'lists_page', 'traffic_page', 'settings_page', 'logs_page', 'hosts_page']:
+            for page_name in ['main_page', 'service_page', 'lists_page', 'traffic_page', 'stats_page', 'settings_page', 'logs_page', 'hosts_page']:
                 if hasattr(self.pages, page_name):
                     page = getattr(self.pages, page_name)
                     if page:
@@ -601,8 +614,8 @@ class ZapretLauncher:
                 header_color = "#1E1B2E"
             elif self.current_theme == 'Old':
                 header_color = "#0F172A"
-            elif self.current_theme == 'Contrast':
-                header_color = "#333333"
+            elif self.current_theme == 'Halloween':
+                header_color = "#1A120B"
             else:
                 header_color = "#F0F0F2"
             
@@ -809,14 +822,12 @@ class ZapretLauncher:
         self.left_panel = left_panel
 
         try:
-            icon_path = [PNG_ICON_PATH]
+            icon_file = self._get_theme_icon_path()
             icon_image = None
-            for path in icon_path:
-                if path and path.exists():
-                    img = Image.open(path).convert("RGBA")
-                    img = img.resize((icon_size, icon_size), Image.Resampling.LANCZOS)
-                    icon_image = ImageTk.PhotoImage(img)
-                    break
+            if icon_file and Path(icon_file).exists():
+                img = Image.open(icon_file).convert("RGBA")
+                img = img.resize((icon_size, icon_size), Image.Resampling.LANCZOS)
+                icon_image = ImageTk.PhotoImage(img)
 
             if icon_image:
                 icon_label = tk.Label(logo_frame, image=icon_image, bg=self.colors['bg_medium'])
@@ -2051,6 +2062,21 @@ class ZapretLauncher:
             APPDATA_DIR.mkdir(parents=True, exist_ok=True)
         except:
             pass
+
+    def _cleanup_legacy_install_id(self):
+        try:
+            legacy = APPDATA_DIR / "install_id.json"
+            if legacy.exists():
+                legacy.unlink()
+                try:
+                    self.log_event("info", f"Removed legacy install_id.json: {legacy}")
+                except Exception:
+                    pass
+        except Exception as e:
+            try:
+                self.log_event("info", f"_cleanup_legacy_install_id: {e}")
+            except Exception:
+                pass
 
     def toggle_vpn_detection(self):
         current = getattr(self, '_show_vpn_detection', False)
