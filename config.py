@@ -34,6 +34,14 @@ API_URL_NEWS = "https://zapret-launcher.ru/api/news.php"
 
 DONATION_URL = "https://www.donationalerts.com/r/tweenkedrage"
 
+THEME_ICON_FILES = {
+    'Dark':      'icon.png',
+    'Pink':      'icon_pink.png',
+    'Old':       'icon_blue.png',
+    'Light':     'icon_white.png',
+    'Halloween': 'icon_orange.png'
+}
+
 # Site
 ZAPRET_VERSION_URL = "https://zapret-launcher.ru/updater/docs/zapret_version.txt"
 ZAPRET_CORE_URL = "https://zapret-launcher.ru/updater/zapret_core.zip"
