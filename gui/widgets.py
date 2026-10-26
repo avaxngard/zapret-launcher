@@ -87,8 +87,8 @@ class RoundedButton(tk.Canvas):
                 self.hover_color = '#DD72A9'
             elif theme_name == 'Old':
                 self.hover_color = '#60A5FA'
-            elif theme_name == 'Contrast':
-                self.hover_color = '#333333'
+            elif theme_name == 'Halloween':
+                self.hover_color = '#FF9A3C'
             else:
                 self.hover_color = '#9b78a8'
 
@@ -262,7 +262,7 @@ class RoundedButton(tk.Canvas):
                 self.hover_color = '#DD72A9'
             elif theme_name == 'Old':
                 self.hover_color = '#60A5FA'
-            elif theme_name == 'Contrast':
-                self.hover_color = '#333333'
+            elif theme_name == 'Halloween':
+                self.hover_color = '#FF9A3C'
             else:
                 self.hover_color = '#9b78a8'
