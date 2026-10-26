@@ -17,7 +17,7 @@ from gui.theme import get_theme
 from utils.update_verifier import is_safe_to_install
 from utils.version import compare_builds, compare_zapret_versions
 from update_source import get_source, get_all_sources, normalize_source_name
-from config import APPDATA_DIR, ICON_PATH
+from config import APPDATA_DIR, ICON_PATH, THEME_ICON_FILES
 import urllib.request
 import subprocess
 import sys
@@ -167,8 +167,8 @@ class SplashWindow:
                 header_color = "#1E1B2E"
             elif self.colors_name == 'Old':
                 header_color = "#0F172A"
-            elif self.colors_name == 'Contrast':
-                header_color = "#333333"
+            elif self.colors_name == 'Halloween':
+                header_color = "#1A120B"
             else:
                 header_color = "#F0F0F2"
             pywinstyles.change_header_color(self.window, header_color)
@@ -255,19 +255,34 @@ class SplashWindow:
         
     def load_logo(self):
         try:
-            icon_paths = [ICON_PATH]
-            
-            for path in icon_paths:
-                if path.exists():
-                    img = Image.open(path)
-                    img = img.resize((140, 140), Image.Resampling.LANCZOS)
-                    self.logo_image = ImageTk.PhotoImage(img)
-                    self.logo_label.config(image=self.logo_image)
-                    return
-                    
+            name = THEME_ICON_FILES.get(self.colors_name, 'icon.png')
+            candidates = [
+                ICON_PATH.parent / name,
+                ICON_PATH.parent / 'icon.png',
+            ]
+            icon_file = None
+            for p in candidates:
+                try:
+                    if p and p.exists():
+                        icon_file = p
+                        break
+                except Exception:
+                    continue
+
+            if icon_file:
+                img = Image.open(icon_file)
+                img = img.resize((140, 140), Image.Resampling.LANCZOS)
+                self.logo_image = ImageTk.PhotoImage(img)
+                self.logo_label.config(image=self.logo_image)
+                return
+
             self.logo_label.config(image='', text='')
-        except Exception:
-            self.logo_label.config(image='', text='')
+        except Exception as e:
+            self._log("load_logo", e)
+            try:
+                self.logo_label.config(image='', text='')
+            except Exception:
+                pass
     
     def update_status(self, text, progress=None):
         if self._is_closing:
