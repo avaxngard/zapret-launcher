@@ -148,6 +148,7 @@ class Languages:
             'theme_pink': 'Розовая',
             'theme_old': 'Синяя',
             'theme_light': 'Светлая',
+            'theme_halloween': 'Хэллоуин',
 
             'splash_check_connecting': 'Подключаемся к сети..',
             'splash_check_updates': 'Проверяем обновления...',
@@ -530,6 +531,7 @@ class Languages:
             'theme_pink': 'Pink',
             'theme_old': 'Blue',
             'theme_light': 'Light',
+            'theme_halloween': 'Halloween',
 
             'splash_check_connecting': 'Checking network..',
             'splash_check_updates': 'Checking for updates...',
