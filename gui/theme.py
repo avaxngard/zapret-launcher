@@ -98,33 +98,33 @@ def get_theme(theme_name='Dark'):
             
             'separator': '#D0D0D8',
         },
-        'Contrast': {
-            'accent': '#000000',
-            'accent_hover': '#333333',
-            'accent_green': '#059669',
-            'accent_darkgreen': '#047857',
-            'accent_red': '#DC2626',
+        'Halloween': {
+            'accent': '#E87A1E',
+            'accent_hover': '#FF9A3C',
+            'accent_green': '#8BC34A',
+            'accent_darkgreen': '#5B8A2A',
+            'accent_red': '#C1362F',
 
-            'bg_dark': '#FFFFFF',
-            'bg_medium': "#BBB7B7",
-            'bg_light': "#DAD8D8",
-            'bg_light_hover': "#D8D4D4",
+            'bg_dark': '#1A120B',
+            'bg_medium': '#241812',
+            'bg_light': '#3A2618',
+            'bg_light_hover': '#503522',
 
-            'text_primary': '#000000',
-            'text_secondary': '#404040',
+            'text_primary': '#F4E4C1',
+            'text_secondary': '#B89968',
 
-            'button_bg': '#000000',
-            'button_hover': '#333333',
-            'button_text': '#FFFFFF',
+            'button_bg': '#3A2618',
+            'button_hover': '#503522',
+            'button_text': '#F4E4C1',
             'button_text_hover': '#FFFFFF',
 
-            'separator': '#808080',
+            'separator': '#4A3020',
         }
     }
     return themes.get(theme_name, themes['Dark'])
 
 def get_theme_names():
-    return ['Dark', 'Pink', 'Old', 'Light']
+    return ['Dark', 'Pink', 'Old', 'Light', 'Halloween']
 
 def get_theme_display_name(theme_name: str) -> str:
     key = f"theme_{theme_name.lower()}"
