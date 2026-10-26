@@ -20,7 +20,7 @@ HOSTS_PATH = Path(r"C:\Windows\System32\drivers\etc\hosts")
 BACKUP_DIR = APPDATA_DIR / "hosts_backups"
 
 CURRENT_VERSION = "3.2.3.4"
-CURRENT_BUILD = "3507"
+CURRENT_BUILD = "3508"
 
 CHECK_UPDATES_INTERVAL = 3 * 60 * 60 * 1000
 
