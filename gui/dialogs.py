@@ -1910,7 +1910,7 @@ class Dialogs:
         dialog.grab_set()
         dialog.focus_force()
 
-        w, h = scale_size(400, self.scale_factor), scale_size(250, self.scale_factor)
+        w, h = scale_size(400, self.scale_factor), scale_size(300, self.scale_factor)
         x = self.app.root.winfo_x() + (self.app.root.winfo_width() // 2) - w // 2
         y = self.app.root.winfo_y() + (self.app.root.winfo_height() // 2) - h // 2
         dialog.geometry(f"{w}x{h}+{x}+{y}")
