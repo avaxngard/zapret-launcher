@@ -30,7 +30,7 @@ def get_theme(theme_name='Dark'):
             'button_text': '#FFFFFF',
             'button_text_hover': '#FFFFFF',
             
-            'separator': "#2D2D35",
+            'separator': "#2D2D35"
         },
         'Pink': {
             'accent': "#D4438C",
@@ -52,7 +52,7 @@ def get_theme(theme_name='Dark'):
             'button_text': '#FFFFFF',
             'button_text_hover': '#FFFFFF',
             
-            'separator': "#46435A",
+            'separator': "#46435A"
         },
         'Old': {
             'accent': "#3B82F6",
@@ -74,7 +74,7 @@ def get_theme(theme_name='Dark'):
             'button_text': '#FFFFFF',
             'button_text_hover': '#FFFFFF',
             
-            'separator': "#3E4C63",
+            'separator': "#3E4C63"
         },
         'Light': {
             'accent': '#7c5a8a',
@@ -96,7 +96,7 @@ def get_theme(theme_name='Dark'):
             'button_text': '#1A1A1F',
             'button_text_hover': '#FFFFFF',
             
-            'separator': '#D0D0D8',
+            'separator': '#D0D0D8'
         },
         'Halloween': {
             'accent': '#E87A1E',
@@ -113,18 +113,40 @@ def get_theme(theme_name='Dark'):
             'text_primary': '#F4E4C1',
             'text_secondary': '#B89968',
 
-            'button_bg': '#3A2618',
+            'button_bg': "#533723",
             'button_hover': '#503522',
             'button_text': '#F4E4C1',
             'button_text_hover': '#FFFFFF',
 
-            'separator': '#4A3020',
+            'separator': '#4A3020'
+        },
+        'Contrast': {
+            'accent': '#000000',
+            'accent_hover': '#333333',
+            'accent_green': '#059669',
+            'accent_darkgreen': '#047857',
+            'accent_red': '#DC2626',
+
+            'bg_dark': '#FFFFFF',
+            'bg_medium': "#BBB7B7",
+            'bg_light': "#DAD8D8",
+            'bg_light_hover': "#D8D4D4",
+
+            'text_primary': '#000000',
+            'text_secondary': '#404040',
+
+            'button_bg': '#000000',
+            'button_hover': '#333333',
+            'button_text': '#FFFFFF',
+            'button_text_hover': '#FFFFFF',
+
+            'separator': '#808080'
         }
     }
     return themes.get(theme_name, themes['Dark'])
 
 def get_theme_names():
-    return ['Dark', 'Pink', 'Old', 'Light', 'Halloween']
+    return ['Dark', 'Pink', 'Old', 'Light', 'Halloween', 'Contrast']
 
 def get_theme_display_name(theme_name: str) -> str:
     key = f"theme_{theme_name.lower()}"
