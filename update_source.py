@@ -25,7 +25,7 @@ from config import (
     GITHUB_ZIP_URL,
     GITHUB_ZAPRET_CORE_URL,
     GITHUB_ZAPRET_CORE_SIG_URL,
-    GITHUB_INSTALLER_URL,
+    GITHUB_INSTALLER_URL
 )
 
 SOURCE_MAIN = "main"
@@ -44,7 +44,7 @@ _ALIASES = {
     "updater": "exe",
     "zip": "zip",
     "internal": "zip",
-    "installer": "installer",
+    "installer": "installer"
 }
 
 @dataclass(frozen=True)
@@ -69,7 +69,7 @@ class UpdateSource:
             "zip": self.zip_url,
             "zapret_core": self.zapret_core_url,
             "zapret_core_sig": self.zapret_core_sig_url,
-            "installer": self.installer_url,
+            "installer": self.installer_url
         }
         if normalized not in mapping:
             raise KeyError(f"Unknown update source key: {key}")
@@ -84,7 +84,7 @@ _MAIN = UpdateSource(
     zip_url=ZIP_URL,
     zapret_core_url=ZAPRET_CORE_URL,
     zapret_core_sig_url=ZAPRET_CORE_SIG_URL,
-    installer_url=INSTALLER_URL,
+    installer_url=INSTALLER_URL
 )
 
 _GITHUB = UpdateSource(
@@ -96,12 +96,12 @@ _GITHUB = UpdateSource(
     zip_url=GITHUB_ZIP_URL,
     zapret_core_url=GITHUB_ZAPRET_CORE_URL,
     zapret_core_sig_url=GITHUB_ZAPRET_CORE_SIG_URL,
-    installer_url=GITHUB_INSTALLER_URL,
+    installer_url=GITHUB_INSTALLER_URL
 )
 
 _SOURCES = {
     SOURCE_MAIN: _MAIN,
-    SOURCE_GITHUB: _GITHUB,
+    SOURCE_GITHUB: _GITHUB
 }
 
 def normalize_source_name(name: str | None) -> str:
