@@ -31,46 +31,51 @@ class HostsPage:
         font_size_text = scale_size(10, self.scale_factor)
         font_size_label = scale_size(9, self.scale_factor)
         font_size_info = scale_size(8, self.scale_factor)
-        padx_main = scale_size(30, self.scale_factor)
-        pady_main = scale_size(20, self.scale_factor)
+        
+        padx_title = scale_size(30, self.scale_factor)
+        pady_title = scale_size(20, self.scale_factor)
+        inner_padx = scale_size(15, self.scale_factor) 
+        inner_pady = scale_size(15, self.scale_factor)
         entry_width = scale_size(30, self.scale_factor)
 
         title = tk.Label(
             self.frame,
             text=tr('hosts_title'),
-            font=("Segoe UI Variable", font_size_title, "bold"),
+            font=("Inter", font_size_title, "bold"),
             fg=self.colors['text_primary'],
             bg=self.colors['bg_dark']
         )
-        title.pack(anchor='w', pady=(scale_size(30, self.scale_factor), 5), padx=padx_main)
+        title.pack(anchor='w', pady=(scale_size(30, self.scale_factor), 5), padx=padx_title)
         
         desc = tk.Label(
             self.frame,
             text=tr('hosts_desc'),
-            font=("Segoe UI Variable", font_size_desc),
+            font=("Inter", font_size_desc),
             fg=self.colors['text_secondary'],
             bg=self.colors['bg_dark']
         )
-        desc.pack(anchor='w', pady=(0, pady_main), padx=padx_main)
+        desc.pack(anchor='w', pady=(0, pady_title), padx=padx_title)
         
+        # Растягиваем main_frame на весь экран
         main_frame = tk.Frame(self.frame, bg=self.colors['bg_medium'])
-        main_frame.pack(fill=tk.BOTH, expand=True, padx=padx_main, pady=(0, pady_main))
+        main_frame.pack(fill=tk.BOTH, expand=True, padx=0, pady=0)
         
+        # Внутренние отступы для текста
         text_frame = tk.Frame(main_frame, bg=self.colors['bg_medium'])
-        text_frame.pack(fill=tk.BOTH, expand=True, pady=(scale_size(10, self.scale_factor), scale_size(10, self.scale_factor)))
+        text_frame.pack(fill=tk.BOTH, expand=True, padx=inner_padx, pady=(inner_pady, 0))
         
         self.text_area = tk.Text(
             text_frame,
             wrap=tk.WORD,
             font=("Consolas", font_size_text),
             undo=True,
-            height=20,
             bg=self.colors['bg_light'],
             fg=self.colors['text_primary'],
             insertbackground=self.colors['text_primary'],
             selectbackground=self.colors['accent'],
             selectforeground=self.colors['text_primary'],
             relief=tk.FLAT,
+            bd=0,
             highlightthickness=1,
             highlightcolor=self.colors['accent'],
             highlightbackground=self.colors['bg_medium']
@@ -91,15 +96,15 @@ class HostsPage:
         self.search_label = tk.Label(
             self.search_frame,
             text=tr('editor_find'),
-            font=("Segoe UI Variable", font_size_label),
+            font=("Inter", font_size_label),
             bg=self.colors['bg_medium'],
             fg=self.colors['text_secondary']
         )
-        self.search_label.pack(side=tk.LEFT, padx=(0, 5))
+        self.search_label.pack(side=tk.LEFT, padx=(inner_padx, 5))
         
         self.search_entry = tk.Entry(
             self.search_frame,
-            font=("Segoe UI Variable", font_size_label),
+            font=("Inter", font_size_label),
             width=entry_width,
             bg=self.colors['bg_light'],
             fg=self.colors['button_text'],
@@ -124,7 +129,7 @@ class HostsPage:
             bg=self.colors['accent'],
             fg=self.colors['button_text_hover'],
             hover_fg=self.colors['button_text_hover'],
-            font=("Segoe UI Variable", scale_size(9, self.scale_factor)),
+            font=("Inter", scale_size(9, self.scale_factor)),
             corner_radius=scale_size(6, self.scale_factor),
             hover_color=self.colors['accent'],
             theme_name=self.app.current_theme
@@ -140,7 +145,7 @@ class HostsPage:
             bg=self.colors['button_bg'],
             fg=self.colors['button_text'],
             hover_fg=self.colors['button_text_hover'],
-            font=("Segoe UI Variable", scale_size(9, self.scale_factor)),
+            font=("Inter", scale_size(9, self.scale_factor)),
             corner_radius=scale_size(6, self.scale_factor),
             hover_color=self.colors['accent'],
             theme_name=self.app.current_theme
@@ -150,11 +155,11 @@ class HostsPage:
         self.search_info = tk.Label(
             self.search_frame,
             text="",
-            font=("Segoe UI Variable", font_size_info),
+            font=("Inter", font_size_info),
             bg=self.colors['bg_medium'],
             fg=self.colors['accent']
         )
-        self.search_info.pack(side=tk.LEFT, padx=(10, 0))
+        self.search_info.pack(side=tk.LEFT, padx=(10, inner_padx))
         
         self.text_area.bind('<Control-f>', self.toggle_search)
         self.text_area.bind('<Control-F>', self.toggle_search)
@@ -167,8 +172,9 @@ class HostsPage:
         self.text_area.bind('<Control-a>', self.select_all)
         self.text_area.bind('<Control-A>', self.select_all)
         
+        # Внутренние отступы для кнопок
         button_frame = tk.Frame(main_frame, bg=self.colors['bg_medium'])
-        button_frame.pack(fill=tk.X, pady=(0, scale_size(10, self.scale_factor)))
+        button_frame.pack(fill=tk.X, padx=inner_padx, pady=(scale_size(5, self.scale_factor), inner_pady))
 
         btn_width = scale_size(120, self.scale_factor)
         btn_height = scale_size(32, self.scale_factor)
@@ -182,12 +188,12 @@ class HostsPage:
             bg=self.colors['accent'],
             fg=self.colors['button_text_hover'],
             hover_fg=self.colors['button_text_hover'],
-            font=("Segoe UI Variable", scale_size(10, self.scale_factor)),
+            font=("Inter", scale_size(10, self.scale_factor)),
             corner_radius=scale_size(8, self.scale_factor),
             hover_color=self.colors['accent'],
             theme_name=self.app.current_theme
         )
-        self.save_btn.pack(side=tk.RIGHT, padx=(5, scale_size(15, self.scale_factor)))
+        self.save_btn.pack(side=tk.RIGHT, padx=(5, 0))
 
         self.reload_btn = RoundedButton(
             button_frame,
@@ -198,7 +204,7 @@ class HostsPage:
             bg=self.colors['button_bg'],
             fg=self.colors['button_text'],
             hover_fg=self.colors['button_text_hover'],
-            font=("Segoe UI Variable", scale_size(10, self.scale_factor)),
+            font=("Inter", scale_size(10, self.scale_factor)),
             corner_radius=scale_size(8, self.scale_factor),
             hover_color=self.colors['accent'],
             theme_name=self.app.current_theme
@@ -214,7 +220,7 @@ class HostsPage:
             bg=self.colors['button_bg'],
             fg=self.colors['button_text'],
             hover_fg=self.colors['button_text_hover'],
-            font=("Segoe UI Variable", scale_size(10, self.scale_factor)),
+            font=("Inter", scale_size(10, self.scale_factor)),
             corner_radius=scale_size(8, self.scale_factor),
             hover_color=self.colors['accent'],
             theme_name=self.app.current_theme
@@ -227,11 +233,11 @@ class HostsPage:
         info_label = tk.Label(
             info_frame,
             text=tr('editor_tooltip'),
-            font=("Segoe UI Variable", font_size_info),
+            font=("Inter", font_size_info),
             bg=self.colors['bg_medium'],
             fg=self.colors['text_secondary']
         )
-        info_label.pack(side=tk.LEFT, padx=10)
+        info_label.pack(side=tk.LEFT)
         self.load_hosts()
 
     def on_escape_search(self, event=None):
@@ -258,7 +264,7 @@ class HostsPage:
             self.text_area.tag_remove("search", "1.0", "end")
             self.text_area.focus()
         else:
-            self.search_frame.pack(fill=tk.X, pady=(0, scale_size(10, self.scale_factor)), before=self.text_area.master)
+            self.search_frame.pack(fill=tk.X, padx=scale_size(15, self.scale_factor), pady=(scale_size(5, self.scale_factor), 0), before=self.text_area.master)
             self.search_visible = True
             self.search_entry.focus()
             self.search_entry.select_range(0, tk.END)
