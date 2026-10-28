@@ -70,7 +70,7 @@ class ListsPage:
         tk.Label(
             self.frame,
             text=tr('lists_title'),
-            font=("Segoe UI Variable", font_size_title, "bold"),
+            font=("Inter", font_size_title, "bold"),
             fg=self.colors['text_primary'],
             bg=self.colors['bg_dark']
         ).pack(anchor='w', pady=(scale_size(30, self.scale_factor), 5), padx=padx)
@@ -78,7 +78,7 @@ class ListsPage:
         tk.Label(
             self.frame,
             text=tr('lists_desc'),
-            font=("Segoe UI Variable", font_size_desc),
+            font=("Inter", font_size_desc),
             fg=self.colors['text_secondary'],
             bg=self.colors['bg_dark']
         ).pack(anchor='w', pady=(0, scale_size(20, self.scale_factor)), padx=padx)
@@ -218,7 +218,7 @@ class ListsPage:
 
         name_label = tk.Label(
             left, text=name,
-            font=("Segoe UI Variable", scale_size(13, self.scale_factor), "bold"),
+            font=("Inter", scale_size(13, self.scale_factor), "bold"),
             fg=self.colors['accent'],
             bg=self.colors['bg_light'],
             anchor='w', justify=tk.LEFT
@@ -227,7 +227,7 @@ class ListsPage:
 
         file_label = tk.Label(
             left, text=filename,
-            font=("Segoe UI Variable", scale_size(10, self.scale_factor)),
+            font=("Inter", scale_size(10, self.scale_factor)),
             fg=self.colors['text_secondary'],
             bg=self.colors['bg_light'],
             anchor='w', justify=tk.LEFT
@@ -240,7 +240,7 @@ class ListsPage:
 
         lines_label = tk.Label(
             right, text=tr_plural(lines, 'lists_lines_one', 'lists_lines_few', 'lists_lines_many'),
-            font=("Segoe UI Variable", scale_size(9, self.scale_factor)),
+            font=("Inter", scale_size(9, self.scale_factor)),
             fg=self.colors['text_secondary'],
             bg=self.colors['bg_light'],
             anchor='e'
@@ -256,7 +256,7 @@ class ListsPage:
 
         badge_label = tk.Label(
             right, text=badge_text,
-            font=("Segoe UI Variable", scale_size(9, self.scale_factor), "bold"),
+            font=("Inter", scale_size(9, self.scale_factor), "bold"),
             fg=badge_color,
             bg=self.colors['bg_light'],
             anchor='e'
