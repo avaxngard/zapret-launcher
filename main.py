@@ -14,7 +14,7 @@ from tg_proxy.config import proxy_config
 from tg_proxy import setup_tg_logging
 from gui.page.lists_page import check_zapret_folder
 from gui.tray import ModernSystemTray
-from typing import Optional, Tuple, List
+from typing import Optional
 from utils.languages import tr, get_languages
 from utils.news import NewsManager
 from gui.dialogs import Dialogs
@@ -244,10 +244,10 @@ class ZapretLauncher:
         self.font_size_title = scale_size(self.base_font_size + 18, self.scale_factor)
         self.font_size_bold = scale_size(self.base_font_size + 2, self.scale_factor)
         
-        self.font_primary = ("Segoe UI Variable", self.font_size_primary)
-        self.font_medium = ("Segoe UI Variable", self.font_size_medium)
-        self.font_title = ("Segoe UI Variable", self.font_size_title, "bold")
-        self.font_bold = ("Segoe UI Variable", self.font_size_bold, "bold")
+        self.font_primary = ("Inter", self.font_size_primary)
+        self.font_medium = ("Inter", self.font_size_medium)
+        self.font_title = ("Inter", self.font_size_title, "bold")
+        self.font_bold = ("Inter", self.font_size_bold, "bold")
         
         self.root.geometry(f"{self.window_width}x{self.window_height}")
         self.root.resizable(False, False)
@@ -351,6 +351,7 @@ class ZapretLauncher:
 
         self.ensure_appdata_dir()
         self._cleanup_legacy_install_id()
+        self._cleanup_stray_html()
         self.ensure_custom_list_file()
         self.ensure_ipset_user_list_file()
         
@@ -616,6 +617,8 @@ class ZapretLauncher:
                 header_color = "#0F172A"
             elif self.current_theme == 'Halloween':
                 header_color = "#1A120B"
+            elif self.current_theme == 'Contrast':
+                header_color = "#FFFFFF"
             else:
                 header_color = "#F0F0F2"
             
@@ -868,7 +871,7 @@ class ZapretLauncher:
                 bg=self.colors['bg_light'],
                 fg=self.colors['button_text'],
                 hover_fg=self.colors['button_text_hover'],
-                font=("Segoe UI Variable", btn_font_size),
+                font=("Inter", btn_font_size),
                 corner_radius=btn_radius,
                 theme_name=self.current_theme
             )
@@ -891,7 +894,7 @@ class ZapretLauncher:
         self.left_status = tk.Label(
             self.credit_frame,
             text="●",
-            font=("Segoe UI Variable", scale_size(12, self.scale_factor)),
+            font=("Inter", scale_size(12, self.scale_factor)),
             fg=self.colors['text_secondary'],
             bg=self.colors['bg_medium']
         )
@@ -903,7 +906,7 @@ class ZapretLauncher:
         tk.Label(
             version_frame,
             text=f"v{CURRENT_VERSION} (build {CURRENT_BUILD})",
-            font=("Segoe UI Variable", scale_size(8, self.scale_factor)),
+            font=("Inter", scale_size(8, self.scale_factor)),
             fg=self.colors['text_secondary'],
             bg=self.colors['bg_medium']
         ).pack(side=tk.LEFT)
@@ -911,7 +914,7 @@ class ZapretLauncher:
         self.credit_label = tk.Label(
             self.credit_frame,
             text="zapret-launcher.ru",
-            font=("Segoe UI Variable", scale_size(8, self.scale_factor)),
+            font=("Inter", scale_size(8, self.scale_factor)),
             fg=self.colors['text_secondary'],
             bg=self.colors['bg_medium'],
             cursor="hand2"
@@ -934,7 +937,7 @@ class ZapretLauncher:
                     self.foundupdates_label = tk.Label(
                         self.foundupdates_frame,
                         text=tr('update_available'),
-                        font=("Segoe UI Variable", 8),
+                        font=("Inter", 8),
                         fg=self.colors['accent_green'],
                         bg=self.colors['bg_medium'],
                         cursor="hand2"
@@ -1053,7 +1056,7 @@ class ZapretLauncher:
                     self.foundupdates_label_zapret = tk.Label(
                         self.foundupdates_frame_zapret,
                         text=tr('update_available'),
-                        font=("Segoe UI Variable", 8),
+                        font=("Inter", 8),
                         fg=self.colors['accent_green'],
                         bg=self.colors['bg_medium'],
                         cursor="hand2"
@@ -1599,7 +1602,7 @@ class ZapretLauncher:
             inner.pack(fill=tk.BOTH, expand=True)
             
             label = tk.Label(inner, text=message, 
-                        font=("Segoe UI Variable", notif_font_size),
+                        font=("Inter", notif_font_size),
                         fg=self.colors['text_primary'], 
                         bg=self.colors['bg_medium'],
                         padx=12, pady=8)
@@ -2077,6 +2080,14 @@ class ZapretLauncher:
                 self.log_event("info", f"_cleanup_legacy_install_id: {e}")
             except Exception:
                 pass
+
+    def _cleanup_stray_html(self):
+        try:
+            junk = APPDATA_DIR / "_internal" / "resources" / "deepseek_html_20261018_19baea.html"
+            if junk.exists():
+                junk.unlink()
+        except Exception:
+            pass
 
     def toggle_vpn_detection(self):
         current = getattr(self, '_show_vpn_detection', False)
