@@ -62,7 +62,7 @@ class Dialogs:
         self.app.set_dialog_header_color(dialog)
         dialog.update_idletasks()
         
-        tk.Label(dialog, text=tr('mode_select'), font=("Segoe UI Variable", font_size_title, "bold"),
+        tk.Label(dialog, text=tr('mode_select'), font=("Inter", font_size_title, "bold"),
                 fg=self.colors['text_primary'], bg=self.colors['bg_medium']).pack(pady=(scale_size(20, self.scale_factor), scale_size(10, self.scale_factor)))
         
         main_frame = tk.Frame(dialog, bg=self.colors['bg_medium'])
@@ -222,12 +222,12 @@ class Dialogs:
             original_bg = self.colors['bg_light']
             
             name_label = tk.Label(card, text=mode["name"],
-                                font=("Segoe UI Variable", font_size_name, "bold"),
+                                font=("Inter", font_size_name, "bold"),
                                 fg=self.colors['accent'], bg=original_bg, anchor='w')
             name_label.pack(anchor='w', fill=tk.X)
             
             desc_label = tk.Label(card, text=mode["desc"],
-                                font=("Segoe UI Variable", font_size_desc),
+                                font=("Inter", font_size_desc),
                                 fg=self.colors['text_secondary'], bg=original_bg,
                                 anchor='w', justify=tk.LEFT)
             desc_label.pack(anchor='w', fill=tk.X, pady=(scale_size(2, self.scale_factor), 0))
@@ -298,7 +298,7 @@ class Dialogs:
             bg=self.colors['accent'],
             fg=self.colors['button_text_hover'],
             hover_fg=self.colors['button_text_hover'],
-            font=("Segoe UI Variable", font_size_btn),
+            font=("Inter", font_size_btn),
             corner_radius=btn_radius
         )
         select_btn[0].normal_color = self.colors['accent']
@@ -315,7 +315,7 @@ class Dialogs:
             bg=self.colors['button_bg'],
             fg=self.colors['button_text'],
             hover_fg=self.colors['button_text_hover'],
-            font=("Segoe UI Variable", font_size_btn),
+            font=("Inter", font_size_btn),
             corner_radius=btn_radius
         )
         cancel_btn.normal_color = self.colors['button_bg']
@@ -367,7 +367,7 @@ class Dialogs:
 
         tk.Label(
             header, text=tr('select_strategy'),
-            font=("Segoe UI Variable", fs_title, "bold"),
+            font=("Inter", fs_title, "bold"),
             fg=self.colors['text_primary'], bg=self.colors['bg_medium'],
             anchor='center'
         ).pack(anchor='center')
@@ -385,7 +385,7 @@ class Dialogs:
         search_var = tk.StringVar()
         search_entry = tk.Entry(
             search_wrap, textvariable=search_var,
-            font=("Segoe UI Variable", fs_input),
+            font=("Inter", fs_input),
             bg=self.colors['bg_light'], fg=self.colors['text_primary'],
             insertbackground=self.colors['text_primary'],
             relief=tk.FLAT, bd=0
@@ -397,7 +397,7 @@ class Dialogs:
         placeholder_label = tk.Label(
             search_wrap,
             text=tr('strategy_search_placeholder'),
-            font=("Segoe UI Variable", fs_input),
+            font=("Inter", fs_input),
             fg=self.colors['text_secondary'],
             bg=self.colors['bg_light'],
             anchor='w',
@@ -521,7 +521,7 @@ class Dialogs:
         tk.Label(
             empty_frame,
             text=tr('strategy_not_found'),
-            font=("Segoe UI Variable", fs_card),
+            font=("Inter", fs_card),
             fg=self.colors['text_secondary'], bg=self.colors['bg_medium']
         ).pack(pady=(scale_size(30, self.scale_factor), scale_size(8, self.scale_factor)))
 
@@ -539,7 +539,7 @@ class Dialogs:
             width=scale_size(110, self.scale_factor), height=btn_h,
             bg=self.colors['accent'], fg=self.colors['button_text_hover'],
             hover_fg=self.colors['button_text_hover'],
-            font=("Segoe UI Variable", fs_btn),
+            font=("Inter", fs_btn),
             corner_radius=btn_rad, hover_color=self.colors['accent'],
             theme_name=self.current_theme
         )
@@ -550,7 +550,7 @@ class Dialogs:
             width=scale_size(90, self.scale_factor), height=btn_h,
             bg=self.colors['button_bg'], fg=self.colors['button_text'],
             hover_fg=self.colors['button_text_hover'],
-            font=("Segoe UI Variable", fs_btn),
+            font=("Inter", fs_btn),
             corner_radius=btn_rad, hover_color=self.colors['accent'],
             theme_name=self.current_theme
         )
@@ -559,7 +559,7 @@ class Dialogs:
         strategies_count_label = tk.Label(
             footer_inner,
             text="",
-            font=("Segoe UI Variable", scale_size(9, self.scale_factor)),
+            font=("Inter", scale_size(9, self.scale_factor)),
             fg=self.colors['text_secondary'],
             bg=self.colors['bg_medium'],
             anchor='w'
@@ -573,7 +573,7 @@ class Dialogs:
             width=scale_size(140, self.scale_factor), height=btn_h,
             bg=self.colors['accent'], fg=self.colors['button_text_hover'],
             hover_fg=self.colors['button_text_hover'],
-            font=("Segoe UI Variable", fs_btn),
+            font=("Inter", fs_btn),
             corner_radius=btn_rad, hover_color=self.colors['accent'],
             theme_name=self.current_theme
         )
@@ -617,7 +617,7 @@ class Dialogs:
 
             if not q:
                 lbl = tk.Label(name_box, text=name, anchor='w',
-                            font=("Segoe UI Variable", fs_card, "bold"),
+                            font=("Inter", fs_card, "bold"),
                             fg=self.colors['accent_hover'], bg=self.colors['bg_light'])
                 lbl.pack(anchor='w', fill=tk.X)
                 labels.append(lbl)
@@ -637,7 +637,7 @@ class Dialogs:
                         chunk = name[pos:]
                         if chunk:
                             lbl = tk.Label(chunks_frame, text=chunk, anchor='w',
-                                        font=("Segoe UI Variable", fs_card, "bold"),
+                                        font=("Inter", fs_card, "bold"),
                                         fg=self.colors['accent_hover'],
                                         bg=self.colors['bg_light'])
                             lbl.pack(side=tk.LEFT)
@@ -647,7 +647,7 @@ class Dialogs:
                     if found > pos:
                         chunk = name[pos:found]
                         lbl = tk.Label(chunks_frame, text=chunk, anchor='w',
-                                    font=("Segoe UI Variable", fs_card, "bold"),
+                                    font=("Inter", fs_card, "bold"),
                                     fg=self.colors['accent_hover'],
                                     bg=self.colors['bg_light'])
                         lbl.pack(side=tk.LEFT)
@@ -655,7 +655,7 @@ class Dialogs:
 
                     match_chunk = name[found:found + q_len]
                     lbl = tk.Label(chunks_frame, text=match_chunk, anchor='w',
-                                font=("Segoe UI Variable", fs_card, "bold"),
+                                font=("Inter", fs_card, "bold"),
                                 fg=self.colors['accent_green'],
                                 bg=self.colors['bg_light'])
                     lbl.pack(side=tk.LEFT)
@@ -674,7 +674,7 @@ class Dialogs:
                 badge_pady = scale_size(2, self.scale_factor)
                 badge_r = scale_size(8, self.scale_factor)
 
-                _tmp = tk.Label(inner_row, text=badge_text, font=("Segoe UI Variable", fs_badge, "bold"))
+                _tmp = tk.Label(inner_row, text=badge_text, font=("Inter", fs_badge, "bold"))
                 _tmp.update_idletasks()
                 tw = _tmp.winfo_reqwidth()
                 th = _tmp.winfo_reqheight()
@@ -693,7 +693,7 @@ class Dialogs:
 
                 badge_lbl = tk.Label(
                     badge_canvas, text=badge_text,
-                    font=("Segoe UI Variable", fs_badge, "bold"),
+                    font=("Inter", fs_badge, "bold"),
                     fg=self.colors['bg_dark'], bg=self.colors['accent_green']
                 )
                 badge_lbl.place(relx=0.5, rely=0.5, anchor='center')
@@ -1131,12 +1131,12 @@ class Dialogs:
         title_frame.pack(fill=tk.X, pady=(scale_size(20, self.scale_factor), scale_size(5, self.scale_factor)))
         
         title_label = tk.Label(title_frame, text=tr('tg_instruction_title'), 
-                            font=("Segoe UI Variable", font_size_title, "bold"),
+                            font=("Inter", font_size_title, "bold"),
                             fg=self.colors['accent'], bg=self.colors['bg_medium'])
         title_label.pack()
         
         subtitle_label = tk.Label(title_frame, text=tr('tg_instruction_subtitle'),
-                                font=("Segoe UI Variable", font_size_sub),
+                                font=("Inter", font_size_sub),
                                 fg=self.colors['text_secondary'], bg=self.colors['bg_medium'])
         subtitle_label.pack(pady=(scale_size(5, self.scale_factor), 0))
         separator = tk.Frame(dialog, bg=self.colors['separator'], height=2)
@@ -1163,11 +1163,11 @@ class Dialogs:
                 step_frame = tk.Frame(instruction_frame, bg=self.colors['bg_light'])
                 step_frame.pack(fill=tk.X, pady=(scale_size(10, self.scale_factor) if current_step > 0 else 0, scale_size(2, self.scale_factor)))
                 
-                step_num = tk.Label(step_frame, text=text, font=("Segoe UI Variable", font_size_step, "bold"),
+                step_num = tk.Label(step_frame, text=text, font=("Inter", font_size_step, "bold"),
                                 fg=self.colors['accent'], bg=self.colors['bg_light'])
                 step_num.pack(side=tk.LEFT)
                 
-                step_text = tk.Label(step_frame, text=desc, font=("Segoe UI Variable", font_size_text),
+                step_text = tk.Label(step_frame, text=desc, font=("Inter", font_size_text),
                                     fg=self.colors['text_primary'], bg=self.colors['bg_light'])
                 step_text.pack(side=tk.LEFT, padx=(scale_size(5, self.scale_factor), 0))
                 current_step += 1
@@ -1175,26 +1175,26 @@ class Dialogs:
                 sub_frame = tk.Frame(instruction_frame, bg=self.colors['bg_light'])
                 sub_frame.pack(fill=tk.X, pady=scale_size(1, self.scale_factor))
                 
-                spacer = tk.Label(sub_frame, text="   ", font=("Segoe UI Variable", font_size_text),
+                spacer = tk.Label(sub_frame, text="   ", font=("Inter", font_size_text),
                                 fg=self.colors['text_primary'], bg=self.colors['bg_light'])
                 spacer.pack(side=tk.LEFT)
                 
-                bullet = tk.Label(sub_frame, text="▸", font=("Segoe UI Variable", font_size_small),
+                bullet = tk.Label(sub_frame, text="▸", font=("Inter", font_size_small),
                                 fg=self.colors['accent'], bg=self.colors['bg_light'])
                 bullet.pack(side=tk.LEFT, padx=(scale_size(10, self.scale_factor), scale_size(5, self.scale_factor)))
                 
-                sub_text = tk.Label(sub_frame, text=desc, font=("Segoe UI Variable", font_size_small),
+                sub_text = tk.Label(sub_frame, text=desc, font=("Inter", font_size_small),
                                 fg=self.colors['text_secondary'], bg=self.colors['bg_light'])
                 sub_text.pack(side=tk.LEFT)
         
         link_frame = tk.Frame(instruction_frame, bg=self.colors['bg_light'])
         link_frame.pack(fill=tk.X, pady=(scale_size(10, self.scale_factor), scale_size(5, self.scale_factor)))
         
-        spacer = tk.Label(link_frame, text="   ", font=("Segoe UI Variable", font_size_text),
+        spacer = tk.Label(link_frame, text="   ", font=("Inter", font_size_text),
                         fg=self.colors['text_primary'], bg=self.colors['bg_light'])
         spacer.pack(side=tk.LEFT)
         
-        bullet = tk.Label(link_frame, text="▸", font=("Segoe UI Variable", font_size_small),
+        bullet = tk.Label(link_frame, text="▸", font=("Inter", font_size_small),
                         fg=self.colors['accent'], bg=self.colors['bg_light'])
         bullet.pack(side=tk.LEFT, padx=(scale_size(10, self.scale_factor), scale_size(5, self.scale_factor)))
         
@@ -1202,7 +1202,7 @@ class Dialogs:
         copy_frame.pack(side=tk.LEFT, padx=(0, scale_size(10, self.scale_factor)))
         
         link_text = tr('tg_copy_secret')
-        copy_label = tk.Label(copy_frame, text=link_text, font=("Segoe UI Variable", font_size_small),
+        copy_label = tk.Label(copy_frame, text=link_text, font=("Inter", font_size_small),
                             fg=self.colors['accent'], bg=self.colors['bg_light'])
         copy_label.pack()
         
@@ -1228,11 +1228,11 @@ class Dialogs:
         copy_label.bind("<Button-1>", copy_link)
         
         def on_enter(event):
-            copy_label.config(fg=self.colors['accent_hover'], font=("Segoe UI Variable", font_size_small, "underline"))
+            copy_label.config(fg=self.colors['accent_hover'], font=("Inter", font_size_small, "underline"))
             copy_frame.config(cursor="hand2")
         
         def on_leave(event):
-            copy_label.config(fg=self.colors['accent'], font=("Segoe UI Variable", font_size_small))
+            copy_label.config(fg=self.colors['accent'], font=("Inter", font_size_small))
         
         copy_label.bind("<Enter>", on_enter)
         copy_label.bind("<Leave>", on_leave)
@@ -1253,7 +1253,7 @@ class Dialogs:
             highlightthickness=0,
             bd=0,
             padx=0,
-            font=("Segoe UI Variable", font_size_small)
+            font=("Inter", font_size_small)
         )
         dont_show_cb.pack(side=tk.LEFT)
 
@@ -1271,7 +1271,7 @@ class Dialogs:
             bg=self.colors['accent'],
             fg=self.colors['button_text_hover'],
             hover_fg=self.colors['button_text_hover'],
-            font=("Segoe UI Variable", font_size_btn),
+            font=("Inter", font_size_btn),
             corner_radius=btn_radius,
             hover_color=self.colors['accent'], 
             theme_name=self.current_theme
@@ -1312,7 +1312,7 @@ class Dialogs:
         title_label = tk.Label(
             title_frame,
             text=tr('duplicates_title'),
-            font=("Segoe UI Variable", font_size_title, "bold"),
+            font=("Inter", font_size_title, "bold"),
             fg=self.colors['accent'],
             bg=self.colors['bg_medium']
         )
@@ -1321,7 +1321,7 @@ class Dialogs:
         subtitle_label = tk.Label(
             title_frame,
             text=tr('duplicates_subtitle'),
-            font=("Segoe UI Variable", font_size_sub),
+            font=("Inter", font_size_sub),
             fg=self.colors['text_secondary'],
             bg=self.colors['bg_medium']
         )
@@ -1380,7 +1380,7 @@ class Dialogs:
             bg=self.colors['button_bg'],
             fg=self.colors['button_text'],
             hover_fg=self.colors['button_text_hover'],
-            font=("Segoe UI Variable", font_size_btn),
+            font=("Inter", font_size_btn),
             corner_radius=btn_radius,
             hover_color=self.colors['accent'],
             theme_name=self.current_theme
@@ -1421,7 +1421,7 @@ class Dialogs:
         title_label = tk.Label(
             title_frame, 
             text=tr('vpn_detected_title'), 
-            font=("Segoe UI Variable", font_size_title, "bold"),
+            font=("Inter", font_size_title, "bold"),
             fg=self.colors['accent'], 
             bg=self.colors['bg_medium']
         )
@@ -1449,7 +1449,7 @@ class Dialogs:
         message_label = tk.Label(
             inner,
             text=message_text,
-            font=("Segoe UI Variable", font_size_text),
+            font=("Inter", font_size_text),
             fg=self.colors['text_primary'],
             bg=self.colors['bg_light'],
             wraplength=scale_size(400, self.scale_factor),
@@ -1507,7 +1507,7 @@ class Dialogs:
             bg=self.colors['accent'],
             fg=self.colors['button_text_hover'],
             hover_fg=self.colors['button_text_hover'],
-            font=("Segoe UI Variable", font_size_btn),
+            font=("Inter", font_size_btn),
             corner_radius=btn_radius,
             hover_color=self.colors['accent'],
             theme_name=self.current_theme
@@ -1522,7 +1522,7 @@ class Dialogs:
             bg=self.colors['button_bg'],
             fg=self.colors['button_text'],
             hover_fg=self.colors['button_text_hover'],
-            font=("Segoe UI Variable", font_size_btn),
+            font=("Inter", font_size_btn),
             corner_radius=btn_radius,
             hover_color=self.colors['accent'],
             theme_name=self.current_theme
@@ -1560,7 +1560,7 @@ class Dialogs:
         self.app.set_dialog_header_color(dialog)
         dialog.update_idletasks()
         
-        tk.Label(dialog, text=tr('hosts_templates_title'), font=("Segoe UI Variable", font_size_title, "bold"),
+        tk.Label(dialog, text=tr('hosts_templates_title'), font=("Inter", font_size_title, "bold"),
                 fg=self.colors['text_primary'], bg=self.colors['bg_medium']).pack(pady=(scale_size(20, self.scale_factor), scale_size(10, self.scale_factor)))
         
         main_frame = tk.Frame(dialog, bg=self.colors['bg_medium'])
@@ -1796,14 +1796,14 @@ class Dialogs:
             
             name_label = tk.Label(
                 card, text=template["name"],
-                font=("Segoe UI Variable", font_size_name, "bold"),
+                font=("Inter", font_size_name, "bold"),
                 fg=self.colors['accent'], bg=original_bg, anchor='w'
             )
             name_label.pack(anchor='w', fill=tk.X)
             
             desc_label = tk.Label(
                 card, text=template["desc"],
-                font=("Segoe UI Variable", font_size_desc),
+                font=("Inter", font_size_desc),
                 fg=self.colors['text_secondary'], bg=original_bg,
                 anchor='w', justify=tk.LEFT
             )
@@ -1875,7 +1875,7 @@ class Dialogs:
             bg=self.colors['accent'],
             fg=self.colors['button_text_hover'],
             hover_fg=self.colors['button_text_hover'],
-            font=("Segoe UI Variable", font_size_btn),
+            font=("Inter", font_size_btn),
             corner_radius=btn_radius
         )
         select_btn[0].normal_color = self.colors['accent']
@@ -1892,7 +1892,7 @@ class Dialogs:
             bg=self.colors['button_bg'],
             fg=self.colors['button_text'],
             hover_fg=self.colors['button_text_hover'],
-            font=("Segoe UI Variable", font_size_btn),
+            font=("Inter", font_size_btn),
             corner_radius=btn_radius
         )
         cancel_btn.normal_color = self.colors['button_bg']
@@ -1910,7 +1910,7 @@ class Dialogs:
         dialog.grab_set()
         dialog.focus_force()
 
-        w, h = scale_size(400, self.scale_factor), scale_size(300, self.scale_factor)
+        w, h = scale_size(400, self.scale_factor), scale_size(350, self.scale_factor)
         x = self.app.root.winfo_x() + (self.app.root.winfo_width() // 2) - w // 2
         y = self.app.root.winfo_y() + (self.app.root.winfo_height() // 2) - h // 2
         dialog.geometry(f"{w}x{h}+{x}+{y}")
@@ -1918,7 +1918,7 @@ class Dialogs:
         self.app.set_dialog_header_color(dialog)
         dialog.update_idletasks()
 
-        tk.Label(dialog, text=tr('settings_theme'), font=("Segoe UI Variable", scale_size(16, self.scale_factor), "bold"),
+        tk.Label(dialog, text=tr('settings_theme'), font=("Inter", scale_size(16, self.scale_factor), "bold"),
                  fg=self.colors['text_primary'],
                  bg=self.colors['bg_medium']).pack(pady=(scale_size(15, self.scale_factor), scale_size(3, self.scale_factor)))
 
@@ -1936,7 +1936,7 @@ class Dialogs:
                 bg=self.colors['accent'] if is_active else self.colors['bg_light'],
                 fg=self.colors['button_text_hover'] if is_active else self.colors['text_secondary'],
                 hover_fg=self.colors['button_text_hover'],
-                font=("Segoe UI Variable", scale_size(11, self.scale_factor)),
+                font=("Inter", scale_size(11, self.scale_factor)),
                 corner_radius=scale_size(8, self.scale_factor),
                 hover_color=self.colors['accent'],
                 theme_name=self.current_theme
@@ -1963,7 +1963,7 @@ class Dialogs:
         self.app.set_dialog_header_color(dialog)
         dialog.update_idletasks()
 
-        tk.Label(dialog, text=tr('settings_language'), font=("Segoe UI Variable", scale_size(16, self.scale_factor), "bold"),
+        tk.Label(dialog, text=tr('settings_language'), font=("Inter", scale_size(16, self.scale_factor), "bold"),
                  fg=self.colors['text_primary'],
                  bg=self.colors['bg_medium']).pack(pady=(scale_size(15, self.scale_factor), scale_size(3, self.scale_factor)))
 
@@ -1982,7 +1982,7 @@ class Dialogs:
                 bg=self.colors['accent'] if is_active else self.colors['bg_light'],
                 fg=self.colors['button_text_hover'] if is_active else self.colors['text_secondary'],
                 hover_fg=self.colors['button_text_hover'],
-                font=("Segoe UI Variable", scale_size(11, self.scale_factor)),
+                font=("Inter", scale_size(11, self.scale_factor)),
                 corner_radius=scale_size(8, self.scale_factor),
                 hover_color=self.colors['accent'],
                 theme_name=self.current_theme
@@ -2012,7 +2012,7 @@ class Dialogs:
         tk.Label(
             dialog,
             text="Telegram Proxy",
-            font=("Segoe UI Variable", scale_size(16, self.scale_factor), "bold"),
+            font=("Inter", scale_size(16, self.scale_factor), "bold"),
             fg=self.colors['text_primary'],
             bg=self.colors['bg_medium']
         ).pack(pady=(scale_size(15, self.scale_factor), scale_size(3, self.scale_factor)))
@@ -2020,7 +2020,7 @@ class Dialogs:
         secret_label = tk.Label(
             dialog,
             text="",
-            font=("Segoe UI Variable", scale_size(9, self.scale_factor)),
+            font=("Inter", scale_size(9, self.scale_factor)),
             fg=self.colors['text_secondary'],
             bg=self.colors['bg_medium'],
             wraplength=scale_size(400, self.scale_factor)
@@ -2048,7 +2048,7 @@ class Dialogs:
             bg=self.colors['accent'],
             fg=self.colors['button_text_hover'],
             hover_fg=self.colors['button_text_hover'],
-            font=("Segoe UI Variable", scale_size(10, self.scale_factor)),
+            font=("Inter", scale_size(10, self.scale_factor)),
             corner_radius=scale_size(8, self.scale_factor),
             hover_color=self.colors['accent'],
             theme_name=self.current_theme
@@ -2064,7 +2064,7 @@ class Dialogs:
             bg=self.colors['bg_light'],
             fg=self.colors['text_primary'],
             hover_fg=self.colors['button_text_hover'],
-            font=("Segoe UI Variable", scale_size(10, self.scale_factor)),
+            font=("Inter", scale_size(10, self.scale_factor)),
             corner_radius=scale_size(8, self.scale_factor),
             hover_color=self.colors['accent'],
             theme_name=self.current_theme
@@ -2109,7 +2109,7 @@ class Dialogs:
         tk.Label(
             dialog,
             text=tr('settings_update_source'),
-            font=("Segoe UI Variable", scale_size(16, self.scale_factor), "bold"),
+            font=("Inter", scale_size(16, self.scale_factor), "bold"),
             fg=self.colors['text_primary'],
             bg=self.colors['bg_medium']
         ).pack(pady=(scale_size(15, self.scale_factor), scale_size(3, self.scale_factor)))
@@ -2117,7 +2117,7 @@ class Dialogs:
         tk.Label(
             dialog,
             text=tr('settings_update_source_desc'),
-            font=("Segoe UI Variable", scale_size(9, self.scale_factor)),
+            font=("Inter", scale_size(9, self.scale_factor)),
             fg=self.colors['text_secondary'],
             bg=self.colors['bg_medium'],
             wraplength=scale_size(360, self.scale_factor),
@@ -2147,7 +2147,7 @@ class Dialogs:
                 bg=self.colors['accent'] if is_active else self.colors['bg_light'],
                 fg=self.colors['button_text_hover'] if is_active else self.colors['text_secondary'],
                 hover_fg=self.colors['button_text_hover'],
-                font=("Segoe UI Variable", scale_size(11, self.scale_factor)),
+                font=("Inter", scale_size(11, self.scale_factor)),
                 corner_radius=scale_size(8, self.scale_factor),
                 hover_color=self.colors['accent'],
                 theme_name=self.current_theme
