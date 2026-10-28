@@ -169,6 +169,8 @@ class SplashWindow:
                 header_color = "#0F172A"
             elif self.colors_name == 'Halloween':
                 header_color = "#1A120B"
+            elif self.colors_name == 'Contrast':
+                header_color = "#FFFFFF"
             else:
                 header_color = "#F0F0F2"
             pywinstyles.change_header_color(self.window, header_color)
@@ -199,7 +201,7 @@ class SplashWindow:
         self.status_label = tk.Label(
             center_container,
             text=tr('splash_check_connecting'),
-            font=("Segoe UI Variable", 10),
+            font=("Inter", 10),
             fg=self.colors['text_secondary'],
             bg=self.colors['bg_dark']
         )
@@ -230,7 +232,7 @@ class SplashWindow:
         manual_label = tk.Label(
             bottom_frame,
             text=tr('splash_help_update'),
-            font=("Segoe UI Variable", 8),
+            font=("Inter", 8),
             fg=self.colors['text_secondary'],
             bg=self.colors['bg_dark'],
             cursor="hand2"
