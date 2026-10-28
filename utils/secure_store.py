@@ -20,8 +20,7 @@ FILE_ATTRIBUTE_HIDDEN   = 0x2
 FILE_ATTRIBUTE_NORMAL   = 0x80
 
 class _DATA_BLOB(ctypes.Structure):
-    _fields_ = [("cbData", wintypes.DWORD),
-                ("pbData", ctypes.POINTER(ctypes.c_char))]
+    _fields_ = [("cbData", wintypes.DWORD), ("pbData", ctypes.POINTER(ctypes.c_char))]
 
 def _blob(data: bytes):
     buf = ctypes.create_string_buffer(data, len(data))
