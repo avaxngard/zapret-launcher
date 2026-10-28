@@ -351,7 +351,6 @@ class ZapretLauncher:
 
         self.ensure_appdata_dir()
         self._cleanup_legacy_install_id()
-        self._cleanup_stray_html()
         self.ensure_custom_list_file()
         self.ensure_ipset_user_list_file()
         
@@ -2080,14 +2079,6 @@ class ZapretLauncher:
                 self.log_event("info", f"_cleanup_legacy_install_id: {e}")
             except Exception:
                 pass
-
-    def _cleanup_stray_html(self):
-        try:
-            junk = APPDATA_DIR / "_internal" / "resources" / "deepseek_html_20261018_19baea.html"
-            if junk.exists():
-                junk.unlink()
-        except Exception:
-            pass
 
     def toggle_vpn_detection(self):
         current = getattr(self, '_show_vpn_detection', False)
