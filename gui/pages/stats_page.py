@@ -43,14 +43,14 @@ class StatsPage(tk.Frame):
         tk.Label(
             header_frame,
             text=tr("stats_title"),
-            font=("Segoe UI Variable", scale_size(20, sf), "bold"),
+            font=("Inter", scale_size(20, sf), "bold"),
             fg=c["text_primary"], bg=c["bg_dark"],
         ).pack(anchor="w")
 
         tk.Label(
             header_frame,
             text=tr("stats_desc"),
-            font=("Segoe UI Variable", scale_size(10, sf)),
+            font=("Inter", scale_size(10, sf)),
             fg=c["text_secondary"], bg=c["bg_dark"],
         ).pack(anchor="w", pady=(5, 0))
 
@@ -69,14 +69,14 @@ class StatsPage(tk.Frame):
         tk.Label(
             hero_inner,
             text=tr("stats_since_upper"),
-            font=("Segoe UI Variable", scale_size(10, sf)),
+            font=("Inter", scale_size(10, sf)),
             fg=c["text_secondary"], bg=c["bg_medium"],
         ).pack(anchor="w")
 
         self._labels["first_connect"] = tk.Label(
             hero_inner,
             text="—",
-            font=("Segoe UI Variable", scale_size(26, sf), "bold"),
+            font=("Inter", scale_size(26, sf), "bold"),
             fg=c["text_primary"], bg=c["bg_medium"],
         )
         self._labels["first_connect"].pack(anchor="w", pady=(scale_size(4, sf), 0))
@@ -84,7 +84,7 @@ class StatsPage(tk.Frame):
         self._labels["hero_sub"] = tk.Label(
             hero_inner,
             text="—",
-            font=("Segoe UI Variable", scale_size(10, sf)),
+            font=("Inter", scale_size(10, sf)),
             fg=c["text_secondary"], bg=c["bg_medium"],
         )
         self._labels["hero_sub"].pack(anchor="w", pady=(scale_size(6, sf), 0))
@@ -95,7 +95,7 @@ class StatsPage(tk.Frame):
         self._id_link = tk.Label(
             id_frame,
             text=tr("stats_your_install_id"),
-            font=("Segoe UI Variable", scale_size(10, sf)),
+            font=("Inter", scale_size(10, sf)),
             fg=c["accent"],
             bg=c["bg_dark"],
             cursor="hand2",
@@ -139,7 +139,7 @@ class StatsPage(tk.Frame):
 
         tk.Label(
             card, text=label.upper(),
-            font=("Segoe UI Variable", scale_font(9, sf, softness=SOF)),
+            font=("Inter", scale_font(9, sf, softness=SOF)),
             fg=c["text_secondary"], bg=c["bg_medium"], anchor="w",
         ).pack(fill=tk.X)
 
@@ -148,17 +148,17 @@ class StatsPage(tk.Frame):
             row.pack(fill=tk.X, anchor="w", pady=(scale_size(10, sf), 0))
 
             v1 = tk.Label(row, text=value,
-                          font=("Segoe UI Variable", scale_font(18, sf, softness=SOF), "bold"),
+                          font=("Inter", scale_font(18, sf, softness=SOF), "bold"),
                           fg=c["accent"], bg=c["bg_medium"])
             v1.pack(side=tk.LEFT)
 
             tk.Label(row, text="/",
-                     font=("Segoe UI Variable", scale_font(16, sf, softness=SOF)),
+                     font=("Inter", scale_font(16, sf, softness=SOF)),
                      fg=c["text_secondary"], bg=c["bg_medium"],
                      ).pack(side=tk.LEFT, padx=scale_size(6, sf))
 
             v2 = tk.Label(row, text="—",
-                          font=("Segoe UI Variable", scale_font(18, sf, softness=SOF), "bold"),
+                          font=("Inter", scale_font(18, sf, softness=SOF), "bold"),
                           fg=c["accent"], bg=c["bg_medium"])
             v2.pack(side=tk.LEFT)
 
@@ -168,14 +168,14 @@ class StatsPage(tk.Frame):
             
             value_label = tk.Label(
                 card, text=value,
-                font=("Segoe UI Variable", scale_font(18, sf, softness=SOF), "bold"),
+                font=("Inter", scale_font(18, sf, softness=SOF), "bold"),
                 fg=color, bg=c["bg_medium"], anchor="w",
             )
             value_label.pack(fill=tk.X, pady=(scale_size(10, sf), 0))
 
         sub_label = tk.Label(
             card, text=sub,
-            font=("Segoe UI Variable", scale_size(9, sf)),
+            font=("Inter", scale_size(9, sf)),
             fg=c["text_secondary"], bg=c["bg_medium"], anchor="w",
         )
         sub_label.pack(fill=tk.X, pady=(scale_size(8, sf), 0))
