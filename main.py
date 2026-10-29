@@ -393,7 +393,7 @@ class ZapretLauncher:
         self.root.after(500, self.check_lists_for_duplicates)
         self.root.after(1000, self.check_initial_status)
         saved_page = getattr(self, '_initial_page', 'main')
-        if saved_page not in ['main', 'service', 'lists', 'stats', 'traffic', 'hosts', 'logs', 'settings']:
+        if saved_page not in ['main', 'service', 'lists', 'schedule' 'stats', 'traffic', 'hosts', 'logs', 'settings']:
             saved_page = 'main'
         
         self.pages.show_page(saved_page)
@@ -580,7 +580,7 @@ class ZapretLauncher:
         if hasattr(self, 'pages') and self.pages:
             self.pages.colors = self.colors
             
-            for page_name in ['main_page', 'service_page', 'lists_page', 'traffic_page', 'stats_page', 'settings_page', 'logs_page', 'hosts_page']:
+            for page_name in ['main_page', 'service_page', 'lists_page', 'traffic_page', 'stats_page', 'schedule_page', 'settings_page', 'logs_page', 'hosts_page']:
                 if hasattr(self.pages, page_name):
                     page = getattr(self.pages, page_name)
                     if page:
@@ -846,6 +846,7 @@ class ZapretLauncher:
             (tr('service_title'), self.show_service_page),
             (tr('lists_title'), self.show_lists_page),
             (tr('stats_title'), self.show_stats_page),
+            #(tr('schedule_title'), self.show_schedule_page),
             (tr('traffic_title'), self.show_traffic_page),
             (tr('hosts_title'), self.show_hosts_page),
             (tr('logs_title'), self.show_logs_page)
@@ -1658,39 +1659,42 @@ class ZapretLauncher:
             self.log_event("info", f"load_settings_data: {e}")
         return {}
 
-    def set_autostart(self, enabled):
-        try:
-            key_path = r"Software\Microsoft\Windows\CurrentVersion\Run"
-            
-            if enabled:
-                if getattr(sys, 'frozen', False):
-                    exe_path = sys.executable
-                else:
-                    exe_path = sys.argv[0]
-                
-                with winreg.OpenKey(winreg.HKEY_CURRENT_USER, key_path, 0, winreg.KEY_SET_VALUE) as key:
-                    winreg.SetValueEx(key, "Zapret Launcher", 0, winreg.REG_SZ, f'"{exe_path}" --from-splash')
-                return True
+    def set_autostart_task(self, enabled):
+        task_name = "ZapretLauncherAutostart"
+        
+        if enabled:
+            if getattr(sys, 'frozen', False):
+                exe_path = sys.executable
             else:
-                try:
-                    with winreg.OpenKey(winreg.HKEY_CURRENT_USER, key_path, 0, winreg.KEY_SET_VALUE) as key:
-                        winreg.DeleteValue(key, "Zapret Launcher")
-                except FileNotFoundError:
-                    pass
-                return True
-                
-        except Exception as e:
-            self.log_event("info", f"Error setting auto-start: {e}")
-            return False
+                exe_path = sys.argv[0]
+            
+            cmd = [
+                'schtasks', '/Create', '/TN', task_name, '/TR', f'"{exe_path}" --auto-start',
+                '/SC', 'ONLOGON', '/RL', 'HIGHEST', '/IT', '/F'
+            ]
+            result = subprocess.run(cmd, capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW)
+            return result.returncode == 0
+        else:
+            result = subprocess.run(['schtasks', '/Delete', '/TN', task_name, '/F'], capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW)
+            return result.returncode == 0
 
     def check_autostart_status(self):
-        try:
-            key_path = r"Software\Microsoft\Windows\CurrentVersion\Run"
-            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, key_path, 0, winreg.KEY_READ) as key:
-                value, _ = winreg.QueryValueEx(key, "Zapret Launcher")
-                return bool(value)
-        except FileNotFoundError:
+        result = subprocess.run(
+            ['schtasks', '/Query', '/TN', 'ZapretLauncherAutostart', '/XML'],
+            capture_output=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW
+        )
+        if result.returncode != 0:
             return False
+        
+        match = re.search(r'<Command>(.*?)</Command>', result.stdout)
+        if not match:
+            return False
+        
+        task_path = match.group(1).strip('"')
+        expected = sys.executable if getattr(sys, 'frozen', False) else sys.argv[0]
+        
+        try:
+            return Path(task_path).resolve() == Path(expected).resolve()
         except Exception:
             return False
 
@@ -1736,7 +1740,7 @@ class ZapretLauncher:
         current = self.check_autostart_status()
         new_state = not current
         
-        if self.set_autostart(new_state):
+        if self.set_autostart_task(new_state):
             if new_state:
                 messagebox.showinfo(tr('information_desc'), tr('autostart_enabled'))
             else:
@@ -2123,7 +2127,7 @@ class ZapretLauncher:
                     
                     autostart_enabled = data.get('autostart_enabled', False)
                     if autostart_enabled != self.check_autostart_status():
-                        self.set_autostart(autostart_enabled)
+                        self.set_autostart_task(autostart_enabled)
     
                     self._tg_instruction = data.get('tg_instruction', False)
                     self._tg_secret = data.get('tg_secret', None)
@@ -2140,7 +2144,7 @@ class ZapretLauncher:
                     self._auto_update_lists_enabled = data.get('auto_update_lists_enabled', False)
                     saved_page = data.get('current_page', 'main')
                     self._update_source = data.get('update_source', 'main')
-                    if saved_page in ['main', 'service', 'lists', 'stats', 'traffic', 'hosts', 'logs', 'settings']:
+                    if saved_page in ['main', 'service', 'lists', 'stats', 'schedule' 'traffic', 'hosts', 'logs', 'settings']:
                         self.current_page = saved_page
                     else:
                         self.current_page = 'main'
@@ -2224,6 +2228,10 @@ class ZapretLauncher:
     def show_settings_page(self):
         self.current_page = "settings"
         self.pages.show_page_with_animation("settings")
+
+    #def show_schedule_page(self):
+        #self.current_page = "schedule"
+        #self.pages.show_page_with_animation("schedule")
 
     def show_traffic_page(self):
         self.current_page = "traffic"
@@ -2993,16 +3001,6 @@ if __name__ == "__main__":
 
     auto_start = '--auto-start' in sys.argv
     
-    if auto_start:
-        try:
-            key_path = r"Software\Microsoft\Windows\CurrentVersion\Run"
-            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, key_path, 0, winreg.KEY_READ) as key:
-                value, _ = winreg.QueryValueEx(key, "Zapret Launcher")
-                if not value:
-                    sys.exit(0)
-        except:
-            sys.exit(0)
-    
     if not is_admin():
         if auto_start:
             run_as_admin()
@@ -3043,7 +3041,7 @@ if __name__ == "__main__":
     except Exception:
         pass
     
-    show_splash = '--no-splash' not in sys.argv and not auto_start
+    show_splash = '--no-splash' not in sys.argv
     
     if show_splash:
         splash = SplashWindow(
