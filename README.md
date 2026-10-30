@@ -1,4 +1,4 @@
-# zapret-launcher
+# zapret-launcher ([EN](https://github.com/avaxngard/zapret-launcher/blob/main/docs/README_EN.md))
 
 Удобный и понятный лаунчер для обхода DPI блокировок.
 Внутри имеется встроенный **tg-ws-proxy** и **zapret-discord-youtube** от **Flowseal**, автообновления, постоянная поддержка и быстрая находка неисправностей.
