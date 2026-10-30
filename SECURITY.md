@@ -1,4 +1,4 @@
-# Политика безопасности
+# Политика безопасности ([EN](https://github.com/avaxngard/zapret-launcher/blob/main/docs/SECURITY_EN.md))
 
 ## Поддерживаемые версии
 
