@@ -1,4 +1,4 @@
-# zapret-launcher
+# zapret-launcher ([RU](https://github.com/avaxngard/zapret-launcher/blob/main/README.md))
 
 A convenient and intuitive launcher for bypassing DPI-based blocking.
 It includes a built-in **tg-ws-proxy** and **zapret-discord-youtube** by **Flowseal**, along with automatic updates, ongoing support, and rapid troubleshooting.
