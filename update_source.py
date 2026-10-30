@@ -15,7 +15,6 @@ from config import (
     EXE_URL,
     ZIP_URL,
     ZAPRET_CORE_URL,
-    ZAPRET_CORE_SIG_URL,
     INSTALLER_URL,
     # Github
     GITHUB_BUILDNUMBER_URL,
@@ -24,7 +23,6 @@ from config import (
     GITHUB_EXE_URL,
     GITHUB_ZIP_URL,
     GITHUB_ZAPRET_CORE_URL,
-    GITHUB_ZAPRET_CORE_SIG_URL,
     GITHUB_INSTALLER_URL
 )
 
@@ -38,7 +36,6 @@ _ALIASES = {
     "version": "launcher_version",
     "zapret_version": "zapret_version",
     "zapret_core": "zapret_core",
-    "zapret_sig": "zapret_core_sig",
     "zapret": "zapret_core",
     "exe": "exe",
     "updater": "exe",
@@ -83,7 +80,6 @@ _MAIN = UpdateSource(
     exe_url=EXE_URL,
     zip_url=ZIP_URL,
     zapret_core_url=ZAPRET_CORE_URL,
-    zapret_core_sig_url=ZAPRET_CORE_SIG_URL,
     installer_url=INSTALLER_URL
 )
 
@@ -95,7 +91,6 @@ _GITHUB = UpdateSource(
     exe_url=GITHUB_EXE_URL,
     zip_url=GITHUB_ZIP_URL,
     zapret_core_url=GITHUB_ZAPRET_CORE_URL,
-    zapret_core_sig_url=GITHUB_ZAPRET_CORE_SIG_URL,
     installer_url=GITHUB_INSTALLER_URL
 )
 
