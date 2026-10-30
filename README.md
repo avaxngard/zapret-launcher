@@ -11,6 +11,7 @@
 # Сборка проекта
 - Для **Windows 10/11**: `Python 3.12`
 - Для **Windows 7**: `Python 3.8`
+### Перед компиляцией в папке gui/ переименуйте папку "pages" в "page"
 
 # Нашли неисправность? —> [@zapret_launcher_bot](https://t.me/zapret_launcher_bot)
 
