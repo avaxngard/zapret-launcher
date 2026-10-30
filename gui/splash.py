@@ -224,6 +224,8 @@ class SplashWindow:
         self.progress_canvas.pack(pady=(0, 2))
         
         self._current_progress = 0
+        self._bg_ids = None
+        self._fill_ids = None
         self._draw_progress(0)
         
         bottom_frame = tk.Frame(center_container, bg=self.colors['bg_dark'])
@@ -306,70 +308,96 @@ class SplashWindow:
         except Exception as e:
             self._log("update_status", e)
 
-    def _draw_rounded_rect(self, canvas, x1, y1, x2, y2, radius, color):
+    def _draw_rounded_rect(self, canvas, x1, y1, x2, y2, radius, color, tags=None):
         max_radius = min((x2 - x1) // 2, (y2 - y1) // 2)
         r = min(radius, max_radius)
-        
+
         if r <= 0:
-            canvas.create_rectangle(x1, y1, x2, y2, fill=color, outline='')
-            return
-        
-        canvas.create_rectangle(x1 + r, y1, x2 - r, y2, fill=color, outline='')
-        canvas.create_rectangle(x1, y1 + r, x2, y2 - r, fill=color, outline='')
-        canvas.create_oval(x1, y1, x1 + r * 2, y1 + r * 2, fill=color, outline='')
-        canvas.create_oval(x2 - r * 2, y1, x2, y1 + r * 2, fill=color, outline='')
-        canvas.create_oval(x1, y2 - r * 2, x1 + r * 2, y2, fill=color, outline='')
-        canvas.create_oval(x2 - r * 2, y2 - r * 2, x2, y2, fill=color, outline='')
+            return [canvas.create_rectangle(x1, y1, x2, y2, fill=color, outline='', tags=tags)]
+
+        ids = []
+        ids.append(canvas.create_rectangle(x1 + r, y1, x2 - r, y2, fill=color, outline='', tags=tags))
+        ids.append(canvas.create_rectangle(x1, y1 + r, x2, y2 - r, fill=color, outline='', tags=tags))
+        ids.append(canvas.create_oval(x1, y1, x1 + r * 2, y1 + r * 2, fill=color, outline='', tags=tags))
+        ids.append(canvas.create_oval(x2 - r * 2, y1, x2, y1 + r * 2, fill=color, outline='', tags=tags))
+        ids.append(canvas.create_oval(x1, y2 - r * 2, x1 + r * 2, y2, fill=color, outline='', tags=tags))
+        ids.append(canvas.create_oval(x2 - r * 2, y2 - r * 2, x2, y2, fill=color, outline='', tags=tags))
+        return ids
 
     def _draw_progress(self, value):
         if not hasattr(self, 'progress_canvas'):
             return
-        
+
         try:
             if not self.progress_canvas.winfo_exists():
                 return
         except Exception as e:
             self._log("_draw_progress winfo", e)
             return
-        
-        self.progress_canvas.delete("all")
-        
+
         w = self.progress_width
         h = self.progress_height
         r = self.progress_radius
-        
-        self._draw_rounded_rect(
-            self.progress_canvas,
-            0, 0, w, h,
-            r,
-            self.colors['bg_light']
-        )
-        
-        if value > 0:
-            fill_width = int(w * value / 100)
-            if fill_width < h:
-                fill_width = h
-            
-            self._draw_rounded_rect(
-                self.progress_canvas,
-                0, 0, fill_width, h,
-                r,
-                self.colors['accent_hover']
+
+        if not getattr(self, '_bg_ids', None):
+            self._bg_ids = self._draw_rounded_rect(
+                self.progress_canvas, 0, 0, w, h, r,
+                self.colors['bg_light'], tags="bg"
             )
+
+        if not getattr(self, '_fill_ids', None):
+            self._fill_ids = self._draw_rounded_rect(
+                self.progress_canvas, 0, 0, max(h, 1), h, r,
+                self.colors['accent_hover'], tags="fill"
+            )
+
+        if value <= 0:
+            self.progress_canvas.itemconfig("fill", state="hidden")
+            return
+        else:
+            self.progress_canvas.itemconfig("fill", state="normal")
+
+        fill_width = int(w * value / 100)
+        if fill_width < h:
+            fill_width = h
+
+        max_radius = min((fill_width) // 2, h // 2)
+        rr = min(r, max_radius)
+
+        x1, y1, x2, y2 = 0, 0, fill_width, h
+
+        if rr <= 0:
+            self.progress_canvas.coords(self._fill_ids[0], x1, y1, x2, y2)
+        else:
+            cv = self.progress_canvas
+            ids = self._fill_ids
+            cv.coords(ids[0], x1 + rr, y1, x2 - rr, y2)
+            cv.coords(ids[1], x1, y1 + rr, x2, y2 - rr)
+            cv.coords(ids[2], x1, y1, x1 + rr * 2, y1 + rr * 2)
+            cv.coords(ids[3], x2 - rr * 2, y1, x2, y1 + rr * 2)
+            cv.coords(ids[4], x1, y2 - rr * 2, x1 + rr * 2, y2)
+            cv.coords(ids[5], x2 - rr * 2, y2 - rr * 2, x2, y2)
     
     def _animate_progress(self):
         if self._is_closing:
             return
-        
+
+        if self._animation_id:
+            try:
+                self.window.after_cancel(self._animation_id)
+            except Exception:
+                pass
+            self._animation_id = None
+
         current = self._current_progress
         target = self._target_progress
-        
+
         if abs(current - target) <= 0.5:
             self._current_progress = target
             self.progress_var.set(int(target))
             self._draw_progress(target)
             return
-        
+
         if current < target:
             diff = target - current
             step = max(0.5, diff / 8)
@@ -378,7 +406,7 @@ class SplashWindow:
             diff = current - target
             step = max(0.5, diff / 8)
             new_value = max(current - step, target)
-        
+
         self._current_progress = new_value
         self.progress_var.set(int(new_value))
         self._draw_progress(new_value)
@@ -687,8 +715,10 @@ class SplashWindow:
                             if now - last_update > 50:
                                 last_update = now
                                 if not self._is_closing:
-                                    self._target_progress = progress
-                                    self._animate_progress()
+                                    if progress > self._target_progress:
+                                        self._target_progress = progress
+                                    if self._animation_id is None:
+                                        self._animate_progress()
             return True
         except Exception as e:
             self._log("_download_with_progress", e)
