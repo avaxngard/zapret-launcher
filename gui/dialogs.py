@@ -342,13 +342,14 @@ class Dialogs:
         dialog.configure(bg=self.colors['bg_medium'])
         dialog.transient(self.app.root)
         dialog.grab_set()
-        dialog.withdraw()
-        dialog.attributes('-alpha', 0.0)
+        dialog.focus_force()
 
         x = self.app.root.winfo_x() + (self.app.root.winfo_width()  // 2) - dialog_width  // 2
         y = self.app.root.winfo_y() + (self.app.root.winfo_height() // 2) - dialog_height // 2
+
         dialog.geometry(f"{dialog_width}x{dialog_height}+{x}+{y}")
         self.app.set_dialog_header_color(dialog)
+        dialog.update_idletasks()
 
         def on_close():
             self.app._cancel_strategy_selection(dialog)
@@ -1079,20 +1080,6 @@ class Dialogs:
         redraw_list()
         _bind_click_to_all(dialog)
         dialog.deiconify()
-        dialog.update_idletasks()
-
-        def _fade(alpha=0.0):
-            if not dialog.winfo_exists():
-                return
-            alpha = min(1.0, alpha + 0.2)
-            try:
-                dialog.attributes('-alpha', alpha)
-            except Exception:
-                return
-            if alpha < 1.0:
-                dialog.after(10, lambda: _fade(alpha))
-
-        _fade()
 
     def show_tg_proxy_instruction(self):
         dialog_width = scale_size(500, self.scale_factor)
