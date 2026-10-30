@@ -42,7 +42,6 @@ import webbrowser
 import asyncio
 import psutil
 import socket
-import winreg
 import sys
 import re
 import ctypes
@@ -2074,15 +2073,8 @@ class ZapretLauncher:
             legacy = APPDATA_DIR / "install_id.json"
             if legacy.exists():
                 legacy.unlink()
-                try:
-                    self.log_event("info", f"Removed legacy install_id.json: {legacy}")
-                except Exception:
-                    pass
-        except Exception as e:
-            try:
-                self.log_event("info", f"_cleanup_legacy_install_id: {e}")
-            except Exception:
-                pass
+        except Exception:
+            pass
 
     def toggle_vpn_detection(self):
         current = getattr(self, '_show_vpn_detection', False)
