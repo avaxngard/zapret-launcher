@@ -53,7 +53,6 @@ class UpdateSource:
     exe_url: str
     zip_url: str
     zapret_core_url: str
-    zapret_core_sig_url: str
     installer_url: str
 
     def get(self, key: str) -> str:
@@ -65,7 +64,6 @@ class UpdateSource:
             "exe": self.exe_url,
             "zip": self.zip_url,
             "zapret_core": self.zapret_core_url,
-            "zapret_core_sig": self.zapret_core_sig_url,
             "installer": self.installer_url
         }
         if normalized not in mapping:
