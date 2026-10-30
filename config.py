@@ -46,7 +46,6 @@ THEME_ICON_FILES = {
 # Site
 ZAPRET_VERSION_URL = "https://zapret-launcher.ru/updater/docs/zapret_version.txt"
 ZAPRET_CORE_URL = "https://zapret-launcher.ru/updater/zapret_core.zip"
-ZAPRET_CORE_SIG_URL = "https://zapret-launcher.ru/updater/zapret_core.zip.sig"
 BUILDNUMBER_URL = "https://zapret-launcher.ru/updater/docs/build_number.txt"
 VERSION_URL = "https://zapret-launcher.ru/updater/docs/version_launcher.txt"
 EXE_URL = "https://zapret-launcher.ru/updater/updater.exe"
@@ -56,7 +55,6 @@ INSTALLER_URL = "https://zapret-launcher.ru/updater/zapret-launcher-installer-wi
 # GitHub
 GITHUB_ZAPRET_VERSION_URL = "https://raw.githubusercontent.com/avaxngard/zapret-launcher/main/docs/zapret_version.txt"
 GITHUB_ZAPRET_CORE_URL = "https://raw.githubusercontent.com/avaxngard/zapret-launcher/main/updater/zapret_core.zip"
-GITHUB_ZAPRET_CORE_SIG_URL = "https://raw.githubusercontent.com/avaxngard/zapret-launcher/main/updater/zapret_core.zip.sig"
 GITHUB_BUILDNUMBER_URL = "https://raw.githubusercontent.com/avaxngard/zapret-launcher/main/docs/build_number.txt"
 GITHUB_VERSION_URL = "https://raw.githubusercontent.com/avaxngard/zapret-launcher/main/docs/version.txt"
 GITHUB_EXE_URL = "https://raw.githubusercontent.com/avaxngard/zapret-launcher/main/updater/updater.exe"
