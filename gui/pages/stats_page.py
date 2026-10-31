@@ -9,7 +9,7 @@
 import tkinter as tk
 from utils.scaling import scale_size, scale_font
 from utils.languages import tr, tr_plural
-from tkinter import messagebox
+from utils.messagebox import messagebox
 
 MODE_TRANSLATION_KEYS = {
     "Standard": "mode_standard",
@@ -262,8 +262,7 @@ class StatsPage(tk.Frame):
     def _on_install_id_click(self, event=None):
         if not messagebox.askyesno(
             tr("error_warning"),
-            tr("stats_install_id_warning_message"),
-            icon=messagebox.WARNING
+            tr("stats_install_id_warning_message")
         ):
             return
         self._show_install_id()
