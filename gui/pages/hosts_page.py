@@ -7,7 +7,8 @@
 # Distributed WITHOUT ANY WARRANTY.
 
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk
+from utils.messagebox import messagebox
 import os
 from utils.languages import tr
 from utils.scaling import scale_size
