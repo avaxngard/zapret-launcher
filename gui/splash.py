@@ -7,7 +7,7 @@
 # Distributed WITHOUT ANY WARRANTY.
 
 import tkinter as tk
-from tkinter import messagebox
+from utils.messagebox import messagebox, _CustomMessageBox
 from pathlib import Path
 from PIL import Image, ImageTk
 from datetime import datetime
@@ -97,6 +97,9 @@ class SplashWindow:
 
         self.setup_window()
         self.setup_ui()
+        self.current_theme = self.colors_name
+        self.scale_factor = 1.0
+        _CustomMessageBox.register_app(self)
 
     def is_admin(self):
         try:
@@ -507,19 +510,60 @@ class SplashWindow:
             zapret_dir = self.appdata_path / "zapret_core"
             strategy_path = zapret_dir / strategy
             
-            if strategy_path.exists():
-                subprocess.Popen(["cmd.exe", "/c", str(strategy_path)], cwd=str(zapret_dir), creationflags=subprocess.CREATE_NO_WINDOW)
+            if not strategy_path.exists():
+                self._log("_run_strategy_and_restart", f"Strategy file not found: {strategy_path}")
+                self._restart_splash_without_internet_check()
+                return
             
+            try:
+                subprocess.Popen(
+                    ["cmd.exe", "/c", str(strategy_path)],
+                    cwd=str(zapret_dir),
+                    creationflags=subprocess.CREATE_NO_WINDOW,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL
+                )
+                self._log("_run_strategy_and_restart", f"Launched strategy: {strategy}")
+            except Exception as e:
+                self._log("_run_strategy_and_restart spawn", e)
+            
+            max_wait = 15
+            waited = 0
+            while waited < max_wait:
+                if self._is_winws_running():
+                    self._log("_run_strategy_and_restart", f"winws.exe up after {waited}s")
+                    break
+                time.sleep(0.5)
+                waited += 0.5
+            else:
+                self._log("_run_strategy_and_restart", f"winws.exe did not start in {max_wait}s")
+            
+            self._restart_splash_without_internet_check()
+            
+        except Exception as e:
+            self._log("_run_strategy_and_restart", e)
+            self._restart_splash_without_internet_check()
+
+    def _restart_splash_without_internet_check(self):
+        try:
             if getattr(sys, 'frozen', False):
                 exe_path = sys.executable
             else:
                 exe_path = sys.argv[0]
             
-            subprocess.Popen([exe_path], creationflags=subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS)
-            self.close()
+            args = [exe_path, '--strategy-started']
             
+            for arg in sys.argv[1:]:
+                if arg not in ('--no-splash', '--from-splash', '--strategy-started'):
+                    args.append(arg)
+            
+            subprocess.Popen(
+                args,
+                creationflags=subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS
+            )
+            self.close()
         except Exception as e:
-            self._log("_run_strategy_and_restart", e)
+            self._log("_restart_splash_without_internet_check", e)
 
     def _show_no_internet_dialog(self):
         if self._update_check_timer_id:
