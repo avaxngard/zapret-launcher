@@ -19,7 +19,7 @@ import urllib.request
 from config import APPDATA_DIR
 from update_source import get_source
 from pathlib import Path
-from tkinter import messagebox
+from utils.messagebox import messagebox
 from utils.languages import tr
 from utils.scaling import scale_size
 
@@ -470,31 +470,29 @@ class SettingsPage:
 
     def _change_theme(self, new_theme):
         current_theme = self.app.current_theme
-        if new_theme != current_theme:
-            result = messagebox.showwarning(
-                tr('restart_manual_title'),
-                tr('restart_manual_message') + "\n\n",
-                type=messagebox.OKCANCEL
-            )
-            if result == 'ok':
-                self.app.show_notification(tr('please_wait'), 1500)
-                self.app.current_theme = new_theme
-                self.app.save_settings()
-                self.app.root.after(1500, self._restart_launcher)
+        if new_theme == current_theme:
+            return
+
+        if not messagebox.confirm(tr('restart_manual_title'), tr('restart_manual_message')):
+            return
+
+        self.app.show_notification(tr('please_wait'), 1500)
+        self.app.current_theme = new_theme
+        self.app.save_settings()
+        self.app.root.after(1500, self._restart_launcher)
 
     def _change_language(self, new_lang):
         current_lang = self.app.languages.get_current_language()
-        if new_lang != current_lang:
-            result = messagebox.showwarning(
-                tr('restart_manual_title'),
-                tr('restart_manual_message') + "\n\n",
-                type=messagebox.OKCANCEL
-            )
-            if result == 'ok':
-                self.app.show_notification(tr('please_wait'), 1500)
-                self.app.languages.set_language(new_lang)
-                self.app.save_settings()
-                self.app.root.after(1500, self._restart_launcher)
+        if new_lang == current_lang:
+            return
+
+        if not messagebox.confirm(tr('restart_manual_title'), tr('restart_manual_message')):
+            return
+
+        self.app.show_notification(tr('please_wait'), 1500)
+        self.app.languages.set_language(new_lang)
+        self.app.save_settings()
+        self.app.root.after(1500, self._restart_launcher)
 
     def _show_integrity_placeholder(self):
         missing_files = []
