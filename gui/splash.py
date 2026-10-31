@@ -631,6 +631,37 @@ class SplashWindow:
 
         self.after(self._update_check_error_display_ms, _launch_after_error)
 
+    def _fetch_update_control(self, source_index: int) -> bool:
+        try:
+            src = get_source(self._source_names[source_index])
+            url = getattr(src, 'update_control_url', None)
+            if not url:
+                return True
+            
+            req = urllib.request.Request(
+                url,
+                headers={'User-Agent': 'Mozilla/5.0', 'Connection': 'close'}
+            )
+            with urllib.request.urlopen(req, timeout=5) as response:
+                text = response.read().decode('utf-8', errors='ignore')
+            
+            for line in text.splitlines():
+                line = line.strip()
+                if not line or line.startswith('#'):
+                    continue
+                
+                low = line.lower()
+                for sep in ('=', ':', ' '):
+                    if low.startswith('internal' + sep):
+                        val = line.split(sep, 1)[1].strip().lower()
+                        return val in ('1', 'true')
+            
+            return True
+        
+        except Exception as e:
+            self._log("_fetch_update_control", e)
+            return True
+
     def _check_for_update(self):
         self.update_status(tr('splash_check_updates'), 30)
 
@@ -944,6 +975,7 @@ class SplashWindow:
             temp_exe = None
             temp_zip = None
             update_script = None
+            need_internal = True
             
             try:
                 current_exe = Path(sys.executable)
@@ -976,66 +1008,93 @@ class SplashWindow:
 
                 self.after(0, lambda: self.update_status(tr('splash_signature_ok'), 35))
 
-                self.after(0, lambda: self.update_status(tr('splash_downloading_zip'), 30))
-                zip_success = self._download_file_with_fallback('zip', temp_zip, 30, 60)
+                need_internal = self._fetch_update_control(self.current_source_index)
+                self._log("_download_and_update", f"need_internal={need_internal}")
+
+                if need_internal:
+                    self.after(0, lambda: self.update_status(tr('splash_downloading_zip'), 30))
+                    if not self._download_file_with_fallback('zip', temp_zip, 30, 60):
+                        raise Exception("Failed to download zip file")
+                else:
+                    self.after(0, lambda: self.update_status(tr('splash_downloading_zip'), 60))
                 
-                if not zip_success:
-                    raise Exception("Failed to download zip file")
-                
-                self.after(0, lambda: self.update_status(tr('splash_downloading_zip'), 60))
                 self.after(0, lambda: self.update_status(tr('splash_install_update'), 90))
                 self._stop_zapret_processes()
                 time.sleep(2)
                 
-                bat_content = f'''@echo off
-                setlocal enableextensions
-                set "source_exe={temp_exe}"
-                set "target_exe={current_exe}"
-                set "temp_zip={temp_zip}"
-                set "target_dir={current_exe.parent}"
-                set "internal_dir={current_exe.parent}\\_internal"
-                set "old_internal={current_exe.parent}\\_internal_old_%RANDOM%"
+                if need_internal:
+                    bat_content = f'''@echo off
+                    setlocal enableextensions
+                    set "source_exe={temp_exe}"
+                    set "target_exe={current_exe}"
+                    set "temp_zip={temp_zip}"
+                    set "target_dir={current_exe.parent}"
+                    set "internal_dir={current_exe.parent}\\_internal"
+                    set "old_internal={current_exe.parent}\\_internal_old_%RANDOM%"
 
-                :wait_exe
-                2>nul (>>"%target_exe%" call ) && (
-                    timeout /t 1 /nobreak > nul
-                    goto wait_exe
-                )
+                    :wait_exe
+                    2>nul (>>"%target_exe%" call ) && (
+                        timeout /t 1 /nobreak > nul
+                        goto wait_exe
+                    )
 
-                :retry_copy
-                copy /y /b "%source_exe%" "%target_exe%" > nul 2>&1
-                if errorlevel 1 (
-                    timeout /t 1 /nobreak > nul
-                    goto retry_copy
-                )
-
-                :retry_move
-                if exist "%internal_dir%" (
-                    move "%internal_dir%" "%old_internal%" > nul 2>&1
+                    :retry_copy
+                    copy /y /b "%source_exe%" "%target_exe%" > nul 2>&1
                     if errorlevel 1 (
                         timeout /t 1 /nobreak > nul
-                        goto retry_move
+                        goto retry_copy
                     )
-                )
 
-                if exist "%temp_zip%" (
-                    tar -xf "%temp_zip%" -C "%target_dir%" 2>nul
-                )
-
-                if not exist "%internal_dir%" (
-                    mkdir "%internal_dir%" >nul 2>&1
-                    for /d %%D in ("%target_dir%\\*") do (
-                        if /I not "%%~nxD"=="_internal" if /I not "%%~nxD"=="_internal_old_*" (
-                            robocopy "%%D" "%internal_dir%\\%%~nxD" /E /MOVE /NFL /NDL /NJH /NJS /NC /NS > nul
+                    :retry_move
+                    if exist "%internal_dir%" (
+                        move "%internal_dir%" "%old_internal%" > nul 2>&1
+                        if errorlevel 1 (
+                            timeout /t 1 /nobreak > nul
+                            goto retry_move
                         )
                     )
-                )
 
-                start "" /b cmd /c "timeout /t 2 /nobreak > nul & rmdir /s /q "%old_internal%" 2>nul & del /f /q "%source_exe%" 2>nul & del /f /q "%temp_zip%" 2>nul & del /f /q "%~f0" 2>nul"
-                start "" "%target_exe%"
-                exit
-                '''
-                                
+                    if exist "%temp_zip%" (
+                        tar -xf "%temp_zip%" -C "%target_dir%" 2>nul
+                    )
+
+                    if not exist "%internal_dir%" (
+                        mkdir "%internal_dir%" >nul 2>&1
+                        for /d %%D in ("%target_dir%\\*") do (
+                            if /I not "%%~nxD"=="_internal" if /I not "%%~nxD"=="_internal_old_*" (
+                                robocopy "%%D" "%internal_dir%\\%%~nxD" /E /MOVE /NFL /NDL /NJH /NJS /NC /NS > nul
+                            )
+                        )
+                    )
+
+                    start "" /b cmd /c "timeout /t 2 /nobreak > nul & rmdir /s /q "%old_internal%" 2>nul & del /f /q "%source_exe%" 2>nul & del /f /q "%temp_zip%" 2>nul & del /f /q "%~f0" 2>nul"
+                    start "" "%target_exe%"
+                    exit
+                    '''
+                else:
+                    bat_content = f'''@echo off
+                    setlocal enableextensions
+                    set "source_exe={temp_exe}"
+                    set "target_exe={current_exe}"
+
+                    :wait_exe
+                    2>nul (>>"%target_exe%" call ) && (
+                        timeout /t 1 /nobreak > nul
+                        goto wait_exe
+                    )
+
+                    :retry_copy
+                    copy /y /b "%source_exe%" "%target_exe%" > nul 2>&1
+                    if errorlevel 1 (
+                        timeout /t 1 /nobreak > nul
+                        goto retry_copy
+                    )
+
+                    start "" /b cmd /c "timeout /t 2 /nobreak > nul & del /f /q "%source_exe%" 2>nul & del /f /q "%~f0" 2>nul"
+                    start "" "%target_exe%"
+                    exit
+                    '''
+                
                 with open(update_script, 'w', encoding='utf-8') as f:
                     f.write(bat_content)
                 
@@ -1043,33 +1102,28 @@ class SplashWindow:
                 startupinfo.dwFlags = subprocess.STARTF_USESHOWWINDOW
                 startupinfo.wShowWindow = subprocess.SW_HIDE
                 
-                subprocess.Popen(['cmd.exe', '/c', str(update_script)], startupinfo=startupinfo, creationflags=subprocess.CREATE_NO_WINDOW, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                subprocess.Popen(
+                    ['cmd.exe', '/c', str(update_script)],
+                    startupinfo=startupinfo,
+                    creationflags=subprocess.CREATE_NO_WINDOW,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL
+                )
                 
                 self.after(100, self.close)
                 sys.exit(0)
-                                
+                
             except Exception as e:
                 self._log("_download_and_update", e)
                 self.after(0, lambda: self.update_status(tr('splash_update_error'), 100))
                 self.after(2000, self._launch_main_app)
                 
-                if temp_exe and temp_exe.exists():
-                    try:
-                        temp_exe.unlink()
-                    except Exception:
-                        pass
-
-                if temp_zip and temp_zip.exists():
-                    try:
-                        temp_zip.unlink()
-                    except Exception:
-                        pass
-
-                if update_script and update_script.exists():
-                    try:
-                        update_script.unlink()
-                    except Exception:
-                        pass
+                for f in (temp_exe, temp_zip, update_script):
+                    if f and f.exists():
+                        try:
+                            f.unlink()
+                        except Exception:
+                            pass
         
         threading.Thread(target=update_worker, daemon=True).start()
     
