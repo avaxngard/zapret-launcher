@@ -7,7 +7,7 @@
 # Distributed WITHOUT ANY WARRANTY.
 
 import tkinter as tk
-from tkinter import messagebox
+from utils.messagebox import messagebox
 from gui.widgets import RoundedButton
 import webbrowser
 from pathlib import Path
