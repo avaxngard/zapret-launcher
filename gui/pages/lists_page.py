@@ -7,7 +7,7 @@
 # Distributed WITHOUT ANY WARRANTY.
 
 import tkinter as tk
-from tkinter import messagebox
+from utils.messagebox import messagebox
 from utils.languages import tr, tr_plural
 from utils.scaling import scale_size
 from utils.list_editor import ListEditor
