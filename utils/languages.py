@@ -34,6 +34,14 @@ class Languages:
             'information_desc': 'Информация',
             'dev': 'В разработке',
             'generate': 'Сгенерировать',
+
+            'msgbox_ok': 'ОК',
+            'msgbox_cancel': 'Отмена',
+            'msgbox_yes': 'Да',
+            'msgbox_no': 'Нет',
+            'msgbox_retry': 'Повторить',
+            'msgbox_ignore': 'Игнорировать',
+            'msgbox_abort': 'Прервать',
             
             'service_title': 'Сервис',
             'service_desc': 'Инструменты лаунчера',
@@ -418,6 +426,14 @@ class Languages:
             'information_desc': 'Information',
             'dev': 'In development',
             'generate': 'Generate',
+
+            'msgbox_ok': 'OK',
+            'msgbox_cancel': 'Cancel',
+            'msgbox_yes': 'Yes',
+            'msgbox_no': 'No',
+            'msgbox_retry': 'Retry',
+            'msgbox_ignore': 'Ignore',
+            'msgbox_abort': 'Abort',
             
             'service_title': 'Service',
             'service_desc': 'Launcher tools',
