@@ -8,7 +8,7 @@
 
 import tkinter as tk
 import pywinstyles
-from tkinter import messagebox, ttk
+from tkinter import ttk
 from gui.pages import Pages
 from tg_proxy.config import proxy_config
 from tg_proxy import setup_tg_logging
@@ -22,6 +22,7 @@ from utils.analytics import user_stats
 from gui.theme import get_theme, get_theme_names
 from datetime import datetime
 from utils.check_lists import check_lists_for_duplicates
+from utils.messagebox import messagebox, _CustomMessageBox
 from gui.splash import SplashWindow
 from pathlib import Path
 from gui.widgets import RoundedButton
@@ -414,6 +415,7 @@ class ZapretLauncher:
         self.root.update_idletasks()
         self.root.attributes('-alpha', 0.0)
         self.root.deiconify()
+        _CustomMessageBox.register_app(self)
         self.root.update()
 
         def fade_in(alpha=0.0):
@@ -579,7 +581,7 @@ class ZapretLauncher:
         if hasattr(self, 'pages') and self.pages:
             self.pages.colors = self.colors
             
-            for page_name in ['main_page', 'service_page', 'lists_page', 'traffic_page', 'stats_page', 'schedule_page', 'settings_page', 'logs_page', 'hosts_page']:
+            for page_name in ['main_page', 'service_page', 'lists_page', 'traffic_page', 'stats_page', 'settings_page', 'logs_page', 'hosts_page']:
                 if hasattr(self.pages, page_name):
                     page = getattr(self.pages, page_name)
                     if page:
@@ -2136,7 +2138,7 @@ class ZapretLauncher:
                     self._auto_update_lists_enabled = data.get('auto_update_lists_enabled', False)
                     saved_page = data.get('current_page', 'main')
                     self._update_source = data.get('update_source', 'main')
-                    if saved_page in ['main', 'service', 'lists', 'stats', 'schedule' 'traffic', 'hosts', 'logs', 'settings']:
+                    if saved_page in ['main', 'service', 'lists', 'stats', 'traffic', 'hosts', 'logs', 'settings']:
                         self.current_page = saved_page
                     else:
                         self.current_page = 'main'
