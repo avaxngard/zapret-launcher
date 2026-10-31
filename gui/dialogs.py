@@ -7,8 +7,9 @@
 # Distributed WITHOUT ANY WARRANTY.
 
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk
 from typing import Dict
+from utils.messagebox import messagebox
 from gui.widgets import RoundedButton
 from gui.theme import get_theme_names
 from utils.scaling import scale_size
