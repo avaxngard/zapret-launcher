@@ -12,6 +12,7 @@ from config import (
     BUILDNUMBER_URL,
     ZAPRET_VERSION_URL,
     VERSION_URL,
+    UPDATECONTROL_URL,
     EXE_URL,
     ZIP_URL,
     ZAPRET_CORE_URL,
@@ -20,6 +21,7 @@ from config import (
     GITHUB_BUILDNUMBER_URL,
     GITHUB_ZAPRET_VERSION_URL,
     GITHUB_VERSION_URL,
+    GITHUB_UPDATECONTROL_URL,
     GITHUB_EXE_URL,
     GITHUB_ZIP_URL,
     GITHUB_ZAPRET_CORE_URL,
@@ -54,6 +56,7 @@ class UpdateSource:
     zip_url: str
     zapret_core_url: str
     installer_url: str
+    update_control_url: str
 
     def get(self, key: str) -> str:
         normalized = _ALIASES.get(key.lower(), key.lower())
@@ -64,7 +67,8 @@ class UpdateSource:
             "exe": self.exe_url,
             "zip": self.zip_url,
             "zapret_core": self.zapret_core_url,
-            "installer": self.installer_url
+            "installer": self.installer_url,
+            "update_control": self.update_control_url
         }
         if normalized not in mapping:
             raise KeyError(f"Unknown update source key: {key}")
@@ -78,7 +82,8 @@ _MAIN = UpdateSource(
     exe_url=EXE_URL,
     zip_url=ZIP_URL,
     zapret_core_url=ZAPRET_CORE_URL,
-    installer_url=INSTALLER_URL
+    installer_url=INSTALLER_URL,
+    update_control_url=UPDATECONTROL_URL
 )
 
 _GITHUB = UpdateSource(
@@ -89,7 +94,8 @@ _GITHUB = UpdateSource(
     exe_url=GITHUB_EXE_URL,
     zip_url=GITHUB_ZIP_URL,
     zapret_core_url=GITHUB_ZAPRET_CORE_URL,
-    installer_url=GITHUB_INSTALLER_URL
+    installer_url=GITHUB_INSTALLER_URL,
+    update_control_url=GITHUB_UPDATECONTROL_URL
 )
 
 _SOURCES = {
