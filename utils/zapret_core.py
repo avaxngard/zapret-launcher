@@ -14,13 +14,13 @@ import subprocess
 import psutil
 import sys
 from pathlib import Path
-from tkinter import messagebox
+from utils.messagebox import messagebox
 from typing import Optional, Tuple, List
 from config import ZAPRET_CORE_DIR
 from utils.languages import tr
 from gui.page.lists_page import check_zapret_folder
-
 import ctypes
+
 def is_admin():
     try:
         return ctypes.windll.shell32.IsUserAnAdmin()
