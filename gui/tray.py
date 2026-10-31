@@ -9,7 +9,7 @@
 import pystray
 from PIL import Image, ImageDraw
 import webbrowser
-from tkinter import messagebox
+from utils.messagebox import messagebox
 import subprocess
 from utils.languages import tr
 import tkinter as tk
@@ -18,7 +18,7 @@ import threading
 import re
 from update_source import get_source
 from utils.version import compare_builds, compare_zapret_versions
-from config import CURRENT_BUILD, BUILDNUMBER_URL, ZAPRET_VERSION_URL, ICON_PATH, CHECK_UPDATES_INTERVAL
+from config import CURRENT_BUILD, ICON_PATH, CHECK_UPDATES_INTERVAL
 
 class ModernSystemTray:
     def __init__(self, app):
