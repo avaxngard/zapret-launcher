@@ -7,7 +7,8 @@
 # Distributed WITHOUT ANY WARRANTY.
 
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk
+from utils.messagebox import messagebox
 import os
 import pywinstyles
 from utils.languages import tr
@@ -326,7 +327,26 @@ class ListEditor:
             with open(self.file_path, 'w', encoding='utf-8') as f:
                 f.write(content)
 
-            messagebox.showinfo(tr('success'), f"{tr('editor_success')}\n{tr('restart_zapret')}")
+            zapret_running = False
+            try:
+                if self.app and hasattr(self.app, 'zapret') and self.app.zapret:
+                    zapret_running = bool(self.app.zapret.is_winws_running())
+                elif self.app and getattr(self.app, 'is_connected', False):
+                    zapret_running = True
+            except Exception as e:
+                self._log("check winws running", e)
+
+            if zapret_running:
+                messagebox.showinfo(
+                    tr('success'),
+                    f"{tr('editor_success')}\n{tr('restart_zapret')}"
+                )
+            else:
+                messagebox.showinfo(
+                    tr('success'),
+                    tr('editor_success')
+                )
+
             self.dialog.destroy()
 
             try:
@@ -334,7 +354,6 @@ class ListEditor:
                     self.app.pages.lists_page_obj.refresh()
             except Exception as e:
                 self._log("refresh lists page", e)
-            self.dialog.destroy()
         except Exception as e:
             self._log(f"save_content {os.path.basename(self.file_path)}", e)
             messagebox.showerror(tr('error_no_connection'), f"{tr('editor_error_save')}: {str(e)}")
