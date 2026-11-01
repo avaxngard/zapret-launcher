@@ -1,4 +1,4 @@
-# Security Policy ([EN](https://github.com/avaxngard/zapret-launcher/blob/main/docs/SECURITY_EN.md))
+# Security Policy ([RU](https://github.com/avaxngard/zapret-launcher/SECURITY.md))
 
 ## Supported versions
 
@@ -20,7 +20,7 @@ You can check for updates:
 
 ## Vulnerability Report
 
-If you have discovered a security issue, please report it responsibly.
+If you have discovered a security issue, please report it responsibly
 
 ### Where to report
 - **Bot:** [@zapret_launcher_bot](https://t.me/zapret_launcher_bot)
