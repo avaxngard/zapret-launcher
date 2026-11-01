@@ -18,7 +18,6 @@ from .balancer import balancer
 from .config import proxy_config
 from .raw_websocket import RawWebSocket
 from .pool import cf_worker_pool
-from ._aes import Cipher, algorithms, modes
 from .network_debug import WsActivity
 from .cf_h2 import bridge_h2
 
@@ -36,8 +35,6 @@ def reset_tcp_backoff() -> None:
     _tcp_retry_after.clear()
     _tcp_connecting.clear()
 
-ZERO_64 = b'\x00' * 64
-
 class CryptoCtx:
     __slots__ = ('clt_dec', 'clt_enc', 'tg_enc', 'tg_dec')
 
@@ -48,26 +45,26 @@ class CryptoCtx:
         self.tg_dec = tg_dec    # decrypt from telegram
 
 class MsgSplitter:
-    __slots__ = ('_dec', '_proto', '_cipher_buf', '_plain_buf', '_disabled')
+    """
+    Splits TCP stream data into individual MTProto transport packets
+    so each can be sent as a separate WS frame.
+    """
+    __slots__ = ('_proto', '_cipher_buf', '_plain_buf', '_disabled')
 
-    def __init__(self, relay_init: bytes, proto_int: int):
-        cipher = Cipher(algorithms.AES(relay_init[8:40]),
-                        modes.CTR(relay_init[40:56]))
-        self._dec = cipher.encryptor()
-        self._dec.update(ZERO_64)
+    def __init__(self, proto_int: int):
         self._proto = proto_int
         self._cipher_buf = bytearray()
         self._plain_buf = bytearray()
         self._disabled = False
 
-    def split(self, chunk: bytes) -> List[bytes]:
+    def split(self, chunk: bytes, plain: bytes) -> List[bytes]:
         if not chunk:
             return []
         if self._disabled:
             return [chunk]
 
         self._cipher_buf.extend(chunk)
-        self._plain_buf.extend(self._dec.update(chunk))
+        self._plain_buf.extend(plain)
 
         parts = []
         offset = 0
@@ -81,7 +78,8 @@ class MsgSplitter:
             if packet_len is None:
                 break
             if packet_len <= 0:
-                parts.append(bytes(self._cipher_buf) if offset == 0 else bytes(self._cipher_buf[offset:]))
+                parts.append(bytes(self._cipher_buf) if offset == 0
+                             else bytes(self._cipher_buf[offset:]))
                 offset = buf_len
                 self._disabled = True
                 break
@@ -144,8 +142,9 @@ class MsgSplitter:
         return packet_len
 
 async def do_fallback(reader, writer, relay_init, label,
-                       dc: int, is_test_dc: bool, is_media: bool, media_tag: str,
-                       ctx: CryptoCtx, splitter=None, *, h2_pool=None, proto_tag=None):
+                      dc: int, is_test_dc: bool, is_media: bool,
+                      media_tag: str, ctx: CryptoCtx, splitter=None,
+                      *, h2_pool=None, proto_tag=None):
     ip_table = DC_TEST_IPS if is_test_dc else DC_DEFAULT_IPS
     fallback_dst = ip_table.get(dc)
     use_cf = proxy_config.fallback_cfproxy and not is_test_dc
@@ -219,9 +218,10 @@ async def _cfproxy_worker_fallback(reader, writer, relay_init, label,
                      label, dc, media_tag, worker_domain, fallback_dst)
 
             try:
-                ws = await RawWebSocket.connect(worker_domain, worker_domain,
-                                                timeout=10.0, path=path, 
-                                                secure=not proxy_config.disable_secure)
+                ws = await RawWebSocket.connect(
+                    worker_domain, worker_domain,
+                    timeout=10.0, path=path,
+                    secure=not proxy_config.disable_secure)
                 break
             except Exception as exc:
                 cf_worker_pool.report_failure(worker_domain, exc)
@@ -247,15 +247,15 @@ async def _cfproxy_fallback(reader, writer, relay_init, label,
     ws = None
     chosen_domain = None
 
-    log.info("[%s] DC%d%s -> trying CF proxy",
-            label, dc, media_tag)
+    log.info("[%s] DC%d%s -> trying CF proxy", label, dc, media_tag)
     connect_started = time.monotonic()
 
     for base_domain in balancer.get_domains_for_dc(dc):
         domain = f'kws{dc}.{base_domain}'
         try:
-            ws = await RawWebSocket.connect(domain, domain, timeout=10.0, 
-                                            secure=not proxy_config.disable_secure)
+            ws = await RawWebSocket.connect(
+                domain, domain, timeout=10.0,
+                secure=not proxy_config.disable_secure)
             chosen_domain = base_domain
             break
         except Exception as exc:
@@ -266,22 +266,25 @@ async def _cfproxy_fallback(reader, writer, relay_init, label,
         return False
 
     log.debug('[%s] WS CONNECT DC%d%s route=cf setup_ms=%.0f',
-              label, dc, media_tag, (time.monotonic() - connect_started) * 1000)
+              label, dc, media_tag,
+              (time.monotonic() - connect_started) * 1000)
     if chosen_domain and balancer.update_domain_for_dc(dc, chosen_domain):
         log.info("[%s] Switched active CF domain", label)
 
     stats.connections_cfproxy += 1
     await ws.send(relay_init)
     await bridge_ws_reencrypt(reader, writer, ws, label, ctx,
-                               dc=dc, is_media=is_media,
-                               splitter=splitter)
+                              dc=dc, is_media=is_media,
+                              splitter=splitter)
     return True
 
-async def _tcp_fallback(reader, writer, dst, port, relay_init, label, ctx: CryptoCtx):
+async def _tcp_fallback(reader, writer, dst, port, relay_init, label,
+                        ctx: CryptoCtx):
     key = (dst, port)
-    if key in _tcp_connecting or time.monotonic() < _tcp_retry_after.get(key, 0):
-        log.debug("[%s] TCP fallback to %s:%d skipped (backoff or connecting)",
-                  label, dst, port)
+    if (key in _tcp_connecting
+            or time.monotonic() < _tcp_retry_after.get(key, 0)):
+        log.debug("[%s] TCP fallback to %s:%d skipped "
+                  "(backoff or connecting)", label, dst, port)
         return False
 
     _tcp_connecting.add(key)
@@ -299,8 +302,8 @@ async def _tcp_fallback(reader, writer, dst, port, relay_init, label, ctx: Crypt
             delay = min(TCP_BACKOFF_INITIAL * 2 ** min(failures - 1, 7),
                         TCP_BACKOFF_MAX)
             _tcp_retry_after[key] = time.monotonic() + delay
-            log.warning("[%s] TCP fallback to %s:%d failed: %r; retry in %.0fs",
-                        label, dst, port, exc, delay)
+            log.warning("[%s] TCP fallback to %s:%d failed: %r; "
+                        "retry in %.0fs", label, dst, port, exc, delay)
             return False
         finally:
             _tcp_connecting.discard(key)
@@ -319,9 +322,14 @@ async def _tcp_fallback(reader, writer, dst, port, relay_init, label, ctx: Crypt
                 pass
 
 async def bridge_ws_reencrypt(reader, writer, ws: RawWebSocket, label,
-                               ctx: CryptoCtx,
-                               dc=None, is_media=False,
-                               splitter: Optional[MsgSplitter] = None):
+                              ctx: CryptoCtx,
+                              dc=None, is_media=False,
+                              splitter: Optional[MsgSplitter] = None):
+    """
+    Bidirectional TCP(client) <-> WS(telegram) with re-encryption.
+    client ciphertext -> decrypt(clt_key) -> encrypt(tg_key) -> WS
+    WS data -> decrypt(tg_key) -> encrypt(clt_key) -> client TCP
+    """
     dc_tag = f"DC{dc}{'m' if is_media else ''}" if dc else "DC?"
 
     up_bytes = 0
@@ -330,7 +338,8 @@ async def bridge_ws_reencrypt(reader, writer, ws: RawWebSocket, label,
     down_packets = 0
     start_time = asyncio.get_running_loop().time()
     close_reason = 'normal'
-    activity = WsActivity(label, dc_tag) if log.isEnabledFor(logging.DEBUG) else None
+    activity = (WsActivity(label, dc_tag)
+                if log.isEnabledFor(logging.DEBUG) else None)
 
     async def tcp_to_ws():
         nonlocal up_bytes, up_packets, close_reason
@@ -356,15 +365,14 @@ async def bridge_ws_reencrypt(reader, writer, ws: RawWebSocket, label,
                 plain = ctx.clt_dec.update(chunk)
                 chunk = ctx.tg_enc.update(plain)
                 if splitter:
-                    parts = splitter.split(chunk)
+                    parts = splitter.split(chunk, plain)
                     if not parts:
                         continue
                     if activity is not None:
                         activity.send_started()
-                    if len(parts) > 1:
-                        await ws.send_batch(parts)
-                    else:
-                        await ws.send(parts[0])
+                    # В новом RawWebSocket нет send_batch — отправляем по одному
+                    for part in parts:
+                        await ws.send(part)
                     if activity is not None:
                         activity.sent(sum(map(len, parts)))
                 else:
@@ -445,6 +453,7 @@ async def bridge_ws_reencrypt(reader, writer, ws: RawWebSocket, label,
 
 async def _bridge_tcp_reencrypt(reader, writer, remote_reader, remote_writer,
                                 label, ctx: CryptoCtx):
+    """Bidirectional TCP <-> TCP with re-encryption."""
 
     async def forward(src, dst_w, is_up):
         try:
