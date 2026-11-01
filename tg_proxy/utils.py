@@ -1,3 +1,11 @@
+# Zapret Launcher - Bypass restrictions
+# Copyright (C) 2026 avaxngard corp
+#
+# This is free software: you can redistribute it and/or modify it
+# under the terms of the GNU GPL v3 or any later version.
+#
+# Distributed WITHOUT ANY WARRANTY.
+
 import socket as _socket
 import urllib.request
 import http.client
@@ -64,14 +72,12 @@ def ws_domains(dc: int, is_media: bool) -> List[str]:
         return [f'kws{dc}.web.telegram.org']
     return [f'kws{dc}-1.web.telegram.org', f'kws{dc}.web.telegram.org']
 
-
 def human_bytes(n: int) -> str:
     for unit in ('B', 'KB', 'MB', 'GB'):
         if abs(n) < 1024:
             return f"{n:.1f}{unit}"
         n /= 1024  # type: ignore
     return f"{n:.1f}TB"
-
 
 def get_link_host(host: str) -> Optional[str]:
     if host == '0.0.0.0':
@@ -82,8 +88,7 @@ def get_link_host(host: str) -> Optional[str]:
         except OSError:
             link_host = '127.0.0.1'
         return link_host
-    else:
-        return host
+    return host
 
 class DomainCensorFilter(logging.Filter):
     domain_pattern = re.compile(
@@ -94,7 +99,9 @@ class DomainCensorFilter(logging.Filter):
     def _censor_match(self, match):
         domain = match.group()
         normalized = domain.casefold().rstrip('.')
-        if normalized == 'telegram.org' or normalized.endswith('.telegram.org') or normalized.endswith('.log'):
+        if (normalized == 'telegram.org'
+                or normalized.endswith('.telegram.org')
+                or normalized.endswith('.log')):
             return domain
         parts = domain.split('.')
         if len(parts) < 2:
@@ -106,7 +113,8 @@ class DomainCensorFilter(logging.Filter):
         )
 
     def filter(self, record):
-        record.msg = self.domain_pattern.sub(self._censor_match, record.getMessage())
+        record.msg = self.domain_pattern.sub(
+            self._censor_match, record.getMessage())
         record.args = ()
         return True
 
@@ -136,12 +144,19 @@ class _PinnedHTTPSHandler(urllib.request.HTTPSHandler):
         except Exception:
             return super().https_open(req)
 
+def set_x25519(context: ssl.SSLContext) -> None:
+    try:
+        context.set_ecdh_curve('X25519')
+    except Exception:
+        pass
+
 def create_ssl_context(*, check_hostname: bool = True) -> ssl.SSLContext:
     bundle_dir = getattr(sys, '_MEIPASS', None)
     cafile = (os.path.join(bundle_dir, 'certifi', 'cacert.pem')
               if bundle_dir else certifi.where())
     context = ssl.create_default_context(cafile=cafile)
     context.load_default_certs()
+    set_x25519(context)
     context.check_hostname = check_hostname
     return context
 
