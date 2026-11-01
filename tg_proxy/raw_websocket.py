@@ -27,6 +27,9 @@ _st_BBQ4s = struct.Struct('>BBQ4s')
 _st_H = struct.Struct('>H')
 _st_Q = struct.Struct('>Q')
 
+_XOR_TABLES = tuple(bytes(value ^ key for value in range(256))
+                    for key in range(256))
+
 _ssl_ctx = create_ssl_context()
 _ssl_ctx_fronting = create_ssl_context(check_hostname=False)
 
@@ -44,10 +47,17 @@ class WsHandshakeError(Exception):
     def is_redirect(self) -> bool:
         return self.status_code in (301, 302, 303, 307, 308)
 
+
 def _xor_mask(data: bytes, mask: bytes) -> bytes:
     if not data:
         return data
     n = len(data)
+    if n >= 512:
+        masked = bytearray(data)
+        for offset in range(4):
+            masked[offset::4] = masked[offset::4].translate(
+                _XOR_TABLES[mask[offset]])
+        return bytes(masked)
     mask_rep = (mask * (n // 4 + 1))[:n]
     return (int.from_bytes(data, 'big') ^
             int.from_bytes(mask_rep, 'big')).to_bytes(n, 'big')
@@ -219,20 +229,21 @@ class RawWebSocket:
         return None
 
     async def close(self):
-        if self._closed:
-            return
-        self._closed = True
         try:
-            self.writer.write(
-                self._build_frame(self.OP_CLOSE, b'', mask=True))
-            await self.writer.drain()
-        except Exception:
-            pass
-        try:
-            self.writer.close()
-            await self.writer.wait_closed()
-        except Exception:
-            pass
+            if not self._closed:
+                self._closed = True
+                try:
+                    self.writer.write(
+                        self._build_frame(self.OP_CLOSE, b'', mask=True))
+                    await self.writer.drain()
+                except Exception:
+                    pass
+        finally:
+            try:
+                self.writer.close()
+                await self.writer.wait_closed()
+            except Exception:
+                pass
 
     _WS_CLOSE_REASONS = {
         1000: 'normal', 1001: 'going_away', 1002: 'protocol_error',
