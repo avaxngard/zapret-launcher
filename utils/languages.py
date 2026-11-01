@@ -181,6 +181,16 @@ class Languages:
             'splash_signature_ok': 'Подпись подтверждена',
             'splash_update_blocked': 'Обновление заблокировано',
             'update_blocked': 'Подпись обновления не совпадает',
+            'splash_update_confirm': (
+                'Доступно новое обновление: {version}\n\n'
+                'Скачать и установить сейчас?\n'
+                'Если вы откажетесь, лаунчер запустится без обновления'
+            ),
+            'splash_zapret_update_confirm': (
+                'Доступно обновление ядра zapret: {version}\n\n'
+                'Скачать и установить сейчас?\n'
+                'Если вы откажетесь, лаунчер запустится без обновления'
+            ),
 
             'dialog_settings_tgproxy': 'Настройки прокси',
             'dialog_settings_chooselang': 'Выбор языка',
@@ -245,7 +255,7 @@ class Languages:
             'dialog_no_connection': 'Лаунчер не может работать без прав администратора',
             'dialog_admin_message': 'Лаунчер требует прав администратора для работы\nЗапустить от имени администратора?',
             'restart_manual_title': 'Требуется перезапуск',
-            'restart_manual_message': 'Настройки сохранены\nНажмите "Ок", чтобы перезапустить лаунчер',
+            'restart_manual_message': 'Настройки будут сохранены после перезапуска\nНажмите "Ок", чтобы перезапустить лаунчер',
 
             'vpn_detected_title': 'Обнаружен VPN-клиент',
             'vpn_detected_message': 'Обнаружено подключение к VPN-клиенту, рекомендуется его отключить',
@@ -573,6 +583,16 @@ class Languages:
             'splash_signature_ok': 'Signature verified',
             'splash_update_blocked': 'Update blocked',
             'update_blocked': 'Update signature does not match',
+            'splash_update_confirm': (
+                'A new update is available: {version}\n\n'
+                'Download and install now?\n'
+                'If you decline, the launcher will start without updating'
+            ),
+            'splash_zapret_update_confirm': (
+                'A zapret core update is available: {version}\n\n'
+                'Download and install now?\n'
+                'If you decline, the launcher will start without updating'
+            ),
 
             'dialog_settings_tgproxy': 'Proxy settings',
             'dialog_settings_chooselang': 'Choosing a language',
@@ -637,7 +657,7 @@ class Languages:
             'dialog_no_connection': 'Launcher cannot run without administrator rights',
             'dialog_admin_message': 'Launcher requires administrator rights to run\nRun as administrator?',
             'restart_manual_title': 'Restart Required',
-            'restart_manual_message': 'Settings has been saved\nClick "OK" to restart the launcher',
+            'restart_manual_message': 'Settings will be saved after a restart\nClick "OK" to restart the launcher',
 
             'vpn_detected_title': 'VPN Detected',
             'vpn_detected_message': 'An VPN client connection has been detected, it is recommended to disable it',
