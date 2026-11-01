@@ -691,8 +691,7 @@ class SplashWindow:
                     if source_index == self.current_source_index:
                         self.after(0, lambda: self.update_status(tr('splash_check_updates'), 30))
                     else:
-                        self.after(0, lambda: self.update_status(
-                            tr('splash_trying_source').format(source=current_source), 30))
+                        self.after(0, lambda: self.update_status(tr('splash_trying_source').format(source=current_source), 30))
 
                     url = get_source(self._source_names[source_index]).build_number_url
                     req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0', 'Connection': 'close'})
@@ -713,7 +712,7 @@ class SplashWindow:
                         if need_launcher_update:
                             self.after(0, lambda: self._start_update(latest_build))
                         elif need_zapret_update:
-                            self.after(0, lambda: self._update_zapret_core_only(latest_zapret))
+                            self.after(0, lambda: self._start_zapret_update(latest_zapret))
                         else:
                             self.after(0, lambda: self.update_status(tr('splash_starting_exe'), 100))
                             self.after(1000, self._launch_main_app)
@@ -758,8 +757,47 @@ class SplashWindow:
                 continue
         return False, None
 
+    def _start_zapret_update(self, new_version):
+        try:
+            version_text = f"v{new_version}" if new_version else tr('update_available')
+        except Exception:
+            version_text = tr('update_available')
+        
+        text = tr('splash_zapret_update_confirm').format(version=version_text)
+        
+        result = messagebox.askyesno(tr('update_title'), text)
+        if not result:
+            self.after(0, lambda: self.update_status(tr('splash_starting_exe'), 100))
+            self.after(1000, self._launch_main_app)
+            return
+        
+        self.after(0, lambda: self._update_zapret_core_only(new_version))
+
     def _start_update(self, new_build):
         source_name = self._get_source_name(self.current_source_index)
+        
+        latest_version = None
+        try:
+            url = get_source(self._source_names[self.current_source_index]).launcher_version_url
+            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0', 'Connection': 'close'})
+            with urllib.request.urlopen(req, timeout=5) as response:
+                latest_version = response.read().decode('utf-8').strip()
+        except Exception as e:
+            self._log("_start_update version fetch", e)
+        
+        if latest_version:
+            version_text = f"v{latest_version} (build {new_build})"
+        else:
+            version_text = f"build {new_build}"
+        
+        text = tr('splash_update_confirm').format(version=version_text)
+        
+        result = messagebox.askyesno(tr('update_title'), text)
+        if not result:
+            self.after(0, lambda: self.update_status(tr('splash_starting_exe'), 100))
+            self.after(1000, self._launch_main_app)
+            return
+        
         self.after(0, lambda: self.update_status(tr('splash_using_source').format(source=source_name), 50))
         self.after(500, self._download_and_update)
 
