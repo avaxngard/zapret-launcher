@@ -1,4 +1,4 @@
-# Security Policy ([RU](https://github.com/avaxngard/zapret-launcher/SECURITY.md))
+# Security Policy ([RU](https://github.com/avaxngard/zapret-launcher/blob/main/SECURITY.md))
 
 ## Supported versions
 
