@@ -98,7 +98,7 @@ def get_theme(theme_name='Dark'):
             
             'separator': '#D0D0D8'
         },
-        'Halloween': {
+        'Orange': {
             'accent': '#E87A1E',
             'accent_hover': '#FF9A3C',
             'accent_green': '#8BC34A',
@@ -146,7 +146,7 @@ def get_theme(theme_name='Dark'):
     return themes.get(theme_name, themes['Dark'])
 
 def get_theme_names():
-    return ['Dark', 'Pink', 'Old', 'Light', 'Halloween', 'Contrast']
+    return ['Dark', 'Pink', 'Old', 'Light', 'Orange', 'Contrast']
 
 def get_theme_display_name(theme_name: str) -> str:
     key = f"theme_{theme_name.lower()}"
