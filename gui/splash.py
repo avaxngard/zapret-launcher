@@ -14,6 +14,7 @@ from datetime import datetime
 from utils.languages import tr
 from typing import Optional
 from gui.theme import get_theme
+from gui.theme import get_theme_names
 from utils.update_verifier import is_safe_to_install
 from utils.version import compare_builds, compare_zapret_versions
 from update_source import get_source, get_all_sources, normalize_source_name
@@ -46,6 +47,9 @@ class SplashWindow:
 
     def __init__(self, theme='Dark', current_version=None, current_build=None, zapret_version=None, auto_update_enabled=True, update_source='main'):
         self.window = tk.Tk()
+        if theme not in get_theme_names():
+            theme = 'Dark'
+
         self.colors_name = theme
         self.colors = get_theme(theme)
         
