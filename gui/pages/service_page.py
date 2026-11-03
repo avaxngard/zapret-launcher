@@ -58,7 +58,7 @@ class ServicePage:
         desc_label.pack(anchor='w', pady=(0, scale_size(20, self.scale_factor)), padx=padx)
 
         grid_frame = tk.Frame(self.frame, bg=self.colors['bg_dark'])
-        grid_frame.pack(fill=tk.BOTH, expand=True, padx=padx, pady=pady)
+        grid_frame.pack(fill=tk.BOTH, expand=True, padx=padx, pady=(pady, scale_size(20, self.scale_factor)))
         grid_frame.columnconfigure(0, weight=1, uniform="cards")
         grid_frame.columnconfigure(1, weight=1, uniform="cards")
         grid_frame.rowconfigure(0, weight=0)
@@ -93,7 +93,7 @@ class ServicePage:
             name=tr('service_run_diagnostic'),
             desc=tr('service_run_diagnostic_desc'),
             command=self.run_diagnostics,
-            padx=(0, grid_gap // 2), pady=(grid_gap // 2, 0),
+            padx=(0, grid_gap // 2), pady=(0, grid_gap // 2),
             font_size_name=font_size_card_name,
             font_size_desc=font_size_card_desc,
             card_padx=card_padx, card_pady=card_pady
@@ -104,7 +104,7 @@ class ServicePage:
             name=tr('service_run_tests'),
             desc=tr('service_run_tests_desc'),
             command=self.run_tests,
-            padx=(grid_gap // 2, 0), pady=(grid_gap // 2, 0),
+            padx=(grid_gap // 2, 0), pady=(0, grid_gap // 2),
             font_size_name=font_size_card_name,
             font_size_desc=font_size_card_desc,
             card_padx=card_padx, card_pady=card_pady
