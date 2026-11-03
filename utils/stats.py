@@ -27,9 +27,11 @@ class StatsMonitor:
         self.current_speed_up = 0
         self.current_speed_down = 0
         self.last_update_time = 0
+        self._next_long_warn_at = None
 
     def start_session(self):
         self.session_start = time.time()
+        self._next_long_warn_at = self.session_start + 86399
         self.connection_count += 1
         self.is_monitoring = True
         self.total_up_bytes = 0
@@ -41,7 +43,20 @@ class StatsMonitor:
 
     def end_session(self):
         self.is_monitoring = False
+        self._next_long_warn_at = None
         self.disconnection_count += 1
+
+    def is_session_too_long(self) -> bool:
+        if not self.is_monitoring or not self.session_start:
+            return False
+        if self._next_long_warn_at is None:
+            return False
+        return time.time() >= self._next_long_warn_at
+
+    def mark_long_warning_shown(self) -> None:
+        if self._next_long_warn_at is None:
+            return
+        self._next_long_warn_at += 86400
 
     def _get_network_stats(self):
         current_time = time.time()
