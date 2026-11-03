@@ -39,7 +39,7 @@ THEME_ICON_FILES = {
     'Pink':         'icon_pink.png',
     'Old':          'icon_blue.png',
     'Light':        'icon_white.png',
-    'Orange':    'icon_orange.png',
+    'Orange':       'icon_orange.png',
     'Contrast':     'icon_contrast.png'
 }
 
