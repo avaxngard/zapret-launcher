@@ -479,7 +479,7 @@ class SettingsPage:
         self.app.show_notification(tr('please_wait'), 1500)
         self.app.current_theme = new_theme
         self.app.save_settings()
-        self.app.root.after(1500, self._restart_launcher)
+        self.app.root.after(1500, self.app._restart_launcher)
 
     def _change_language(self, new_lang):
         current_lang = self.app.languages.get_current_language()
@@ -492,7 +492,7 @@ class SettingsPage:
         self.app.show_notification(tr('please_wait'), 1500)
         self.app.languages.set_language(new_lang)
         self.app.save_settings()
-        self.app.root.after(1500, self._restart_launcher)
+        self.app.root.after(1500, self.app._restart_launcher)
 
     def _show_integrity_placeholder(self):
         missing_files = []
@@ -861,79 +861,6 @@ class SettingsPage:
             except Exception as e:
                 self.app.root.after_idle(lambda: messagebox.showerror("Error", f"Unable to reinstall kernel: {str(e)}"))
         threading.Thread(target=install_thread, daemon=True).start()
-
-    def _restart_launcher(self):
-        try:
-            try:
-                self.app.save_settings()
-            except Exception:
-                pass
-            
-            winws_running = False
-            if hasattr(self.app, 'zapret') and self.app.zapret:
-                winws_running = self.app.zapret.is_winws_running()
-            
-            tg_running = False
-            if hasattr(self.app, 'tg_proxy') and self.app.tg_proxy:
-                tg_running = self.app.tg_proxy.is_running
-            
-            if winws_running or tg_running or getattr(self.app, 'is_connected', False):
-                if hasattr(self.app, 'zapret') and self.app.zapret:
-                    try:
-                        self.app.zapret.stop_current_strategy()
-                    except Exception:
-                        pass
-                
-                if tg_running and hasattr(self.app, 'tg_proxy'):
-                    try:
-                        self.app.tg_proxy.stop()
-                    except Exception:
-                        pass
-                
-                try:
-                    subprocess.run(['sc', 'stop', 'WinDivert'], capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW, timeout=10)
-                except Exception:
-                    pass
-                
-                time.sleep(1)
-                
-                self.app.is_connected = False
-                self.app.current_strategy = None
-                
-                if hasattr(self.app, 'mode_label') and self.app.mode_label:
-                    try:
-                        self.app.mode_label.config(text=tr('mode_not_selected'), fg=self.app.colors['text_secondary'])
-                    except Exception:
-                        pass
-                
-                if hasattr(self.app, 'connect_btn') and self.app.connect_btn:
-                    try:
-                        self.app.connect_btn.set_text(tr('button_connect'))
-                    except Exception:
-                        pass
-        
-        except Exception:
-            pass
-        
-        if getattr(sys, 'frozen', False):
-            exe_path = sys.executable
-        else:
-            exe_path = sys.argv[0]
-        
-        try:
-            subprocess.Popen([exe_path, '--no-splash', '--from-splash'], creationflags=subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS, close_fds=True)
-        except Exception as e:
-            try:
-                messagebox.showerror(tr('error'), f"{tr('error_restart_launcher')}:\n{e}")
-            except Exception:
-                pass
-            return
-        
-        try:
-            self.app.root.quit()
-            self.app.root.destroy()
-        except Exception:
-            pass
         
         sys.exit(0)
 
