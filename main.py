@@ -3131,9 +3131,13 @@ if __name__ == "__main__":
         if CONFIG_FILE.exists():
             with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
                 data = json.load(f)
-                current_theme = data.get('theme', 'Dark')
+                saved_theme = data.get('theme', 'Dark')
+                if saved_theme in get_theme_names():
+                    current_theme = saved_theme
+                else:
+                    current_theme = 'Dark'
     except Exception:
-        pass
+        current_theme = 'Dark'
     
     auto_update_enabled = True
     update_source = 'main'
