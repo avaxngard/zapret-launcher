@@ -156,7 +156,7 @@ class Languages:
             'theme_pink': 'Розовая',
             'theme_old': 'Синяя',
             'theme_light': 'Светлая',
-            'theme_halloween': 'Хэллоуин',
+            'theme_orange': 'Оранжевая',
             'theme_contrast': 'Контрастная',
 
             'splash_check_connecting': 'Подключаемся к сети..',
@@ -195,6 +195,12 @@ class Languages:
             'dialog_settings_tgproxy': 'Настройки прокси',
             'dialog_settings_chooselang': 'Выбор языка',
             'dialog_settings_choosetheme': 'Выбор оформления',
+
+            'long_session_message': (
+                'Лаунчер работает долгое время\n\n'
+                'За это время он мог накопить кеш, временные файлы, '
+                'логи и состояние сети. Перезапустить лаунчер?'
+            ),
                         
             'settings_title': 'Настройки',
             'settings_desc': 'Настройка интерфейса и параметров работы',
@@ -558,7 +564,7 @@ class Languages:
             'theme_pink': 'Pink',
             'theme_old': 'Blue',
             'theme_light': 'Light',
-            'theme_halloween': 'Halloween',
+            'theme_orange': 'Orange',
             'theme_contrast': 'Contrast',
 
             'splash_check_connecting': 'Checking network..',
@@ -597,6 +603,12 @@ class Languages:
             'dialog_settings_tgproxy': 'Proxy settings',
             'dialog_settings_chooselang': 'Choosing a language',
             'dialog_settings_choosetheme': 'Choosing a theme',
+
+            'long_session_message': (
+                'Launcher has been running for a long time\n\n'
+                'During this time, it could accumulate cache, temporary files, '
+                'logs and network status. Restart the launcher?'
+            ),
                         
             'settings_title': 'Settings',
             'settings_desc': 'Interface and operation settings',
