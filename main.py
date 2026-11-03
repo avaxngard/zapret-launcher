@@ -615,7 +615,7 @@ class ZapretLauncher:
                 header_color = "#1E1B2E"
             elif self.current_theme == 'Old':
                 header_color = "#0F172A"
-            elif self.current_theme == 'Halloween':
+            elif self.current_theme == 'Orange':
                 header_color = "#1A120B"
             elif self.current_theme == 'Contrast':
                 header_color = "#FFFFFF"
@@ -1390,6 +1390,118 @@ class ZapretLauncher:
             except:
                 pass
 
+    def _check_long_session(self):
+        if not self.is_connected:
+            return
+        if not self.stats.is_session_too_long():
+            return
+
+        self.stats.mark_long_warning_shown()
+
+        try:
+            self.log_event(
+                "info",
+                f"Long session warning shown after "
+                f"{self.stats.format_time(self.stats.get_session_time())}"
+            )
+        except Exception:
+            pass
+
+        try:
+            self._send_session_progress(force=True)
+        except Exception:
+            pass
+
+        if messagebox.askyesno(
+            tr('error_warning'),
+            tr('long_session_message')
+        ):
+            self._restart_launcher()
+
+    def _restart_launcher(self):
+        try:
+            self.save_settings()
+        except Exception:
+            pass
+
+        try:
+            winws_running = self.zapret.is_winws_running() if hasattr(self, 'zapret') and self.zapret else False
+            tg_running = self.tg_proxy.is_running if hasattr(self, 'tg_proxy') and self.tg_proxy else False
+
+            if winws_running or tg_running or getattr(self, 'is_connected', False):
+                if hasattr(self, 'zapret') and self.zapret:
+                    try:
+                        self.zapret.stop_current_strategy()
+                    except Exception:
+                        pass
+
+                if tg_running and hasattr(self, 'tg_proxy'):
+                    try:
+                        self.tg_proxy.stop()
+                    except Exception:
+                        pass
+
+                try:
+                    subprocess.run(
+                        ['sc', 'stop', 'WinDivert'],
+                        capture_output=True,
+                        creationflags=subprocess.CREATE_NO_WINDOW,
+                        timeout=10
+                    )
+                except Exception:
+                    pass
+
+                time.sleep(1)
+
+                self.is_connected = False
+                self.current_strategy = None
+
+                if hasattr(self, 'mode_label') and self.mode_label:
+                    try:
+                        self.mode_label.config(
+                            text=tr('mode_not_selected'),
+                            fg=self.colors['text_secondary']
+                        )
+                    except Exception:
+                        pass
+
+                if hasattr(self, 'connect_btn') and self.connect_btn:
+                    try:
+                        self.connect_btn.set_text(tr('button_connect'))
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+
+        if getattr(sys, 'frozen', False):
+            exe_path = sys.executable
+        else:
+            exe_path = sys.argv[0]
+
+        try:
+            subprocess.Popen(
+                [exe_path, '--no-splash', '--from-splash'],
+                creationflags=subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS,
+                close_fds=True,
+            )
+        except Exception as e:
+            try:
+                messagebox.showerror(
+                    tr('error'),
+                    f"{tr('error_restart_launcher')}:\n{e}",
+                )
+            except Exception:
+                pass
+            return
+
+        try:
+            self.root.quit()
+            self.root.destroy()
+        except Exception:
+            pass
+
+        sys.exit(0)
+
     def _update_rtt(self):
         try:
             if hasattr(self, 'stats_rtt_label') and self.stats_rtt_label.winfo_exists():
@@ -1480,6 +1592,7 @@ class ZapretLauncher:
         
         self.stats.update_speed()
         self.update_stats_display()
+        self._check_long_session()
 
         if self.update_interval is None:
             return
