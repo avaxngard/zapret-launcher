@@ -170,7 +170,7 @@ class SplashWindow:
                 header_color = "#1E1B2E"
             elif self.colors_name == 'Old':
                 header_color = "#0F172A"
-            elif self.colors_name == 'Halloween':
+            elif self.colors_name == 'Orange':
                 header_color = "#1A120B"
             elif self.colors_name == 'Contrast':
                 header_color = "#FFFFFF"
