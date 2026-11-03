@@ -393,7 +393,7 @@ class ZapretLauncher:
         self.root.after(500, self.check_lists_for_duplicates)
         self.root.after(1000, self.check_initial_status)
         saved_page = getattr(self, '_initial_page', 'main')
-        if saved_page not in ['main', 'service', 'lists', 'schedule' 'stats', 'traffic', 'hosts', 'logs', 'settings']:
+        if saved_page not in ['main', 'service', 'lists', 'schedule' 'stats', 'hosts', 'logs', 'settings']:
             saved_page = 'main'
         
         self.pages.show_page(saved_page)
@@ -581,7 +581,7 @@ class ZapretLauncher:
         if hasattr(self, 'pages') and self.pages:
             self.pages.colors = self.colors
             
-            for page_name in ['main_page', 'service_page', 'lists_page', 'traffic_page', 'stats_page', 'settings_page', 'logs_page', 'hosts_page']:
+            for page_name in ['main_page', 'service_page', 'lists_page', 'stats_page', 'settings_page', 'logs_page', 'hosts_page']:
                 if hasattr(self.pages, page_name):
                     page = getattr(self.pages, page_name)
                     if page:
@@ -848,7 +848,7 @@ class ZapretLauncher:
             (tr('lists_title'), self.show_lists_page),
             (tr('stats_title'), self.show_stats_page),
             #(tr('schedule_title'), self.show_schedule_page),
-            (tr('traffic_title'), self.show_traffic_page),
+            #(tr('traffic_title'), self.show_traffic_page),
             (tr('hosts_title'), self.show_hosts_page),
             (tr('logs_title'), self.show_logs_page)
         ]
@@ -2042,8 +2042,6 @@ class ZapretLauncher:
                 except Exception:
                     pass
                 
-                time.sleep(0.5)
-                
                 try:
                     subprocess.run(['taskkill', '/F', '/IM', 'winws.exe'], capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW)
                 except:
@@ -2251,7 +2249,7 @@ class ZapretLauncher:
                     self._auto_update_lists_enabled = data.get('auto_update_lists_enabled', False)
                     saved_page = data.get('current_page', 'main')
                     self._update_source = data.get('update_source', 'main')
-                    if saved_page in ['main', 'service', 'lists', 'stats', 'traffic', 'hosts', 'logs', 'settings']:
+                    if saved_page in ['main', 'service', 'lists', 'stats', 'hosts', 'logs', 'settings']:
                         self.current_page = saved_page
                     else:
                         self.current_page = 'main'
