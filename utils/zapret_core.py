@@ -223,16 +223,18 @@ class ZapretCore:
                 stderr=subprocess.DEVNULL
             )
             
-            time.sleep(0.5)
+            time.sleep(1.0)
             winws_started = False
             for _ in range(10):
                 if self.is_winws_running():
                     winws_started = True
                     break
+                time.sleep(0.5)
                 
             if not winws_started:
                 return False, tr('error_winws_not_found')
 
+            time.sleep(1.5)
             if not self.is_winws_running():
                 return False, tr('error_winws_crashed')
 
