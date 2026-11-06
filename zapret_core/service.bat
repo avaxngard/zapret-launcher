@@ -68,6 +68,8 @@ echo   :: Инструкменты
 echo      6. Диагностика
 echo      7. Тест стратегий
 echo.
+echo   :: Обновления
+echo      8. Обновить IPSet
 echo   ----------------------------------------
 echo      0. Выход
 echo.
@@ -81,6 +83,7 @@ if "%menu_choice%"=="4" goto game_switch
 if "%menu_choice%"=="5" goto ipset_switch
 if "%menu_choice%"=="6" goto service_diagnostics
 if "%menu_choice%"=="7" goto run_tests
+if "%menu_choice%"=="8" goto ipset_update
 if "%menu_choice%"=="0" exit /b
 goto menu
 
