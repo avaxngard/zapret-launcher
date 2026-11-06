@@ -68,6 +68,8 @@ echo   :: TOOLS
 echo      6. Run Diagnostics
 echo      7. Run Tests
 echo.
+echo   :: UPDATES
+echo      8. Update IPSet List
 echo   ----------------------------------------
 echo      0. Exit
 echo.
@@ -81,6 +83,7 @@ if "%menu_choice%"=="4" goto game_switch
 if "%menu_choice%"=="5" goto ipset_switch
 if "%menu_choice%"=="6" goto service_diagnostics
 if "%menu_choice%"=="7" goto run_tests
+if "%menu_choice%"=="8" goto ipset_update
 if "%menu_choice%"=="0" exit /b
 goto menu
 
