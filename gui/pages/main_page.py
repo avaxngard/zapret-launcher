@@ -146,8 +146,8 @@ class MainPage:
             val_lbl.pack(anchor='w', pady=(scale_size(2, self.scale_factor), 0))
             return val_lbl
 
-        self.app.main_status = make_info_block(info_grid, 0, 0, tr('status'), tr('status_ready').upper(), self.colors['text_secondary'])
-        self.app.mode_label = make_info_block(info_grid, 0, 1, tr('mode'), tr('mode_not_selected').upper(), self.colors['text_secondary'])
+        self.app.main_status = make_info_block(info_grid, 0, 0, tr('status'), tr('status_ready'), self.colors['text_secondary'])
+        self.app.mode_label = make_info_block(info_grid, 0, 1, tr('mode'), tr('mode_not_selected'), self.colors['text_secondary'])
         
         self.app.stats_time_label = make_info_block(info_grid, 1, 0, tr('stats_time'), "00:00:00")
         self.app.stats_traffic_label = make_info_block(info_grid, 1, 1, tr('traffic'), "⬇ 0 B | ⬆ 0 B")
@@ -192,7 +192,7 @@ class MainPage:
         
         tls_f = ctk.CTkFrame(row_2, fg_color="transparent", corner_radius=0)
         tls_f.pack(side=tk.LEFT, padx=(0, scale_size(10, self.scale_factor)))
-        ctk.CTkLabel(tls_f, text="FAKE TLS:", font=font_mono_small, text_color=self.colors['text_secondary']).pack(anchor='w')
+        ctk.CTkLabel(tls_f, text="FAKE TLS", font=font_mono_small, text_color=self.colors['text_secondary']).pack(anchor='w')
         
         self.fake_tls_var = tk.BooleanVar(value=True)
         self.fake_tls_switch = ctk.CTkSwitch(tls_f, text="", variable=self.fake_tls_var, width=scale_size(40, self.scale_factor), progress_color=self.colors['accent'], button_color=self.colors['text_primary'])
