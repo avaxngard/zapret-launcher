@@ -9,8 +9,9 @@
 import threading
 import requests
 import tkinter as tk
+import customtkinter as ctk
 from utils.languages import tr
-from config import CURRENT_VERSION, API_URL_NEWS
+from config import CURRENT_VERSION, CURRENT_BUILD, API_URL_NEWS
 from utils.scaling import scale_size
 
 class NewsManager:
@@ -31,7 +32,7 @@ class NewsManager:
         
         def check():
             try:
-                response = requests.get(self.api_url, params={'install_id': self.install_id}, timeout=5, headers={'User-Agent': f'Zapret-Launcher/{CURRENT_VERSION}'})
+                response = requests.get(self.api_url, params={'install_id': self.install_id, 'build': str(CURRENT_BUILD)}, timeout=5, headers={'User-Agent': f'Zapret-Launcher/{CURRENT_VERSION}'})
                 
                 if response.status_code == 200:
                     data = response.json()
@@ -53,9 +54,9 @@ class NewsManager:
         dialog_width = scale_size(600, self.scale_factor)
         dialog_height = scale_size(400, self.scale_factor)
         font_size_title = scale_size(20, self.scale_factor)
-        font_size_sub = scale_size(11, self.scale_factor)
-        font_size_date = scale_size(8, self.scale_factor)
-        font_size_content = scale_size(9, self.scale_factor)
+        font_size_sub = scale_size(12, self.scale_factor)
+        font_size_date = scale_size(9, self.scale_factor)
+        font_size_content = scale_size(11, self.scale_factor)
         padx = scale_size(20, self.scale_factor)
         pady = scale_size(10, self.scale_factor)
         wrap_width = scale_size(520, self.scale_factor)
@@ -66,6 +67,7 @@ class NewsManager:
         dialog.configure(bg=self.app.colors['bg_medium'])
         dialog.transient(self.app.root)
         dialog.grab_set()
+        dialog.focus_force()
         
         def on_dialog_close():
             self._close_news(dialog, news_list)
@@ -76,59 +78,66 @@ class NewsManager:
         x = self.app.root.winfo_x() + (self.app.root.winfo_width() // 2) - dialog_width // 2
         y = self.app.root.winfo_y() + (self.app.root.winfo_height() // 2) - dialog_height // 2
         dialog.geometry(f"{dialog_width}x{dialog_height}+{x}+{y}")
+        dialog.withdraw()
+        self.app.set_dialog_header_color(dialog)
         dialog.update_idletasks()
         
-        self.app.set_dialog_header_color(dialog)
-        dialog.deiconify()
-        
-        tk.Label(
+        title_lbl = ctk.CTkLabel(
             dialog,
             text=tr('information_desc'),
-            font=("Segoe UI Variable", font_size_title, "bold"),
-            fg=self.app.colors['accent'],
-            bg=self.app.colors['bg_medium']
-        ).pack(pady=(scale_size(20, self.scale_factor), scale_size(10, self.scale_factor)))
+            font=("Inter", font_size_title, "bold"),
+            text_color=self.app.colors['accent']
+        )
+        title_lbl.pack(pady=(scale_size(20, self.scale_factor), scale_size(10, self.scale_factor)))
         
-        scroll_frame = tk.Frame(dialog, bg=self.app.colors['bg_medium'])
+        scroll_frame = ctk.CTkFrame(dialog, fg_color="transparent")
         scroll_frame.pack(fill=tk.BOTH, expand=True, padx=padx, pady=pady)
         
         for news in news_list:
             self._create_news_item(scroll_frame, news, dialog, font_size_sub, font_size_date, font_size_content, wrap_width)
+            
+        dialog.deiconify()
     
     def _create_news_item(self, parent, news, dialog, font_size_sub, font_size_date, font_size_content, wrap_width):
-        item_frame = tk.Frame(parent, bg=self.app.colors['bg_light'])
+        item_frame = ctk.CTkFrame(
+            parent, 
+            fg_color=self.app.colors['bg_light'],
+            corner_radius=scale_size(8, self.scale_factor)
+        )
         item_frame.pack(fill=tk.X, pady=scale_size(5, self.scale_factor), padx=scale_size(5, self.scale_factor))
         
         title_color = self.app.colors['accent']
         
-        title_label = tk.Label(
+        title_label = ctk.CTkLabel(
             item_frame,
             text=f"{news.get('title', 'News')}",
-            font=("Segoe UI Variable", font_size_sub, "bold"),
-            fg=title_color,
-            bg=self.app.colors['bg_light']
+            font=("Inter", font_size_sub, "bold"),
+            text_color=title_color,
+            anchor="w",
+            justify="left"
         )
-        title_label.pack(anchor='w', padx=scale_size(15, self.scale_factor), pady=(scale_size(8, self.scale_factor), scale_size(2, self.scale_factor)))
+        title_label.pack(anchor='w', fill=tk.X, padx=scale_size(15, self.scale_factor), pady=(scale_size(10, self.scale_factor), scale_size(2, self.scale_factor)))
         
-        date_label = tk.Label(
+        date_label = ctk.CTkLabel(
             item_frame,
             text=news.get('created_at', '')[:10],
-            font=("Segoe UI Variable", font_size_date),
-            fg=self.app.colors['text_secondary'],
-            bg=self.app.colors['bg_light']
+            font=("Inter", font_size_date),
+            text_color=self.app.colors['text_secondary'],
+            anchor="w"
         )
-        date_label.pack(anchor='w', padx=scale_size(15, self.scale_factor), pady=(0, scale_size(2, self.scale_factor)))
+        date_label.pack(anchor='w', fill=tk.X, padx=scale_size(15, self.scale_factor), pady=(0, scale_size(4, self.scale_factor)))
         
-        content_label = tk.Label(
+        content_label = ctk.CTkLabel(
             item_frame,
             text=news.get('content', ''),
-            font=("Segoe UI Variable", font_size_content),
-            fg=self.app.colors['text_primary'],
-            bg=self.app.colors['bg_light'],
+            font=("Inter", font_size_content),
+            text_color=self.app.colors['text_primary'],
             wraplength=wrap_width,
-            justify=tk.LEFT
+            justify="left",
+            anchor="w"
         )
-        content_label.pack(anchor='w', padx=scale_size(15, self.scale_factor), pady=(scale_size(2, self.scale_factor), scale_size(7, self.scale_factor)))
+        content_label.pack(anchor='w', fill=tk.X, padx=scale_size(15, self.scale_factor), pady=(scale_size(2, self.scale_factor), scale_size(10, self.scale_factor)))
+        
         item_frame.news_id = news.get('id')
     
     def _close_news(self, dialog, news_list):
@@ -143,17 +152,3 @@ class NewsManager:
                     pass
         
         threading.Thread(target=mark_read, daemon=True).start()
-    
-    def schedule_check(self):
-        self._check_interval = 3600
-        self._schedule_next_check()
-    
-    def _schedule_next_check(self):
-        self.app.root.after(
-            self._check_interval * 1000,
-            lambda: self._check_news_periodic()
-        )
-    
-    def _check_news_periodic(self):
-        self.check_news(show_on_start=False)
-        self._schedule_next_check()
