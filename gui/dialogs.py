@@ -441,6 +441,25 @@ class Dialogs:
         search_entry.bind("<FocusIn>", _on_focus_in)
         search_entry.bind("<FocusOut>", _on_focus_out)
 
+        def handle_hotkeys(event):
+            if event.state & 0x4:  
+                if event.keycode == 90:
+                    search_entry.event_generate("<<Undo>>")
+                    return "break"
+                elif event.keycode == 65:
+                    search_entry.select_range(0, tk.END)
+                    search_entry.icursor(tk.END)
+                    return "break"
+                elif event.keycode == 67:
+                    search_entry.event_generate("<<Copy>>")
+                    return "break"
+                elif event.keycode == 86:
+                    search_entry.event_generate("<<Paste>>")
+                    return "break"
+            return None
+
+        search_entry.bind('<Key>', handle_hotkeys, add='+')
+
         def _is_descendant(widget, ancestor):
             w = widget
             while w is not None:
@@ -470,8 +489,10 @@ class Dialogs:
             if not _is_descendant(clicked, dialog):
                 return
             if _is_descendant(clicked, search_wrap):
+                search_entry.focus_set()
                 return
             _blur_search_entry()
+            dialog.focus_force()
 
         def _bind_click_to_all(widget):
             try:
