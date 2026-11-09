@@ -191,6 +191,16 @@ class ModernSystemTray:
                 enabled=True
             ),
             pystray.MenuItem(
+                tr('menu_help_github'),
+                lambda: webbrowser.open("https://github.com/avaxngard/zapret-launcher"),
+                enabled=True
+            ),
+            pystray.MenuItem(
+                tr('menu_help_donate'),
+                lambda: webbrowser.open("https://www.donationalerts.com/r/tweenkedrage"),
+                enabled=True
+            ),
+            pystray.MenuItem(
                 tr('menu_help_logs'),
                 lambda: self.open_logs(),
                 enabled=True
