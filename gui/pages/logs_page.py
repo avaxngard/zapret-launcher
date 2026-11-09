@@ -224,6 +224,7 @@ class LogsPage:
         
         current_view = self.logs_text.yview()
         was_at_bottom = (current_view[1] >= 0.99)
+        saved_top = current_view[0]
         
         logs = self.app.load_logs()
         
@@ -236,6 +237,10 @@ class LogsPage:
         
         if new_logs:
             self.logs_text.config(state=tk.NORMAL)
+            
+            if not was_at_bottom and not self.auto_scroll_enabled:
+                self.logs_text.yview_moveto(saved_top)
+            
             for log_line in new_logs:
                 log_line = log_line.strip()
                 if log_line:
@@ -253,6 +258,8 @@ class LogsPage:
             if self.auto_scroll_enabled or was_at_bottom:
                 self.logs_text.see(tk.END)
                 self.auto_scroll_enabled = True
+            else:
+                self.logs_text.yview_moveto(saved_top)
         else:
             if len(logs) != self.last_log_count:
                 self.last_log_count = len(logs)
