@@ -399,6 +399,8 @@ class Languages:
             'and': 'и еще',
             'please_wait': 'Пожалуйста, подождите...',
             'confirm_title': 'Подтверждение',
+
+            'ask_start_tg_proxy_after_detect': 'Обнаружен активный winws.exe\n\nЗапустить Telegram Proxy для совместной работы?',
             
             'success': 'Успех',
             'is_empty': 'пустой',
@@ -795,6 +797,8 @@ class Languages:
             'and': 'and also',
             'please_wait': 'Please wait...',
             'confirm_title': 'Сonfirmation',
+
+            'ask_start_tg_proxy_after_detect': 'Active winws.exe detected\n\nLaunch Telegram Proxy for Combined use?',
             
             'success': 'Success',
             'not_found': 'is missing',
