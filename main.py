@@ -7,6 +7,7 @@
 # Distributed WITHOUT ANY WARRANTY.
 
 import tkinter as tk
+import customtkinter as ctk
 import pywinstyles
 from tkinter import ttk
 from gui.pages import Pages
@@ -309,27 +310,6 @@ class ZapretLauncher:
 
         self.MAX_HISTORY_SIZE = 100
         self.MAX_HISTORY_AGE = 3600
-
-        self.traffic_history = {}
-        self.traffic_history_vpn = {}
-        self.traffic_history_direct = {}
-        self.traffic_speed_history = {}
-        self.traffic_speed_vpn_history = {}
-        self.traffic_speed_direct_history = {}
-        self.traffic_last_update = time.time()
-        self._traffic_update_scheduled = False
-        self._traffic_collecting = False
-        self._traffic_collecting_start = 0
-        self._traffic_update_timer = None
-        self.hostname_cache = {}
-        self.hostname_cache_time = {}
-
-        self._cached_processes = []
-        self._last_process_time = 0
-        self.hostname_cache_maxsize = 100
-        self.traffic_history_maxsize = 50
-
-        self.dns_cache_ttl = 240
         
         self.colors = get_theme('Dark')
         self.setup_scrollbar_style()
@@ -391,7 +371,7 @@ class ZapretLauncher:
         self.update_check_timer_id = None
         
         self.root.after(500, self.check_lists_for_duplicates)
-        self.root.after(1000, self.check_initial_status)
+        self.root.after(2000, self.check_initial_status)
         saved_page = getattr(self, '_initial_page', 'main')
         if saved_page not in ['main', 'service', 'lists', 'schedule' 'stats', 'hosts', 'logs', 'settings']:
             saved_page = 'main'
@@ -848,7 +828,6 @@ class ZapretLauncher:
             (tr('lists_title'), self.show_lists_page),
             (tr('stats_title'), self.show_stats_page),
             #(tr('schedule_title'), self.show_schedule_page),
-            #(tr('traffic_title'), self.show_traffic_page),
             (tr('hosts_title'), self.show_hosts_page),
             (tr('logs_title'), self.show_logs_page)
         ]
@@ -1204,11 +1183,12 @@ class ZapretLauncher:
                 self.dialogs.show_strategy_selector(mode["name"])
                 return
 
-            self._reset_traffic_history()
-
             self.update_status(tr('status_starting'), self.colors['accent'])
             if hasattr(self, 'connect_btn') and self.connect_btn:
-                self.connect_btn.set_enabled(False)
+                try:
+                    self.connect_btn.set_enabled(False)
+                except Exception as e:
+                    self.log_event("info", f"start_with_mode set_enabled(False): {e}")
             self.root.update()
             
             if mode.get("tgproxy", False):
@@ -1220,7 +1200,7 @@ class ZapretLauncher:
             
             mode_name = mode["name"]
             if hasattr(self, 'mode_label') and self.mode_label:
-                self.mode_label.config(text=mode_name, fg=self.colors['accent_green'])
+                self.mode_label.configure(text=mode_name, text_color=self.colors['accent_green'])
             self.update_status(f"{tr('status_connected')}", self.colors['accent_green'])
             self.update_ui_state()
             self.save_settings()
@@ -1283,10 +1263,12 @@ class ZapretLauncher:
         self.show_notification(tr('notification_updated_secret'), 3000)
         
     def _do_start_tg_proxy(self):
-        self._reset_traffic_history()
         self.update_status(tr('status_starting'), self.colors['accent'])
         if hasattr(self, 'connect_btn') and self.connect_btn:
-            self.connect_btn.set_enabled(False)
+            try:
+                self.connect_btn.set_enabled(False)
+            except Exception as e:
+                self.log_event("info", f"_do_start_tg_proxy set_enabled(False): {e}")
         self.root.update()
         
         secret = getattr(self, '_tg_secret', None)
@@ -1319,33 +1301,61 @@ class ZapretLauncher:
         threading.Thread(target=start_thread, daemon=True).start()
 
     def _on_tg_proxy_started_direct(self):
-        if not self.is_connected:
-            self.is_connected = True
+        self.is_connected = True
+        
+        if not self.stats.is_monitoring:
             self.stats.start_session()
             self.start_stats_monitoring()
-            
-            self.mode_label.config(text="Telegram Proxy", fg=self.colors['accent_green'])
-            self.update_status(tr('status_connected'), self.colors['accent_green'])
-            self.update_ui_state()
-            self.save_settings()
-            self.update_stats_display()
-            self.log_event("connect", "", "Telegram Proxy")
 
-            if not self._tg_instruction:
-                self.root.after(500, self.dialogs.show_tg_proxy_instruction)
-
-            self._connecting = False
-            self.force_tray_menu_update()
-            self.update_tray_icon_state()
-
-            self._current_mode_key = "Telegram Proxy"
-            try:
-                if hasattr(self, 'user_stats'):
-                    self.user_stats.on_connect("Telegram Proxy")
-            except Exception:
-                pass
+        self.update_status(tr('status_connected'), self.colors['accent_green'])
         
-        self.connect_btn.set_enabled(True)
+        if hasattr(self, 'mode_label') and self.mode_label:
+            winws_running = self.zapret.is_winws_running()
+            
+            if winws_running:
+                strategy = getattr(self, 'current_strategy', None)
+                if strategy:
+                    strategy_display = self.zapret.get_strategy_display_name(strategy)
+                    display_text = f"{tr('mode_zapret_tgproxy')} ({strategy_display})"
+                else:
+                    display_text = tr('mode_zapret_tgproxy')
+                
+                try:
+                    self.mode_label.configure(text=display_text, text_color=self.colors['accent_green'])
+                except Exception:
+                    self.mode_label.configure(text=display_text)
+                    
+                self._current_mode_key = "Combined"
+            else:
+                try:
+                    self.mode_label.configure(text="Telegram Proxy", text_color=self.colors['accent_green'])
+                except Exception:
+                    self.mode_label.configure(text="Telegram Proxy")
+                    
+                self._current_mode_key = "Telegram Proxy"
+        
+        if hasattr(self, 'connect_btn') and self.connect_btn:
+            self.connect_btn.set_enabled(True)
+        
+        self.update_ui_state()
+        self.save_settings()
+        self.update_stats_display()
+        
+        mode_for_log = "Combined" if winws_running else "Telegram Proxy"
+        self.log_event("connect", "", mode_for_log)
+
+        if not self._tg_instruction:
+            self.root.after(500, self.dialogs.show_tg_proxy_instruction)
+
+        self._connecting = False
+        self.force_tray_menu_update()
+        self.update_tray_icon_state()
+
+        try:
+            if hasattr(self, 'user_stats'):
+                self.user_stats.on_connect(self._current_mode_key)
+        except Exception:
+            pass
 
     def _on_tg_proxy_failed_direct(self, error_msg):
         self.update_status(tr('status_error'), self.colors['accent_red'])
@@ -1359,35 +1369,40 @@ class ZapretLauncher:
         self.force_tray_menu_update()
 
     def update_stats_display(self):
-        if not hasattr(self, 'stats_frame'):
+        # В новом UI stats_frame нет — работаем с конкретными лейблами,
+        # каждый в своём try/except (tk.Label -> text=, CTkLabel -> text=)
+        try:
+            stats = self.stats.get_stats_dict()
+        except Exception as e:
+            self.log_event("info", f"update_stats_display get_stats: {e}")
             return
-        
-        stats = self.stats.get_stats_dict()
 
-        if hasattr(self, 'stats_time_label'):
-            self.stats_time_label.config(text=stats['session_time_str'])
-        
-        if hasattr(self, 'stats_traffic_label'):
-            self.stats_traffic_label.config(text=f"⬇ {stats['down_str']}  |  ⬆ {stats['up_str']}")
-        
-        if hasattr(self, 'stats_total_label'):
-            self.stats_total_label.config(text=stats['total_str'])
-        
-        if hasattr(self, 'stats_speed_up_label'):
-            self.stats_speed_up_label.config(text=f"⬆ {stats['speed_up_str']}")
-        if hasattr(self, 'stats_speed_down_label'):
-            self.stats_speed_down_label.config(text=f"⬇ {stats['speed_down_str']}")
+        def _set(widget, text):
+            if not widget:
+                return
+            try:
+                widget.configure(text=text)
+            except Exception:
+                try:
+                    widget.config(text=text)
+                except Exception:
+                    pass
+
+        _set(getattr(self, 'stats_time_label', None), stats['session_time_str'])
+        _set(getattr(self, 'stats_traffic_label', None),
+            f"⬇ {stats['down_str']} | ⬆ {stats['up_str']}")
+        _set(getattr(self, 'stats_total_label', None), stats['total_str'])
+        _set(getattr(self, 'stats_speed_up_label', None), f"⬆ {stats['speed_up_str']}")
+        _set(getattr(self, 'stats_speed_down_label', None), f"⬇ {stats['speed_down_str']}")
 
         if hasattr(self, 'tray_icon') and self.tray_icon:
             try:
                 self.tray_icon.update_tooltip()
-            except:
+            except Exception:
                 pass
-
-        if hasattr(self, 'tray_icon') and self.tray_icon:
             try:
                 self.tray_icon.update_icon_state()
-            except:
+            except Exception:
                 pass
 
     def _check_long_session(self):
@@ -1458,10 +1473,7 @@ class ZapretLauncher:
 
                 if hasattr(self, 'mode_label') and self.mode_label:
                     try:
-                        self.mode_label.config(
-                            text=tr('mode_not_selected'),
-                            fg=self.colors['text_secondary']
-                        )
+                        self.mode_label.configure( text=tr('mode_not_selected'), text_color=self.colors['text_secondary'])
                     except Exception:
                         pass
 
@@ -1507,14 +1519,30 @@ class ZapretLauncher:
             if hasattr(self, 'stats_rtt_label') and self.stats_rtt_label.winfo_exists():
                 rtt = self.measure_rtt()
                 if rtt > 0:
-                    self.stats_rtt_label.config(text=f"{rtt:.0f} {tr('stats_rtt_ms')}", fg=self.colors['accent'])
+                    self._last_rtt_value = f"{rtt:.0f} {tr('stats_rtt_ms')}"
+                    
+                    try:
+                        self.stats_rtt_label.configure(text=self._last_rtt_value, text_color=self.colors['accent'])
+                    except Exception:
+                        try:
+                            self.stats_rtt_label.config(text=self._last_rtt_value)
+                        except Exception:
+                            pass
+                            
                     try:
                         if hasattr(self, 'user_stats'):
                             self.user_stats.send_ping(rtt)
                     except Exception:
                         pass
                 else:
-                    self.stats_rtt_label.config(text="-- ms", fg=self.colors['text_secondary'])
+                    self._last_rtt_value = "-- ms"
+                    try:
+                        self.stats_rtt_label.configure(text="-- ms", text_color=self.colors['text_secondary'])
+                    except Exception:
+                        try:
+                            self.stats_rtt_label.config(text="-- ms")
+                        except Exception:
+                            pass
         except (tk.TclError, AttributeError):
             return
         self.rtt_timer_id = self.root.after(self.rtt_update_interval, self._update_rtt)
@@ -1619,13 +1647,13 @@ class ZapretLauncher:
                 except:
                     pass
 
-            notif_width = scale_size(280, self.scale_factor)
+            notif_width = scale_size(300, self.scale_factor)
             notif_height = scale_size(40, self.scale_factor)
-            notif_font_size = scale_size(10, self.scale_factor)
+            notif_font_size = scale_size(12, self.scale_factor)
             
             notification = tk.Toplevel(self.root)
             notification.overrideredirect(True)
-            notification.configure(bg=self.colors['bg_medium'])
+            notification.configure(bg=self.colors['bg_medium']) 
             notification._is_alive = True
 
             self._current_notification = notification
@@ -1705,22 +1733,28 @@ class ZapretLauncher:
             except:
                 pass
             
-            x = self.root.winfo_x() + self.root.winfo_width() - 310
+            x = self.root.winfo_x() + self.root.winfo_width() - notif_width - 30
             y = self.root.winfo_y() + 50
-            notification.geometry(f"280x40+{x}+{y}")
+            notification.geometry(f"{notif_width}x{notif_height}+{x}+{y}")
             
-            frame = tk.Frame(notification, bg=self.colors['accent'], padx=1, pady=1)
-            frame.pack(fill=tk.BOTH, expand=True)
-            
-            inner = tk.Frame(frame, bg=self.colors['bg_medium'])
+            inner = ctk.CTkFrame(
+                notification,
+                fg_color=self.colors['bg_medium'],
+                border_width=1,
+                border_color=self.colors['accent'],
+                corner_radius=scale_size(8, self.scale_factor)
+            )
             inner.pack(fill=tk.BOTH, expand=True)
             
-            label = tk.Label(inner, text=message, 
-                        font=("Inter", notif_font_size),
-                        fg=self.colors['text_primary'], 
-                        bg=self.colors['bg_medium'],
-                        padx=12, pady=8)
-            label.pack()
+            label = ctk.CTkLabel(
+                inner, 
+                text=message, 
+                font=("Inter", notif_font_size),
+                text_color=self.colors['text_primary'],
+                padx=12,
+                pady=8
+            )
+            label.pack(fill=tk.BOTH, expand=True, padx=2, pady=2) 
             
             notification.lift()
             notification.attributes('-alpha', 0.0)
@@ -1760,6 +1794,8 @@ class ZapretLauncher:
                 cleanup()
             
             notification.bind("<Button-1>", on_notification_click)
+            inner.bind("<Button-1>", on_notification_click)
+            label.bind("<Button-1>", on_notification_click)
             
         except Exception as e:
             self.log_event("info", f"show_notification: {e}")
@@ -1865,6 +1901,23 @@ class ZapretLauncher:
     def open_website(self):
         webbrowser.open("https://zapret-launcher.ru")
 
+    def _ask_start_tg_proxy_after_detect(self):
+        if getattr(self, 'tg_proxy', None) and self.tg_proxy.is_running:
+            return
+            
+        result = messagebox.askyesno(tr('information_desc'), "Обнаружен активный winws.exe.\n\nЗапустить Telegram Proxy для совместной работы?")
+        
+        if result:
+            def start_tg_only():
+                success = self.tg_proxy.start()
+                if success:
+                    self.root.after(0, lambda: self._on_tg_proxy_started_direct())
+                else:
+                    self.root.after(0, lambda: messagebox.showerror(tr('error'), tr('error_tgproxy_start')))
+                    
+            self.update_status(tr('status_starting'), self.colors['accent'])
+            threading.Thread(target=start_tg_only, daemon=True).start()
+
     def check_initial_status(self):
         if not check_zapret_folder():
             return
@@ -1876,29 +1929,52 @@ class ZapretLauncher:
                 strategy = getattr(self, 'current_strategy', None)
                 if strategy:
                     strategy_display = self.zapret.get_strategy_display_name(strategy)
-                    self.mode_label.config(
-                        text=f"{tr('mode_standard')} ({strategy_display})",
-                        fg=self.colors['accent_green']
-                    )
+                    try:
+                        self.mode_label.configure(
+                            text=f"{tr('mode_standard')} ({strategy_display})",
+                            text_color=self.colors['accent_green']
+                        )
+                    except Exception:
+                        self.mode_label.configure(text=f"{tr('mode_standard')} ({strategy_display})")
                 else:
-                    self.mode_label.config(text=tr('mode_standard'), fg=self.colors['accent_green'])
+                    try:
+                        self.mode_label.configure(text=tr('mode_standard'), text_color=self.colors['accent_green'])
+                    except Exception:
+                        self.mode_label.configure(text=tr('mode_standard'))
 
             self.update_status(tr('status_connected'), self.colors['accent_green'])
             self.update_ui_state()
-            if hasattr(self, 'tray_icon'):
-                self.tray_icon.update_menu()
+            
+            if hasattr(self, 'tray_icon') and self.tray_icon:
+                try:
+                    self.tray_icon.update_menu()
+                except:
+                    pass
             
             if self.is_connected and not self.stats.is_monitoring:
                 self.stats.start_session()
                 self.start_stats_monitoring()
                 self.update_stats_display()
 
+            def force_redraw():
+                try:
+                    if hasattr(self.pages, 'main_page'):
+                        self.pages.main_page.update_idletasks()
+                        self.pages.main_page.update()
+                except Exception:
+                    pass
+
+            force_redraw()
+            self.root.after(100, force_redraw)
+            self.root.after(300, force_redraw)
+            self.root.after(1000, self._ask_start_tg_proxy_after_detect)
+
     def update_status(self, text, color=None):
         if color is None:
             color = self.colors['accent_green'] if self.is_connected else self.colors['text_secondary']
         
         if hasattr(self, 'main_status') and self.main_status:
-            self.main_status.config(text=text, fg=color)
+            self.main_status.configure(text=text, text_color=color)
         
         if hasattr(self, 'left_status') and self.left_status:
             self.left_status.config(fg=color)
@@ -1911,13 +1987,9 @@ class ZapretLauncher:
                     
                 if self.is_connected:
                     self.connect_btn.set_text(tr('button_disconnect'))
-                    self.connect_btn.normal_color = '#3D3D45'
-                    self.connect_btn.hover_color = self.colors['accent']
                     self.connect_btn.update_colors('#3D3D45', '#FFFFFF', self.colors['accent'])
                 else:
                     self.connect_btn.set_text(tr('button_connect'))
-                    self.connect_btn.normal_color = self.colors['accent']
-                    self.connect_btn.hover_color = '#3D3D45'
                     self.connect_btn.update_colors(self.colors['accent'], '#FFFFFF', '#3D3D45')
         except (tk.TclError, AttributeError, RuntimeError):
             pass
@@ -1939,13 +2011,11 @@ class ZapretLauncher:
             try:
                 if self.check_vpn_before_connect():
                     self.dialogs.show_mode_selector()
-                    self._connecting = False
-                    if hasattr(self, 'tray_icon') and self.tray_icon:
-                        self.tray_icon.force_update_menu()
-
             except Exception as e:
                 self.log_event("info", f"toggle_connection: {e}")
+            finally:
                 self._connecting = False
+                self.force_tray_menu_update()
         self.root.after(500, self.update_tray_icon_state)
 
     def connect(self):
@@ -1954,7 +2024,6 @@ class ZapretLauncher:
             messagebox.showerror(tr('error'), tr('error_select_strategy'))
             return
         
-        self._reset_traffic_history()
         self.update_status(tr('status_starting'), self.colors['accent'])
         self.connect_btn.set_enabled(False)
         self.root.update()
@@ -2024,7 +2093,10 @@ class ZapretLauncher:
             
         self.update_status(tr('status_disconnecting'), self.colors['accent'])
         if hasattr(self, 'connect_btn') and self.connect_btn:
-            self.connect_btn.set_enabled(False)
+            try:
+                self.connect_btn.set_enabled(False)
+            except Exception as e:
+                self.log_event("info", f"disconnect set_enabled(False): {e}")
         self.root.update()
         self.stop_rtt_monitoring()
         
@@ -2082,37 +2154,33 @@ class ZapretLauncher:
                 pass
 
             if hasattr(self, 'mode_label') and self.mode_label and self.mode_label.winfo_exists():
-                self.mode_label.config(text=tr('mode_not_selected'), fg=self.colors['text_secondary'])
+                self.mode_label.configure(text=tr('mode_not_selected'), text_color=self.colors['text_secondary'])
             self.update_status(tr('status_ready'), self.colors['text_secondary'])
 
             self.stats = StatsMonitor()
             self.stats_update_id = None
 
-            if hasattr(self, 'stats_time_label') and self.stats_time_label:
-                self.stats_time_label.config(text="00:00:00")
-            if hasattr(self, 'stats_traffic_label') and self.stats_traffic_label:
-                self.stats_traffic_label.config(text="⬇ 0 B  |  ⬆ 0 B")
-            if hasattr(self, 'stats_total_label') and self.stats_total_label:
-                self.stats_total_label.config(text="0 B")
-            if hasattr(self, 'stats_speed_up_label') and self.stats_speed_up_label:
-                self.stats_speed_up_label.config(text="⬆ 0 B/s")
-            if hasattr(self, 'stats_speed_down_label') and self.stats_speed_down_label:
-                self.stats_speed_down_label.config(text="⬇ 0 B/s")
-            if hasattr(self, 'stats_rtt_label') and self.stats_rtt_label:
-                self.stats_rtt_label.config(text="-- ms", fg=self.colors['text_secondary'])
+            def _reset_label(widget, text):
+                if not widget:
+                    return
+                try:
+                    widget.configure(text=text)
+                except Exception:
+                    try:
+                        widget.config(text=text)
+                    except Exception:
+                        pass
+
+            _reset_label(getattr(self, 'stats_time_label', None), "00:00:00")
+            _reset_label(getattr(self, 'stats_traffic_label', None), "⬇ 0 B  |  ⬆ 0 B")
+            _reset_label(getattr(self, 'stats_total_label', None), "0 B")
+            _reset_label(getattr(self, 'stats_speed_up_label', None), "⬆ 0 B/s")
+            _reset_label(getattr(self, 'stats_speed_down_label', None), "⬇ 0 B/s")
+            _reset_label(getattr(self, 'stats_rtt_label', None), "-- ms")
 
             self.stop_stats_monitoring()
             self._cached_processes = []
             self._last_process_time = 0
-            self._traffic_collecting = False
-            self._traffic_collecting_start = 0
-
-            if hasattr(self, '_traffic_update_timer') and self._traffic_update_timer:
-                try:
-                    self.root.after_cancel(self._traffic_update_timer)
-                except:
-                    pass
-                self._traffic_update_timer = None
             
             def update_button():
                 try:
@@ -2120,12 +2188,10 @@ class ZapretLauncher:
                         if self.connect_btn.winfo_exists():
                             self.connect_btn.set_enabled(True)
                             self.connect_btn.set_text(tr('button_connect'))
-                            self.connect_btn.normal_color = self.colors['accent']
-                            self.connect_btn.hover_color = '#3D3D45'
                             self.connect_btn.update_colors(self.colors['accent'], '#FFFFFF', '#3D3D45')
-                except:
-                    pass
-            
+                except Exception as e:
+                    self.log_event("info", f"finish_disconnect update_button: {e}")
+                        
             self.root.after(100, update_button)
 
             if hasattr(self, 'tray_icon') and self.tray_icon:
@@ -2133,24 +2199,6 @@ class ZapretLauncher:
                     self.tray_icon.update_menu()
                 except:
                     pass
-
-            self.traffic_history = {}
-            self.traffic_history_vpn = {}
-            self.traffic_history_direct = {}
-            self.traffic_speed_history = {}
-            self.traffic_speed_vpn_history = {}
-            self.traffic_speed_direct_history = {}
-            self.hostname_cache = {}
-            self.hostname_cache_time = {}
-            
-            if hasattr(self, 'pages') and hasattr(self.pages, 'current_page'):
-                if self.pages.current_page == "traffic":
-                    if hasattr(self.pages, 'traffic_page_obj'):
-                        tree = self.pages.traffic_page_obj.traffic_tree
-                        if tree and tree.winfo_exists():
-                            for item in tree.get_children():
-                                tree.delete(item)
-                        self.root.after(500, self.update_traffic_table)
             
             self.update_tray_icon_state()
             self._disconnecting = False
@@ -2338,21 +2386,6 @@ class ZapretLauncher:
         #self.current_page = "schedule"
         #self.pages.show_page_with_animation("schedule")
 
-    def show_traffic_page(self):
-        self.current_page = "traffic"
-        self.pages.show_page_with_animation("traffic")
-        self._cached_processes = []
-
-        if hasattr(self, '_traffic_collecting'):
-            self._traffic_collecting = False
-            
-        if hasattr(self, '_traffic_update_timer') and self._traffic_update_timer:
-            try:
-                self.root.after_cancel(self._traffic_update_timer)
-            except:
-                pass
-        self.root.after(100, self.update_traffic_table)
-
     def show_hosts_page(self):
         self.current_page = "hosts"
         self.pages.show_page_with_animation("hosts")
@@ -2360,15 +2393,6 @@ class ZapretLauncher:
     def show_logs_page(self):
         self.current_page = "logs"
         self.pages.show_page_with_animation("logs")
-
-    def _reset_traffic_history(self):
-        self.traffic_history = {}
-        self.traffic_history_vpn = {}
-        self.traffic_history_direct = {}
-        self.traffic_speed_history = {}
-        self.traffic_speed_vpn_history = {}
-        self.traffic_speed_direct_history = {}
-        self.traffic_last_update = time.time()
 
     def check_lists_for_duplicates(self):
         if getattr(self, '_hide_duplicates_warning', False):
@@ -2400,401 +2424,9 @@ class ZapretLauncher:
         self.root.clipboard_clear()
         self.root.clipboard_append(link)
         self.root.update()
-    
-    def get_process_traffic(self):
-        self._cleanup_traffic_history()
-        processes = []
-        current_time = time.time()
-        time_diff = current_time - self.traffic_last_update
-
-        if (hasattr(self, '_cached_processes') and self._cached_processes and (current_time - self._last_process_time < 1.5)):
-            return self._cached_processes
-        
-        if time_diff < 0.1:
-            time_diff = 0.5
-        elif time_diff > 5:
-            time_diff = 5
-        
-        self.traffic_last_update = current_time
-        
-        connections = []
-        try:
-            connections = psutil.net_connections(kind='inet')
-        except psutil.AccessDenied:
-            self._cached_processes = [{
-                'name': tr('error_admin_required'),
-                'speed': '-',
-                'vpn': '-',
-                'direct': '-',
-                'connections': 0,
-                'host': '',
-                'total': '-'
-            }]
-            self._last_process_time = current_time
-            return self._cached_processes
-        except Exception as e:
-            self.log_event("info", f"Failed to get network connections: {str(e)}")
-            self._cached_processes = [{
-                'name': tr('error_traffic_collection'),
-                'speed': '-',
-                'vpn': '-',
-                'direct': '-',
-                'connections': 0,
-                'host': '',
-                'total': '-'
-            }]
-            self._last_process_time = current_time
-            return self._cached_processes
-        
-        try:
-            pid_counts = {}
-            pid_hosts = {}
-            
-            for conn in connections:
-                if conn.pid and conn.pid > 0:
-                    pid_counts[conn.pid] = pid_counts.get(conn.pid, 0) + 1
-                    
-                    if conn.raddr and conn.raddr.ip and conn.raddr.port:
-                        remote_ip = conn.raddr.ip
-                        if remote_ip not in ['127.0.0.1', '0.0.0.0', '::1']:
-                            if conn.pid not in pid_hosts:
-                                pid_hosts[conn.pid] = {}
-                            pid_hosts[conn.pid][remote_ip] = pid_hosts[conn.pid].get(remote_ip, 0) + 1
-            
-            top_pids = sorted(pid_counts.items(), key=lambda x: x[1], reverse=True)[:50]
-            top_pids_set = {pid for pid, _ in top_pids}
-            
-            vpn_ports = {1443}
-            vpn_connections = {}
-            
-            for conn in connections:
-                if conn.pid and conn.pid in top_pids_set:
-                    is_vpn = False
-                    if conn.raddr and conn.raddr.port in vpn_ports:
-                        is_vpn = True
-                    elif conn.laddr and conn.laddr.port in vpn_ports:
-                        is_vpn = True
-                    
-                    if is_vpn:
-                        if conn.pid not in vpn_connections:
-                            vpn_connections[conn.pid] = []
-                        vpn_connections[conn.pid].append(conn)
-            
-            proc_data = {}
-            
-            for pid in top_pids_set:
-                try:
-                    proc = psutil.Process(pid)
-                    proc_name = proc.name()
-                    
-                    if proc_name not in proc_data:
-                        try:
-                            if hasattr(proc, 'io_counters'):
-                                net_io = proc.io_counters()
-                            elif hasattr(proc, 'net_io_counters'):
-                                net_io = proc.net_io_counters()
-                            else:
-                                net_io = None
-                            
-                            if net_io:
-                                bytes_sent = net_io.write_bytes if hasattr(net_io, 'write_bytes') else 0
-                                bytes_recv = net_io.read_bytes if hasattr(net_io, 'read_bytes') else 0
-                            else:
-                                bytes_sent = 0
-                                bytes_recv = 0
-                        except Exception as e:
-                            self.log_event("info", f"io_counters: {e}")
-                            bytes_sent = 0
-                            bytes_recv = 0
-                        
-                        main_host = ''
-                        if pid in pid_hosts and pid_hosts[pid]:
-                            top_ip = max(pid_hosts[pid].items(), key=lambda x: x[1])[0]
-                            main_host = self._get_hostname(top_ip)
-                        
-                        proc_data[proc_name] = {
-                            'name': proc_name,
-                            'connections': pid_counts.get(pid, 0),
-                            'bytes_sent': bytes_sent,
-                            'bytes_recv': bytes_recv,
-                            'host': main_host,
-                            'pid': pid
-                        }
-                    
-                    if pid in vpn_connections:
-                        proc_data[proc_name]['vpn_connections'] = proc_data[proc_name].get('vpn_connections', 0) + len(vpn_connections[pid])
-                        
-                except (psutil.NoSuchProcess, psutil.AccessDenied):
-                    pass
-
-            for proc_name, data in proc_data.items():
-                total_connections = data['connections']
-                vpn_conn_count = data.get('vpn_connections', 0)
-                
-                total_bytes = data['bytes_sent'] + data['bytes_recv']
-                
-                if total_connections > 0 and total_bytes > 0:
-                    vpn_bytes = int(total_bytes * vpn_conn_count / total_connections)
-                    direct_bytes = total_bytes - vpn_bytes
-                else:
-                    vpn_bytes = 0
-                    direct_bytes = 0
-                
-                speed = 0
-                if proc_name in self.traffic_history:
-                    prev_total = self.traffic_history[proc_name]
-                    if time_diff > 0 and total_bytes >= prev_total:
-                        raw_speed = (total_bytes - prev_total) / time_diff
-                        raw_speed = max(0, raw_speed)
-                        raw_speed = min(raw_speed, 100 * 1024 * 1024)
-                        
-                        if proc_name in self.traffic_speed_history:
-                            speed = self.traffic_speed_history[proc_name] * 0.7 + raw_speed * 0.3
-                        else:
-                            speed = raw_speed
-                        
-                        self.traffic_speed_history[proc_name] = speed
-                else:
-                    speed = 0
-                    if proc_name not in self.traffic_speed_history:
-                        self.traffic_speed_history[proc_name] = 0
-                
-                speed_vpn = 0
-                speed_direct = 0
-                
-                if proc_name in self.traffic_history_vpn:
-                    prev_vpn = self.traffic_history_vpn[proc_name]
-                    if time_diff > 0 and vpn_bytes >= prev_vpn:
-                        raw_speed_vpn = (vpn_bytes - prev_vpn) / time_diff
-                        raw_speed_vpn = max(0, min(raw_speed_vpn, 100 * 1024 * 1024))
-                        
-                        if proc_name in self.traffic_speed_vpn_history:
-                            speed_vpn = self.traffic_speed_vpn_history[proc_name] * 0.7 + raw_speed_vpn * 0.3
-                        else:
-                            speed_vpn = raw_speed_vpn
-                        
-                        self.traffic_speed_vpn_history[proc_name] = speed_vpn
-                
-                if proc_name in self.traffic_history_direct:
-                    prev_direct = self.traffic_history_direct[proc_name]
-                    if time_diff > 0 and direct_bytes >= prev_direct:
-                        raw_speed_direct = (direct_bytes - prev_direct) / time_diff
-                        raw_speed_direct = max(0, min(raw_speed_direct, 100 * 1024 * 1024))
-                        
-                        if proc_name in self.traffic_speed_direct_history:
-                            speed_direct = self.traffic_speed_direct_history[proc_name] * 0.7 + raw_speed_direct * 0.3
-                        else:
-                            speed_direct = raw_speed_direct
-                        
-                        self.traffic_speed_direct_history[proc_name] = speed_direct
-                
-                self.traffic_history[proc_name] = total_bytes
-                self.traffic_history_vpn[proc_name] = vpn_bytes
-                self.traffic_history_direct[proc_name] = direct_bytes
-                
-                vpn_display = self._format_speed(speed_vpn) if speed_vpn > 0 else '-'
-                direct_display = self._format_speed(speed_direct) if speed_direct > 0 else '-'
-                
-                processes.append({
-                    'name': proc_name[:35],
-                    'speed': self._format_speed(speed),
-                    'vpn': vpn_display,
-                    'direct': direct_display,
-                    'connections': data['connections'],
-                    'host': data['host'][:40] if data['host'] else '',
-                    'total': self._format_bytes(total_bytes)
-                })
-            
-            processes.sort(key=lambda x: (x['connections'], self._parse_speed_value(x['speed'])), reverse=True)
-            processes = processes[:40]
-            
-        except Exception as e:
-            self.log_event("info", f"Error collecting traffic: {str(e)}")
-            processes = [{
-                'name': tr('error_traffic_collection'),
-                'speed': '-',
-                'vpn': '-',
-                'direct': '-',
-                'connections': 0,
-                'host': '',
-                'total': '-'
-            }]
-        
-        if not processes:
-            processes.append({
-                'name': tr('traffic_no_connections'),
-                'speed': '-',
-                'vpn': '-',
-                'direct': '-',
-                'connections': 0,
-                'host': '',
-                'total': '-'
-            })
-        
-        self._cached_processes = processes
-        self._last_process_time = current_time
-        return processes
-
-    def _parse_speed_value(self, speed_str):
-        if speed_str == '-' or not speed_str:
-            return 0
-        try:
-            if 'KB/s' in speed_str:
-                return float(speed_str.replace(' KB/s', '')) * 1024
-            elif 'MB/s' in speed_str:
-                return float(speed_str.replace(' MB/s', '')) * 1024 * 1024
-            elif 'B/s' in speed_str:
-                return float(speed_str.replace(' B/s', ''))
-        except Exception as e:
-            self.log_event("info", f"_parse_speed_value({speed_str}): {e}")
-        return 0
-    
-    def _format_bytes(self, bytes_val):
-        if bytes_val < 1024:
-            return f"{bytes_val} B"
-        elif bytes_val < 1024 * 1024:
-            return f"{bytes_val / 1024:.1f} KB"
-        elif bytes_val < 1024 * 1024 * 1024:
-            return f"{bytes_val / (1024 * 1024):.1f} MB"
-        else:
-            return f"{bytes_val / (1024 * 1024 * 1024):.2f} GB"
-    
-    def _format_speed(self, bytes_per_sec):
-        if bytes_per_sec < 1024:
-            return f"{bytes_per_sec:.0f} B/s"
-        elif bytes_per_sec < 1024 * 1024:
-            return f"{bytes_per_sec / 1024:.1f} KB/s"
-        else:
-            return f"{bytes_per_sec / (1024 * 1024):.1f} MB/s"
-
-    def _get_hostname(self, ip):
-        if not ip or ip in ['127.0.0.1', '0.0.0.0', '::1']:
-            return ip
-        
-        current_time = time.time()
-        
-        if len(self.hostname_cache) > self.hostname_cache_maxsize:
-            to_remove = len(self.hostname_cache) - self.hostname_cache_maxsize
-            oldest = sorted(self.hostname_cache_time.items(), key=lambda x: x[1])[:to_remove + 10]
-            for ip_key, _ in oldest:
-                self.hostname_cache.pop(ip_key, None)
-                self.hostname_cache_time.pop(ip_key, None)
-        
-        if ip in self.hostname_cache and (current_time - self.hostname_cache_time.get(ip, 0)) < self.dns_cache_ttl:
-            return self.hostname_cache[ip]
-        
-        try:
-            socket.setdefaulttimeout(1)
-            hostname = socket.gethostbyaddr(ip)[0]
-            if len(hostname) > 40:
-                hostname = hostname[:37] + '...'
-            self.hostname_cache[ip] = hostname
-            self.hostname_cache_time[ip] = current_time
-            return hostname
-        except (socket.herror, socket.gaierror, socket.timeout):
-            self.hostname_cache[ip] = ip
-            self.hostname_cache_time[ip] = current_time
-            return ip
-        except Exception as e:
-            self.log_event("info", f"_get_hostname({ip}): {e}")
-            return ip
-        finally:
-            socket.setdefaulttimeout(None)
-
-    def update_traffic_table(self):
-        if self.update_interval is None:
-            return
-        
-        current_page = None
-        if hasattr(self, 'pages'):
-            current_page = getattr(self.pages, 'current_page', None)
-        
-        if current_page != "traffic":
-            self._schedule_next_traffic_update()
-            return
-        
-        if hasattr(self, '_traffic_collecting') and self._traffic_collecting:
-            if time.time() - self._traffic_collecting_start > 5:
-                self._traffic_collecting = False
-                self._traffic_collecting_start = 0
-            else:
-                self._schedule_next_traffic_update()
-                return
-        
-        self._traffic_collecting = True
-        self._traffic_collecting_start = time.time()
-        
-        def collect_data():
-            try:
-                processes = self.get_process_traffic()
-                self.root.after(0, lambda: self._update_traffic_table_ui(processes))
-            except Exception as e:
-                self.log_event("info", f"Error collecting traffic data: {str(e)}")
-            finally:
-                self._traffic_collecting = False
-                self.root.after(0, self._schedule_next_traffic_update)
-        
-        threading.Thread(target=collect_data, daemon=True).start()
-
-    def _schedule_next_traffic_update(self):
-        if self.update_interval is None:
-            return
-        
-        if self.update_interval == 0:
-            interval_ms = 500
-        else:
-            interval_ms = int(self.update_interval * 1000)
-        
-        if hasattr(self, '_traffic_update_timer') and self._traffic_update_timer:
-            try:
-                self.root.after_cancel(self._traffic_update_timer)
-            except:
-                pass
-        
-        self._traffic_update_timer = self.root.after(interval_ms, self.update_traffic_table)
-
-    def _schedule_traffic_update(self):
-        self._schedule_next_traffic_update()
-
-    def _update_traffic_table_ui(self, processes):
-        try:
-            if hasattr(self, 'pages') and hasattr(self.pages, 'traffic_page_obj'):
-                tree = self.pages.traffic_page_obj.traffic_tree
-                if tree and tree.winfo_exists():
-                    for item in tree.get_children():
-                        tree.delete(item)
-                    
-                    for proc in processes:
-                        speed_display = proc.get('speed', '-')
-                        
-                        tree.insert("", "end", values=(
-                            proc['name'],
-                            speed_display,
-                            proc['vpn'],
-                            proc['direct'],
-                            str(proc['connections']) if proc['connections'] > 0 else '-',
-                            proc['host'],
-                            proc['total']
-                        ))
-        except Exception as e:
-            self.log_event("info", f"Error updating traffic table: {str(e)}")
 
     def is_any_connection_active(self):
         return self.is_connected or self.zapret.is_winws_running() or (hasattr(self, 'tg_proxy') and self.tg_proxy.is_running)
-
-    def _cleanup_traffic_history(self):
-        current_time = time.time()
-        
-        if len(self.traffic_history) > self.MAX_HISTORY_SIZE:
-            to_remove = len(self.traffic_history) - self.MAX_HISTORY_SIZE
-            oldest_keys = list(self.traffic_history.keys())[:to_remove]
-            for key in oldest_keys:
-                self.traffic_history.pop(key, None)
-                self.traffic_history_vpn.pop(key, None)
-                self.traffic_history_direct.pop(key, None)
-                self.traffic_speed_history.pop(key, None)
-                self.traffic_speed_vpn_history.pop(key, None)
-                self.traffic_speed_direct_history.pop(key, None)
 
     def setup_scrollbar_style(self):
         style = ttk.Style()
@@ -2958,9 +2590,13 @@ class ZapretLauncher:
                 display_text = f"{mode_name} ({strategy_display})"
             else:
                 display_text = mode_name
-            self.mode_label.config(text=display_text, fg=self.colors['accent_green'])
+            self.mode_label.configure(text=display_text, text_color=self.colors['accent_green'])
 
         self.update_status(f"{tr('status_connected')}", self.colors['accent_green'])
+        
+        if hasattr(self, 'connect_btn') and self.connect_btn:
+            self.connect_btn.set_enabled(True)
+        
         self.update_ui_state()
         self.save_settings()
         self.update_stats_display()
