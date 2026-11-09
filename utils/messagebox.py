@@ -220,7 +220,15 @@ class _CustomMessageBox:
             y = (top.winfo_screenheight() - dlg_h) // 2
 
         dialog = tk.Toplevel(top)
+        
+        # --- СКРЫВАЕМ ОКНО И ДЕЛАЕМ ЕГО ПРОЗРАЧНЫМ ДО ОТРИСОВКИ ---
         dialog.withdraw()
+        try:
+            dialog.attributes('-alpha', 0.0)
+        except Exception:
+            pass
+        # ----------------------------------------------------------
+
         try:
             dialog.geometry(f"+{x}+{y}")
         except Exception:
@@ -228,12 +236,6 @@ class _CustomMessageBox:
         dialog.update_idletasks()
 
         _win32_hide(dialog)
-
-        try:
-            dialog.attributes('-alpha', 0.0)
-        except Exception:
-            pass
-        dialog.update_idletasks()
 
         dialog.title(title)
         dialog.resizable(False, False)
@@ -367,6 +369,7 @@ class _CustomMessageBox:
         cls._set_header_color(dialog, colors)
         dialog.update_idletasks()
 
+        # --- АНИМАЦИЯ ПОЯВЛЕНИЯ (FADE IN) ---
         dialog.deiconify()
         dialog.update_idletasks()
         
@@ -403,6 +406,7 @@ class _CustomMessageBox:
                     pass
 
         dialog.after(10, fade_in)
+        # ------------------------------------
 
         try:
             top.wait_window(dialog)
