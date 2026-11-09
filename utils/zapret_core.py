@@ -176,25 +176,38 @@ class ZapretCore:
             dangerous_patterns = [
                 r"\bdel\b", r"\berase\b", r"\brmdir\b", r"\brd\s+/s\b", r"\bformat\b", r"\bdiskpart\b",
                 r"\bcipher\b", r"\bwbadmin\b", r"\bvssadmin\b", r"\bfsutil\b",
-                
-                r"\breg\s+add\b", r"\breg\s+delete\b", r"\breg\s+import\b", r"\bregedit\b", 
+
+                r"\breg\s+add\b", r"\breg\s+delete\b", r"\breg\s+import\b", r"\bregedit\b",
+                r"\breg\s+save\b", r"\breg\s+export\b", r"\breg\s+load\b", r"\breg\s+unload\b",
+
                 r"\bschtasks\b", r"\bsc\s+create\b", r"\bsc\s+delete\b", r"\bsc\s+stop\b",
-                r"\bsecedit\b", r"\bauditpol\b", r"\bbcdedit\b",
-                
-                r"\bcertutil\b", r"\bbitsadmin\b", r"\bcurl\b", r"\bwget\b", 
+                r"\bsc\s+start\b", r"\bsc\s+config\b", r"\bsecedit\b", r"\bauditpol\b", r"\bbcdedit\b",
+
+                r"\bcertutil\b", r"\bbitsadmin\b", r"\bcurl\b", r"\bwget\b",
                 r"\bmshta\b", r"\brundll32\b", r"\bregsvr32\b", r"\besentutl\b",
                 r"\bexpand\b", r"\bextrac32\b", r"\bmakecab\b", r"\bforfiles\b",
                 r"\bpcalua\b", r"\bwscript\b", r"\bcscript\b", r"\brpcping\b", r"\breplace\b",
-                r"\binvoke-webrequest\b", r"\bdownloadstring\b", r"\biex\b", r"\bencodedcommand\b",
-                
+                r"\bdesktopimgdownldr\b", r"\bfinger\b",
+                r"\binvoke-webrequest\b", r"\bdownloadstring\b", r"\bdownloadfile\b",
+                r"\biex\b", r"\bencodedcommand\b", r"\bfrombase64string\b",
+
+                r"\binstallutil\b", r"\bmsbuild\b", r"\bregasm\b", r"\bregsvcs\b",
+                r"\bcmstp\b", r"\bpresentationhost\b", r"\bmsxsl\b", r"\bsyncappvpublishingserver\b",
+
+                r"\bcsc\b", r"\bjsc\b", r"\bvbc\b",
+
                 r"\bnet\s+user\b", r"\bnet\s+localgroup\b", r"\bnet\s+start\b", r"\bnet\s+stop\b",
-                r"\bnetsh\b", r"\btasklist\b", r"\btaskkill\b", r"\bwhoami\b", r"\bsysteminfo\b",
-                
+                r"\bnet\s+share\b", r"\bnetsh\b", r"\btasklist\b", r"\btaskkill\b",
+                r"\bwhoami\b", r"\bsysteminfo\b", r"\bcmdkey\b", r"\bqwinsta\b",
+
                 r"\bshutdown\b", r"\blogoff\b", r"\brestart\b", r"\bpowercfg\b",
                 r"\btakeown\b", r"\bicacls\b", r"\bcacls\b", r"\bwmic\b", r"\battrib\b", r"\bfltmc\b",
-                
+
+                r"\bwinrs\b", r"\bpsexec\b", r"\bwmic\s+process\s+call\b",
+
                 r"%0",
-                r"\bstart\s+cmd\b"
+                r"\bstart\s+cmd\b",
+                r"\bcmd\s+/c\s+start\b"
             ]
             
             for pattern in dangerous_patterns:
@@ -208,7 +221,7 @@ class ZapretCore:
 
         try:
             subprocess.run(['sc', 'stop', 'WinDivert'], capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW)
-            time.sleep(0.5)
+            time.sleep(1.0)
             subprocess.run(['sc', 'start', 'WinDivert'], capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW)
         except Exception as e:
             self.log_event("info", f"WinDivert restart error: {e}")
