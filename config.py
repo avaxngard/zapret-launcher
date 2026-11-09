@@ -19,10 +19,11 @@ PNG_ICON_PATH = BASE_DIR / "resources" / "icon.png"
 HOSTS_PATH = Path(r"C:\Windows\System32\drivers\etc\hosts")
 BACKUP_DIR = APPDATA_DIR / "hosts_backups"
 
-CURRENT_VERSION = "3.2.3.4"
-CURRENT_BUILD = "3519"
+CURRENT_VERSION = "3.2.4.1"
+CURRENT_BUILD = "3520"
 
 CHECK_UPDATES_INTERVAL = 3 * 60 * 60 * 1000
+STATS_RETRY_INTERVAL_MS = 1 * 60 * 1000
 
 TG_HOST = "127.0.0.1"
 TG_PORT = 1443
@@ -33,6 +34,7 @@ API_URL_STATS = "https://zapret-launcher.ru/api/stats.php"
 API_URL_NEWS = "https://zapret-launcher.ru/api/news.php"
 
 DONATION_URL = "https://www.donationalerts.com/r/tweenkedrage"
+DEFAULT_FONT_NAME = "Inter"
 
 THEME_ICON_FILES = {
     'Dark':         'icon.png',
