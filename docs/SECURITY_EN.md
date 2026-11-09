@@ -7,8 +7,8 @@ Older versions are not supported and may contain unpatched vulnerabilities
 
 | Version | Status |
 | ------- | ---------
-| 3.2.3.4 | Actively supported, receives security updates |
-| 3.2.3.3 and earlier | Not supported; may contain vulnerabilities |
+| 3.2.4.1 | Actively supported, receives security updates |
+| 3.2.3.4 and earlier | Not supported; may contain vulnerabilities |
 
 Recommendation: Always use the latest version of the application.
 You can check for updates:
@@ -75,4 +75,4 @@ All collected data is anonymized and used solely to improve the launcher. You ca
 
 ---
 
-*Upd: 11/02/2026*
+*Upd: 11/09/2026*
