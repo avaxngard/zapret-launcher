@@ -1369,8 +1369,6 @@ class ZapretLauncher:
         self.force_tray_menu_update()
 
     def update_stats_display(self):
-        # В новом UI stats_frame нет — работаем с конкретными лейблами,
-        # каждый в своём try/except (tk.Label -> text=, CTkLabel -> text=)
         try:
             stats = self.stats.get_stats_dict()
         except Exception as e:
@@ -1905,7 +1903,7 @@ class ZapretLauncher:
         if getattr(self, 'tg_proxy', None) and self.tg_proxy.is_running:
             return
             
-        result = messagebox.askyesno(tr('information_desc'), "Обнаружен активный winws.exe.\n\nЗапустить Telegram Proxy для совместной работы?")
+        result = messagebox.askyesno(tr('information_desc'), tr('ask_start_tg_proxy_after_detect'))
         
         if result:
             def start_tg_only():
