@@ -343,7 +343,12 @@ class Dialogs:
         dialog.configure(bg=self.colors['bg_medium'])
         dialog.transient(self.app.root)
         dialog.grab_set()
-        dialog.focus_force()
+
+        dialog.withdraw()
+        try:
+            dialog.attributes('-alpha', 0.0)
+        except Exception:
+            pass
 
         x = self.app.root.winfo_x() + (self.app.root.winfo_width()  // 2) - dialog_width  // 2
         y = self.app.root.winfo_y() + (self.app.root.winfo_height() // 2) - dialog_height // 2
@@ -1001,7 +1006,10 @@ class Dialogs:
             self.app.strategy_var.set(name)
             self.app.update_status(f"{tr('status_starting')}", self.colors['accent'])
             if hasattr(self.app, 'connect_btn') and self.app.connect_btn:
-                self.app.connect_btn.set_enabled(False)
+                try:
+                    self.app.connect_btn.set_enabled(False)
+                except Exception as e:
+                    self._log("launch_selected set_enabled(False)", e)
             self.app.root.update()
 
             if mode and mode.get("name") == tr('mode_zapret_tgproxy'):
@@ -1039,10 +1047,11 @@ class Dialogs:
             success, msg = self.app.zapret.run_strategy(name)
             if not success:
                 self.app.update_status(tr('status_error'), self.colors['accent_red'])
-                messagebox.showerror(tr('error_startup'), msg)
+                messagebox.showerror(tr('error_startup'), msg or tr('error_startup'))
                 if hasattr(self.app, 'connect_btn') and self.app.connect_btn:
                     self.app.connect_btn.set_enabled(True)
-                self.app.dialogs.show_mode_selector()
+                self.app._connecting = False
+                self.app.force_tray_menu_update()
                 return
 
             self.app.current_strategy = name
@@ -1057,11 +1066,20 @@ class Dialogs:
 
             if hasattr(self.app, 'mode_label') and self.app.mode_label and mode:
                 strategy_display = self.app.zapret.get_strategy_display_name(name)
-                self.app.mode_label.config(
-                    text=f"{mode['name']} ({strategy_display})",
-                    fg=self.colors['accent_green']
-                )
+                if hasattr(self.app.mode_label, 'configure'):
+                    try:
+                        self.app.mode_label.configure(
+                            text=f"{mode['name']} ({strategy_display})",
+                            text_color=self.colors['accent_green']
+                        )
+                    except Exception:
+                        self.app.mode_label.configure(text=f"{mode['name']} ({strategy_display})")
+
             self.app.update_status(f"{tr('status_connected')}", self.colors['accent_green'])
+            
+            if hasattr(self.app, 'connect_btn') and self.app.connect_btn:
+                self.app.connect_btn.set_enabled(True)
+            
             self.app.update_ui_state()
             self.app.save_settings()
             self.app.root.after(500, self.app.update_tray_icon_state)
@@ -1080,7 +1098,28 @@ class Dialogs:
 
         redraw_list()
         _bind_click_to_all(dialog)
+
+        dialog.update_idletasks()
         dialog.deiconify()
+        dialog.focus_force()
+
+        def fade_in(alpha=0.0):
+            if not dialog.winfo_exists():
+                return
+            if alpha < 1.0:
+                alpha += 0.15
+                try:
+                    dialog.attributes('-alpha', alpha)
+                    dialog.after(12, lambda: fade_in(alpha))
+                except Exception:
+                    pass
+            else:
+                try:
+                    dialog.attributes('-alpha', 1.0)
+                except Exception:
+                    pass
+
+        dialog.after(50, fade_in)
 
     def show_tg_proxy_instruction(self):
         dialog_width = scale_size(500, self.scale_factor)
@@ -1898,7 +1937,7 @@ class Dialogs:
         dialog.grab_set()
         dialog.focus_force()
 
-        w, h = scale_size(400, self.scale_factor), scale_size(350, self.scale_factor)
+        w, h = scale_size(400, self.scale_factor), scale_size(340, self.scale_factor)
         x = self.app.root.winfo_x() + (self.app.root.winfo_width() // 2) - w // 2
         y = self.app.root.winfo_y() + (self.app.root.winfo_height() // 2) - h // 2
         dialog.geometry(f"{w}x{h}+{x}+{y}")
