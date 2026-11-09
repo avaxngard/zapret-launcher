@@ -136,23 +136,29 @@ class ModernSystemTray:
         return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
 
     def get_tooltip_text(self):
-        
         if self.app.is_connected:
             stats = self.app.stats.get_stats_dict()
             mode_text = self.app.mode_label.cget('text') if hasattr(self.app, 'mode_label') and self.app.mode_label else tr('status_connected')
             
             rtt_text = ""
-            if hasattr(self.app, 'stats_rtt_label') and self.app.stats_rtt_label:
-                rtt_value = self.app.stats_rtt_label.cget('text')
-                if rtt_value and rtt_value != "-- ms":
-                    rtt_text = f"{rtt_value}"
+            if hasattr(self.app, '_last_rtt_value'):
+                rtt_val = self.app._last_rtt_value
+                if rtt_val and rtt_val != "-- ms":
+                    rtt_text = f"{rtt_val}\n"
+            elif hasattr(self.app, 'stats_rtt_label') and self.app.stats_rtt_label:
+                try:
+                    rtt_value = self.app.stats_rtt_label.cget('text')
+                    if rtt_value and rtt_value != "-- ms":
+                        rtt_text = f"{rtt_value}\n"
+                except Exception:
+                    pass
             
             return (
                 f"Zapret Launcher\n"
                 f"{tr('mode')} {mode_text}\n"
                 f"———————————\n"
                 f"{stats['session_time_str']}\n"
-                f"{rtt_text}\n"
+                f"{rtt_text}"
                 f"{stats['speed_down_str']} / {stats['speed_up_str']}\n"
                 f"{stats['down_str']} / {stats['up_str']}"
             )
