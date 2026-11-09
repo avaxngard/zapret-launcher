@@ -734,135 +734,120 @@ class SettingsPage:
         return len(missing_files) == 0
 
     def _download_and_install_zapret_core(self):
-        def install_thread():
-            temp_zip = None
-            saved_custom_files = {}
-            
-            try:
-                subprocess.run(['taskkill', '/F', '/IM', 'winws.exe'], capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW)
-                subprocess.run(['sc', 'stop', 'WinDivert'], capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW)
-                time.sleep(1.5)
-                
-                zapret_dir = APPDATA_DIR / "zapret_core"
-                
-                lists_dir = zapret_dir / "lists"
-                if lists_dir.exists():
-                    custom_file = lists_dir / "list-custom.txt"
-                    if custom_file.exists():
-                        with open(custom_file, 'r', encoding='utf-8') as f:
-                            saved_custom_files['list-custom.txt'] = f.read()
-                    
-                    white_user_file = lists_dir / "ipset-white-user.txt"
-                    if white_user_file.exists():
-                        with open(white_user_file, 'r', encoding='utf-8') as f:
-                            saved_custom_files['ipset-white-user.txt'] = f.read()
-                
-                src = get_source(getattr(self.app, '_update_source', 'main'))
-                req = urllib.request.Request(src.zapret_core_url, headers={'User-Agent': 'Mozilla/5.0'})
-                with urllib.request.urlopen(req, timeout=30) as response:
-                    temp_zip = tempfile.mktemp(suffix='.zip')
-                    with open(temp_zip, 'wb') as f:
-                        f.write(response.read())
-                
-                if zapret_dir.exists():
-                    version_file = zapret_dir / "version.txt"
-                    if version_file.exists():
-                        version_file.unlink()
-                    
-                    bat_files_to_delete = [
-                        "service.bat",
-                        "service_en.bat",
-                        "general.bat",
-                        "general (ALT).bat",
-                        "general (ALT2).bat",
-                        "general (ALT3).bat",
-                        "general (ALT4).bat",
-                        "general (ALT5).bat",
-                        "general (ALT6).bat",
-                        "general (ALT7).bat",
-                        "general (ALT8).bat",
-                        "general (ALT9).bat",
-                        "general (ALT10).bat",
-                        "general (ALT11).bat",
-                        "general (ALT12).bat",
-                        "general (ALT13).bat",
-                        "general (EXP).bat",
-                        "general (FAKE TLS AUTO).bat",
-                        "general (FAKE TLS AUTO ALT2).bat",
-                        "general (FAKE TLS AUTO ALT3).bat",
-                        "general (SIMPLE FAKE).bat",
-                        "general (SIMPLE FAKE ALT).bat",
-                        "general (SIMPLE FAKE ALT2).bat"
-                    ]
-                    
-                    for bat_file in bat_files_to_delete:
-                        bat_path = zapret_dir / bat_file
-                        if bat_path.exists():
-                            bat_path.unlink()
-                    
-                    if lists_dir.exists():
-                        for file in lists_dir.iterdir():
-                            if file.is_file():
-                                if file.name not in ['list-custom.txt', 'ipset-white-user.txt']:
-                                    file.unlink()
-                    
-                    utils_dir = zapret_dir / "utils"
-                    if utils_dir.exists():
-                        shutil.rmtree(utils_dir)
-                    
-                    bin_dir = zapret_dir / "bin"
-                    if bin_dir.exists():
-                        shutil.rmtree(bin_dir)
-                
-                with zipfile.ZipFile(temp_zip, 'r') as zf:
-                    temp_extract = tempfile.mkdtemp()
-                    zf.extractall(temp_extract)
-                    
-                    extracted_core = Path(temp_extract) / "zapret_core"
-                    if not extracted_core.exists():
-                        extracted_core = Path(temp_extract)
-                    
-                    for item in extracted_core.iterdir():
-                        dest = zapret_dir / item.name
-                        
-                        if item.is_dir() and item.name == "lists":
-                            lists_dest = dest
-                            lists_dest.mkdir(parents=True, exist_ok=True)
-                            
-                            for file_in_archive in item.iterdir():
-                                if file_in_archive.is_file():
-                                    if file_in_archive.name not in ['list-custom.txt', 'ipset-white-user.txt']:
-                                        dest_file = lists_dest / file_in_archive.name
-                                        shutil.copy2(file_in_archive, dest_file)
-                        
-                        elif item.is_dir():
-                            if dest.exists():
-                                shutil.rmtree(dest)
-                            shutil.copytree(item, dest)
-                        else:
-                            shutil.copy2(item, dest)
-                    
-                    shutil.rmtree(temp_extract)
-                
-                if saved_custom_files:
-                    lists_dest = zapret_dir / "lists"
-                    lists_dest.mkdir(parents=True, exist_ok=True)
-                    
-                    for filename, content in saved_custom_files.items():
-                        dest_file = lists_dest / filename
-                        with open(dest_file, 'w', encoding='utf-8') as f:
-                            f.write(content)
-                
-                if temp_zip and Path(temp_zip).exists():
-                    Path(temp_zip).unlink()
-                
-                self.app.root.after_idle(lambda: self._show_success_and_restart())
-            
-            except Exception as e:
-                self.app.root.after_idle(lambda: messagebox.showerror("Error", f"Unable to reinstall kernel: {str(e)}"))
-        threading.Thread(target=install_thread, daemon=True).start()
+        temp_zip = None
+        saved_custom_files = {}
         
-        sys.exit(0)
+        try:
+            subprocess.run(['taskkill', '/F', '/IM', 'winws.exe'], capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW)
+            subprocess.run(['sc', 'stop', 'WinDivert'], capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW)
+            time.sleep(1.5)
+            
+            zapret_dir = APPDATA_DIR / "zapret_core"
+            
+            lists_dir = zapret_dir / "lists"
+            if lists_dir.exists():
+                custom_file = lists_dir / "list-custom.txt"
+                if custom_file.exists():
+                    with open(custom_file, 'r', encoding='utf-8') as f:
+                        saved_custom_files['list-custom.txt'] = f.read()
+                
+                white_user_file = lists_dir / "ipset-white-user.txt"
+                if white_user_file.exists():
+                    with open(white_user_file, 'r', encoding='utf-8') as f:
+                        saved_custom_files['ipset-white-user.txt'] = f.read()
+            
+            src = get_source(getattr(self.app, '_update_source', 'main'))
+            req = urllib.request.Request(src.zapret_core_url, headers={'User-Agent': 'Mozilla/5.0'})
+            with urllib.request.urlopen(req, timeout=30) as response:
+                temp_zip = tempfile.mktemp(suffix='.zip')
+                with open(temp_zip, 'wb') as f:
+                    f.write(response.read())
+            
+            if zapret_dir.exists():
+                version_file = zapret_dir / "version.txt"
+                if version_file.exists():
+                    version_file.unlink()
+                
+                bat_files_to_delete = [
+                    "service.bat", "service_en.bat", "general.bat",
+                    "general (ALT).bat", "general (ALT2).bat", "general (ALT3).bat",
+                    "general (ALT4).bat", "general (ALT5).bat", "general (ALT6).bat",
+                    "general (ALT7).bat", "general (ALT8).bat", "general (ALT9).bat",
+                    "general (ALT10).bat", "general (ALT11).bat", "general (ALT12).bat",
+                    "general (ALT13).bat", "general (EXP).bat", "general (FAKE TLS AUTO).bat",
+                    "general (FAKE TLS AUTO ALT2).bat", "general (FAKE TLS AUTO ALT3).bat",
+                    "general (SIMPLE FAKE).bat", "general (SIMPLE FAKE ALT).bat", "general (SIMPLE FAKE ALT2).bat"
+                ]
+                
+                for bat_file in bat_files_to_delete:
+                    bat_path = zapret_dir / bat_file
+                    if bat_path.exists():
+                        bat_path.unlink()
+                
+                if lists_dir.exists():
+                    for file in lists_dir.iterdir():
+                        if file.is_file():
+                            if file.name not in ['list-custom.txt', 'ipset-white-user.txt']:
+                                file.unlink()
+                
+                utils_dir = zapret_dir / "utils"
+                if utils_dir.exists():
+                    shutil.rmtree(utils_dir)
+                
+                bin_dir = zapret_dir / "bin"
+                if bin_dir.exists():
+                    shutil.rmtree(bin_dir)
+            
+            with zipfile.ZipFile(temp_zip, 'r') as zf:
+                temp_extract = tempfile.mkdtemp()
+                zf.extractall(temp_extract)
+                
+                extracted_core = Path(temp_extract) / "zapret_core"
+                if not extracted_core.exists():
+                    extracted_core = Path(temp_extract)
+                
+                for item in extracted_core.iterdir():
+                    dest = zapret_dir / item.name
+                    
+                    if item.is_dir() and item.name == "lists":
+                        lists_dest = dest
+                        lists_dest.mkdir(parents=True, exist_ok=True)
+                        
+                        for file_in_archive in item.iterdir():
+                            if file_in_archive.is_file():
+                                if file_in_archive.name not in ['list-custom.txt', 'ipset-white-user.txt']:
+                                    dest_file = lists_dest / file_in_archive.name
+                                    shutil.copy2(file_in_archive, dest_file)
+                    
+                    elif item.is_dir():
+                        if dest.exists():
+                            shutil.rmtree(dest)
+                        shutil.copytree(item, dest)
+                    else:
+                        shutil.copy2(item, dest)
+                
+                shutil.rmtree(temp_extract)
+            
+            if saved_custom_files:
+                lists_dest = zapret_dir / "lists"
+                lists_dest.mkdir(parents=True, exist_ok=True)
+                
+                for filename, content in saved_custom_files.items():
+                    dest_file = lists_dest / filename
+                    with open(dest_file, 'w', encoding='utf-8') as f:
+                        f.write(content)
+            
+            if temp_zip and Path(temp_zip).exists():
+                Path(temp_zip).unlink()
+            
+            self.app.root.after_idle(self._show_success_and_restart)
+        
+        except Exception as e:
+            self.app.root.after_idle(lambda: messagebox.showerror("Error", f"Unable to reinstall zapret_core: {str(e)}"))
+
+    def _show_success_and_restart(self):
+        messagebox.showinfo(tr('success'), tr('reinstall_success'))
+        self.app.root.after(500, self.app._restart_launcher)
 
     def get_frame(self):
         return self.frame
