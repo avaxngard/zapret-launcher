@@ -195,7 +195,15 @@ class MainPage:
         ctk.CTkLabel(tls_f, text="FAKE TLS", font=font_mono_small, text_color=self.colors['text_secondary']).pack(anchor='w')
         
         self.fake_tls_var = tk.BooleanVar(value=True)
-        self.fake_tls_switch = ctk.CTkSwitch(tls_f, text="", variable=self.fake_tls_var, width=scale_size(40, self.scale_factor), progress_color=self.colors['accent'], button_color=self.colors['text_primary'])
+        self.fake_tls_switch = ctk.CTkSwitch(
+            tls_f, 
+            text="", 
+            variable=self.fake_tls_var, 
+            width=scale_size(40, self.scale_factor), 
+            progress_color=self.colors['accent'], 
+            button_color="#FFFFFF",
+            button_hover_color="#FFFFFF",
+        )
         self.fake_tls_switch.pack(anchor='w', pady=(2,0))
 
         dom_f = ctk.CTkFrame(row_2, fg_color="transparent", corner_radius=0)
@@ -235,6 +243,47 @@ class MainPage:
         
         self.load_tg_proxy_settings()
         self._setup_focus_handling()
+        self._bind_hotkeys_to_entries()
+
+    def _bind_hotkeys_to_entries(self):
+        def handle_hotkeys(event):
+            if event.state & 0x4:
+                widget = event.widget
+                if event.keycode == 90:
+                    try:
+                        widget.event_generate("<<Undo>>")
+                    except Exception:
+                        pass
+                    return "break"
+                elif event.keycode == 65:
+                    widget.select_range(0, tk.END)
+                    widget.icursor(tk.END)
+                    return "break"
+                elif event.keycode == 67:
+                    try:
+                        widget.event_generate("<<Copy>>")
+                    except Exception:
+                        pass
+                    return "break"
+                elif event.keycode == 86:
+                    try:
+                        widget.event_generate("<<Paste>>")
+                    except Exception:
+                        pass
+                    return "break"
+            return None
+
+        entries = [
+            self.tg_host_entry,
+            self.tg_port_entry,
+            self.tg_domain_entry
+        ]
+        
+        for entry in entries:
+            entry.unbind("<Control-Key>")
+            entry.unbind("<Control-KeyPress>")
+            
+            entry.bind('<Key>', handle_hotkeys, add='+')
 
     def load_tg_proxy_settings(self):
         if hasattr(self.app, 'tg_host'):
