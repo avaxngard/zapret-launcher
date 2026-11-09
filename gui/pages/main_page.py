@@ -7,14 +7,68 @@
 # Distributed WITHOUT ANY WARRANTY.
 
 import tkinter as tk
+import customtkinter as ctk
 from utils.messagebox import messagebox
-from gui.widgets import RoundedButton
 import webbrowser
 from pathlib import Path
 from PIL import Image, ImageTk, ImageEnhance
 import sys
 from utils.languages import tr
-from utils.scaling import scale_size, scale_font
+from utils.scaling import scale_size
+
+class CTkButtonWrapper(ctk.CTkButton):
+    def set_text(self, text):
+        try:
+            self.configure(text=text)
+        except Exception:
+            pass
+
+    def set_enabled(self, enabled):
+        fg = tc = hc = None
+        try:
+            fg = self.cget("fg_color")
+        except Exception:
+            pass
+        try:
+            tc = self.cget("text_color")
+        except Exception:
+            pass
+        try:
+            hc = self.cget("hover_color")
+        except Exception:
+            pass
+
+        try:
+            self.configure(state="normal" if enabled else "disabled")
+        except Exception:
+            pass
+
+        try:
+            if fg is not None:
+                self.configure(fg_color=fg)
+        except Exception:
+            pass
+        try:
+            if tc is not None:
+                self.configure(text_color=tc)
+        except Exception:
+            pass
+        try:
+            if hc is not None:
+                self.configure(hover_color=hc)
+        except Exception:
+            pass
+
+    def update_colors(self, bg_color, fg_color, hover_color):
+        try:
+            self.configure(fg_color=bg_color, text_color=fg_color, hover_color=hover_color)
+        except Exception:
+            for kw, val in (("fg_color", bg_color), ("text_color", fg_color), ("hover_color", hover_color)):
+                try:
+                    if val is not None:
+                        self.configure(**{kw: val})
+                except Exception:
+                    pass
 
 class MainPage:
     def __init__(self, parent, app):
@@ -25,147 +79,162 @@ class MainPage:
         self.font_bold = app.font_bold
         self.scale_factor = getattr(app, 'scale_factor', 1.0)
         
-        font_size_title = scale_size(20, self.scale_factor)
-        font_size_desc = scale_size(10, self.scale_factor)
-        font_size_stats = scale_size(18, self.scale_factor)
-        font_size_rtt = scale_size(16, self.scale_factor)
-        font_size_btn = scale_size(18, self.scale_factor)
-        font_size_small = scale_size(12, self.scale_factor)
-        btn_width = scale_size(350, self.scale_factor)
-        btn_height = scale_size(60, self.scale_factor)
-        btn_radius = scale_size(15, self.scale_factor)
-        right_column_width = scale_size(340, self.scale_factor)
-        stats_height = scale_size(80, self.scale_factor)
-        stats_width = scale_size(550, self.scale_factor)
-        icon_size = scale_size(24, self.scale_factor)
+        font_mono_title = ("Inter", scale_size(24, self.scale_factor), "bold")
+        font_mono_desc = ("Inter", scale_size(12, self.scale_factor))
+        font_mono_large = ("Inter", scale_size(18, self.scale_factor), "bold")
+        font_mono_med = ("Inter", scale_size(14, self.scale_factor), "bold")
+        font_mono_small = ("Inter", scale_size(11, self.scale_factor))
+        font_mono_btn = ("Inter", scale_size(15, self.scale_factor), "bold")
+
         padx = scale_size(30, self.scale_factor)
         pady = scale_size(20, self.scale_factor)
+        corner_r = scale_size(6, self.scale_factor)
+
+        self.frame = ctk.CTkFrame(parent, fg_color=self.colors['bg_dark'], corner_radius=0)
         
-        self.frame = tk.Frame(parent, bg=self.colors['bg_dark'])
+        header_frame = ctk.CTkFrame(self.frame, fg_color="transparent", corner_radius=0)
+        header_frame.pack(fill=tk.X, padx=padx, pady=(scale_size(30, self.scale_factor), scale_size(10, self.scale_factor)))
         
-        header_frame = tk.Frame(self.frame, bg=self.colors['bg_dark'])
-        header_frame.pack(fill=tk.X, padx=padx, pady=(scale_size(30, self.scale_factor), 5))
+        ctk.CTkLabel(
+            header_frame,
+            text=tr('main_title'),
+            font=font_mono_title,
+            text_color=self.colors['text_primary']
+        ).pack(anchor='w')
         
-        title_label = tk.Label(
-            header_frame, 
-            text=tr('main_title'), 
-            font=("Inter", font_size_title, "bold"),
-            fg=self.colors['text_primary'], 
-            bg=self.colors['bg_dark']
-        )
-        title_label.pack(anchor='w')
-        
-        desc_label = tk.Label(
+        ctk.CTkLabel(
             header_frame,
             text=tr('main_desc'),
-            font=("Inter", font_size_desc),
-            fg=self.colors['text_secondary'],
-            bg=self.colors['bg_dark']
+            font=font_mono_desc,
+            text_color=self.colors['text_secondary']
+        ).pack(anchor='w', pady=(2, 0))
+
+        ctk.CTkFrame(self.frame, fg_color=self.colors['separator'], height=1, corner_radius=0).pack(fill=tk.X, padx=padx, pady=(0, scale_size(15, self.scale_factor)))
+
+        info_grid = ctk.CTkFrame(self.frame, fg_color="transparent", corner_radius=0)
+        info_grid.pack(fill=tk.X, padx=padx, pady=(0, scale_size(15, self.scale_factor)))
+        
+        info_grid.columnconfigure(0, weight=1, uniform="col")
+        info_grid.columnconfigure(1, weight=1, uniform="col")
+
+        def make_info_block(parent, row, col, label, initial_text, text_color=None):
+            block = ctk.CTkFrame(
+                parent, 
+                fg_color=self.colors['bg_medium'], 
+                border_width=1, 
+                border_color=self.colors['separator'],
+                corner_radius=corner_r
+            )
+            block.grid(row=row, column=col, sticky="nsew", padx=(0 if col == 0 else scale_size(10, self.scale_factor), 0), pady=(0 if row == 0 else scale_size(10, self.scale_factor), 0))
+            
+            inner = ctk.CTkFrame(block, fg_color="transparent", corner_radius=0)
+            inner.pack(padx=scale_size(15, self.scale_factor), pady=scale_size(10, self.scale_factor), fill=tk.BOTH, expand=True)
+            
+            ctk.CTkLabel(
+                inner, 
+                text=label.upper(), 
+                font=font_mono_small, 
+                text_color=self.colors['text_secondary']
+            ).pack(anchor='w')
+            
+            val_lbl = ctk.CTkLabel(
+                inner, 
+                text=initial_text, 
+                font=font_mono_large, 
+                text_color=text_color if text_color else self.colors['text_primary']
+            )
+            val_lbl.pack(anchor='w', pady=(scale_size(2, self.scale_factor), 0))
+            return val_lbl
+
+        self.app.main_status = make_info_block(info_grid, 0, 0, tr('status'), tr('status_ready').upper(), self.colors['text_secondary'])
+        self.app.mode_label = make_info_block(info_grid, 0, 1, tr('mode'), tr('mode_not_selected').upper(), self.colors['text_secondary'])
+        
+        self.app.stats_time_label = make_info_block(info_grid, 1, 0, tr('stats_time'), "00:00:00")
+        self.app.stats_traffic_label = make_info_block(info_grid, 1, 1, tr('traffic'), "⬇ 0 B | ⬆ 0 B")
+
+        self.app.stats_speed_up_label = ctk.CTkLabel(self.frame, text="", width=0, height=0)
+        self.app.stats_speed_down_label = ctk.CTkLabel(self.frame, text="", width=0, height=0)
+        self.app.stats_total_label = ctk.CTkLabel(self.frame, text="", width=0, height=0)
+        self.app.stats_rtt_label = ctk.CTkLabel(self.frame, text="-- ms", width=0, height=0)
+        self.app.stats_frame = info_grid
+
+        config_card = ctk.CTkFrame(
+            self.frame, 
+            fg_color=self.colors['bg_medium'], 
+            border_width=1,
+            border_color=self.colors['separator'],
+            corner_radius=corner_r
         )
-        desc_label.pack(anchor='w', pady=(5, 0))
+        config_card.pack(fill=tk.X, padx=padx, pady=(0, scale_size(15, self.scale_factor)))
         
-        main_content = tk.Frame(self.frame, bg=self.colors['bg_dark'])
-        main_content.pack(fill=tk.BOTH, expand=True, padx=padx, pady=(pady, pady))
+        config_inner = ctk.CTkFrame(config_card, fg_color="transparent", corner_radius=0)
+        config_inner.pack(fill=tk.X, padx=scale_size(20, self.scale_factor), pady=scale_size(15, self.scale_factor))
         
-        left_column = tk.Frame(main_content, bg=self.colors['bg_dark'])
-        left_column.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, scale_size(15, self.scale_factor)))
+        ctk.CTkLabel(config_inner, text="TELEGRAM PROXY", font=font_mono_med, text_color=self.colors['accent']).pack(anchor='w', pady=(0, scale_size(10, self.scale_factor)))
         
-        right_column = tk.Frame(main_content, bg=self.colors['bg_dark'], width=right_column_width)
-        right_column.pack(side=tk.RIGHT, fill=tk.Y, padx=(scale_size(15, self.scale_factor), 0))
-        right_column.pack_propagate(False)
+        row_1 = ctk.CTkFrame(config_inner, fg_color="transparent", corner_radius=0)
+        row_1.pack(fill=tk.X, pady=(0, scale_size(10, self.scale_factor)))
         
-        status_frame = tk.Frame(left_column, bg=self.colors['bg_light'])
-        status_frame.pack(fill=tk.X, pady=(0, scale_size(15, self.scale_factor)))
+        host_f = ctk.CTkFrame(row_1, fg_color="transparent", corner_radius=0)
+        host_f.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, scale_size(10, self.scale_factor)))
+        ctk.CTkLabel(host_f, text=tr('main_page_tg_proxy_host'), font=font_mono_small, text_color=self.colors['text_secondary']).pack(anchor='w')
+        self.tg_host_entry = ctk.CTkEntry(host_f, font=font_mono_small, height=scale_size(28, self.scale_factor), fg_color=self.colors['bg_dark'], text_color=self.colors['text_primary'], border_color=self.colors['separator'], corner_radius=corner_r)
+        self.tg_host_entry.pack(fill=tk.X, pady=(2,0))
         
-        tk.Label(status_frame, text=tr('status'), font=self.font_bold, 
-                fg=self.colors['text_primary'], bg=self.colors['bg_light']).pack(side=tk.LEFT, padx=scale_size(15, self.scale_factor), pady=scale_size(10, self.scale_factor))
-        
-        self.app.main_status = tk.Label(status_frame, text=tr('status_ready'), font=self.font_medium,
-                                        fg=self.colors['text_secondary'], bg=self.colors['bg_light'])
-        self.app.main_status.pack(side=tk.LEFT, padx=5, pady=scale_size(10, self.scale_factor))
-        
-        mode_frame = tk.Frame(left_column, bg=self.colors['bg_light'])
-        mode_frame.pack(fill=tk.X, pady=(0, scale_size(15, self.scale_factor)))
-        
-        tk.Label(mode_frame, text=tr('mode'), font=self.font_bold,
-                fg=self.colors['text_primary'], bg=self.colors['bg_light']).pack(side=tk.LEFT, padx=scale_size(15, self.scale_factor), pady=scale_size(10, self.scale_factor))
-        
-        self.app.mode_label = tk.Label(mode_frame, text=tr('mode_not_selected'), font=self.font_medium,
-                                    fg=self.colors['text_secondary'], bg=self.colors['bg_light'])
-        self.app.mode_label.pack(side=tk.LEFT, padx=7, pady=scale_size(10, self.scale_factor))
-        
-        self.app.stats_frame = tk.Frame(left_column, bg=self.colors['bg_light'])
-        self.app.stats_frame.pack(fill=tk.X, pady=(0, scale_size(15, self.scale_factor)), ipadx=scale_size(20, self.scale_factor), ipady=scale_size(15, self.scale_factor))
-        
-        tk.Label(self.app.stats_frame, text=tr('stats_session'), font=("Inter", scale_size(14, self.scale_factor), "bold"),
-            fg=self.colors['text_primary'], bg=self.colors['bg_light']).pack(anchor='w', padx=scale_size(15, self.scale_factor), pady=(scale_size(8, self.scale_factor), 5))
-        
-        stats_row1 = tk.Frame(self.app.stats_frame, bg=self.colors['bg_light'])
-        stats_row1.pack(fill=tk.X, padx=scale_size(15, self.scale_factor), pady=2)
-        
-        self.app.stats_time_label = tk.Label(stats_row1, text="00:00:00", font=("Inter", font_size_stats, "bold"),
-                                            fg=self.colors['accent'], bg=self.colors['bg_light'])
-        self.app.stats_time_label.pack(side=tk.LEFT)
-        
-        tk.Label(stats_row1, text=tr('stats_time'), font=self.font_primary,
-                fg=self.colors['text_secondary'], bg=self.colors['bg_light']).pack(side=tk.LEFT, padx=(5, scale_size(20, self.scale_factor)))
-        
-        self.app.stats_traffic_label = tk.Label(stats_row1, text="⬇ 0 B  |  ⬆ 0 B", font=("Inter", font_size_small),
-                                                fg=self.colors['text_primary'], bg=self.colors['bg_light'])
-        self.app.stats_traffic_label.pack(side=tk.LEFT, padx=(0, scale_size(20, self.scale_factor)))
-        self.app.stats_total_label = tk.Label(stats_row1, text="0 B", font=("Inter", font_size_small),
-                                            fg=self.colors['text_secondary'], bg=self.colors['bg_light'])
-        self.app.stats_total_label.pack(side=tk.LEFT)
-        
-        stats_speed_frame = tk.Frame(self.app.stats_frame, bg=self.colors['bg_light'])
-        stats_speed_frame.pack(fill=tk.X, padx=scale_size(15, self.scale_factor), pady=(scale_size(10, self.scale_factor), 5))
+        port_f = ctk.CTkFrame(row_1, fg_color="transparent", corner_radius=0, width=scale_size(80, self.scale_factor))
+        port_f.pack(side=tk.RIGHT)
+        ctk.CTkLabel(port_f, text=tr('main_page_tg_proxy_port'), font=font_mono_small, text_color=self.colors['text_secondary']).pack(anchor='w')
+        self.tg_port_entry = ctk.CTkEntry(port_f, font=font_mono_small, height=scale_size(28, self.scale_factor), fg_color=self.colors['bg_dark'], text_color=self.colors['text_primary'], border_color=self.colors['separator'], corner_radius=corner_r)
+        self.tg_port_entry.pack(fill=tk.X, pady=(2,0))
 
-        stats_container = tk.Frame(stats_speed_frame, bg=self.colors['bg_light'], width=stats_width, height=stats_height)
-        stats_container.pack(anchor='w')
-        stats_container.pack_propagate(False)
+        row_2 = ctk.CTkFrame(config_inner, fg_color="transparent", corner_radius=0)
+        row_2.pack(fill=tk.X, pady=(0, scale_size(10, self.scale_factor)))
+        
+        tls_f = ctk.CTkFrame(row_2, fg_color="transparent", corner_radius=0)
+        tls_f.pack(side=tk.LEFT, padx=(0, scale_size(10, self.scale_factor)))
+        ctk.CTkLabel(tls_f, text="FAKE TLS:", font=font_mono_small, text_color=self.colors['text_secondary']).pack(anchor='w')
+        
+        self.fake_tls_var = tk.BooleanVar(value=True)
+        self.fake_tls_switch = ctk.CTkSwitch(tls_f, text="", variable=self.fake_tls_var, width=scale_size(40, self.scale_factor), progress_color=self.colors['accent'], button_color=self.colors['text_primary'])
+        self.fake_tls_switch.pack(anchor='w', pady=(2,0))
 
-        speed_frame = tk.Frame(stats_container, bg=self.colors['bg_light'])
-        speed_frame.place(x=0, y=0, width=scale_size(300, self.scale_factor), height=stats_height)
-        
-        tk.Label(speed_frame, text=tr('stats_speed'), font=self.font_bold,
-                fg=self.colors['text_primary'], bg=self.colors['bg_light']).pack(anchor='w')
-        
-        self.app.stats_speed_up_label = tk.Label(speed_frame, text="⬆ 0 B/s", font=self.font_primary,
-                                                fg=self.colors['accent'], bg=self.colors['bg_light'])
-        self.app.stats_speed_up_label.pack(anchor='w', pady=(scale_size(5, self.scale_factor), 2))
-        
-        self.app.stats_speed_down_label = tk.Label(speed_frame, text="⬇ 0 B/s", font=self.font_primary,
-                                                fg=self.colors['accent'], bg=self.colors['bg_light'])
-        self.app.stats_speed_down_label.pack(anchor='w', pady=2)
+        dom_f = ctk.CTkFrame(row_2, fg_color="transparent", corner_radius=0)
+        dom_f.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        ctk.CTkLabel(dom_f, text=tr('main_page_tg_proxy_domain'), font=font_mono_small, text_color=self.colors['text_secondary']).pack(anchor='w')
+        self.tg_domain_entry = ctk.CTkEntry(dom_f, font=font_mono_small, height=scale_size(28, self.scale_factor), fg_color=self.colors['bg_dark'], text_color=self.colors['text_primary'], border_color=self.colors['separator'], corner_radius=corner_r)
+        self.tg_domain_entry.pack(fill=tk.X, pady=(2,0))
 
-        rtt_frame = tk.Frame(stats_container, bg=self.colors['bg_light'])
-        rtt_frame.place(x=scale_size(320, self.scale_factor), y=0, width=scale_size(230, self.scale_factor), height=stats_height)
+        btn_row = ctk.CTkFrame(config_inner, fg_color="transparent", corner_radius=0)
+        btn_row.pack(fill=tk.X, pady=(scale_size(5, self.scale_factor), 0))
         
-        tk.Label(rtt_frame, text=tr('stats_rtt'), font=self.font_bold,
-                fg=self.colors['text_primary'], bg=self.colors['bg_light']).pack(anchor='w')
+        apply_btn = ctk.CTkButton(btn_row, text=tr('button_apply').upper(), command=self.save_tg_proxy_settings, height=scale_size(28, self.scale_factor), fg_color=self.colors['bg_light'], hover_color=self.colors['accent'], text_color=self.colors['text_primary'], font=font_mono_small, corner_radius=corner_r)
+        apply_btn.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, scale_size(5, self.scale_factor)))
         
-        self.app.stats_rtt_label = tk.Label(rtt_frame, text="-- ms", font=("Inter", font_size_rtt, "bold"),
-                                            fg=self.colors['accent'], bg=self.colors['bg_light'])
-        self.app.stats_rtt_label.pack(anchor='w', pady=(scale_size(5, self.scale_factor), 0))
+        copy_btn = ctk.CTkButton(btn_row, text=tr('tg_copy_secret').upper(), command=self.copy_current_link, height=scale_size(28, self.scale_factor), fg_color=self.colors['bg_light'], hover_color=self.colors['accent'], text_color=self.colors['text_primary'], font=font_mono_small, corner_radius=corner_r)
+        copy_btn.pack(side=tk.RIGHT, fill=tk.X, expand=True, padx=(scale_size(5, self.scale_factor), 0))
+
+        btn_container = ctk.CTkFrame(self.frame, fg_color="transparent", corner_radius=0)
+        btn_container.pack(fill=tk.X, padx=padx, pady=(0, scale_size(10, self.scale_factor)))
         
-        button_frame = tk.Frame(left_column, bg=self.colors['bg_dark'])
-        button_frame.pack(fill=tk.X, pady=(scale_size(10, self.scale_factor), 0))
+        self.app.connect_btn = CTkButtonWrapper(
+            btn_container,
+            text=tr('button_connect').upper(),
+            command=self.app.toggle_connection,
+            height=scale_size(45, self.scale_factor),
+            fg_color=self.colors['accent'],
+            hover_color=self.colors['accent'],
+            text_color=self.colors['button_text_hover'],
+            font=font_mono_btn,
+            corner_radius=corner_r
+        )
+        self.app.connect_btn.pack(fill=tk.X)
+
+        self.icons_frame = ctk.CTkFrame(self.frame, fg_color="transparent", corner_radius=0)
+        self.icons_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=padx, pady=(0, scale_size(15, self.scale_factor)))
+        self._create_icon_buttons(scale_size(24, self.scale_factor))
         
-        self.app.connect_btn = RoundedButton(button_frame, text=tr('button_connect'), command=self.app.toggle_connection,
-                                    width=btn_width, height=btn_height, bg=self.colors['accent'], 
-                                    font=("Inter", font_size_btn, "bold"), corner_radius=btn_radius,
-                                    theme_name=self.app.current_theme)
-        self.app.connect_btn.hover_color = '#3D3D45'
-        self.app.connect_btn.pack()
-        
-        self._create_tg_proxy_card(right_column, font_size_small)
-        self.frame.update_idletasks()
-        
-        self.icons_frame = tk.Frame(self.frame, bg=self.colors['bg_dark'])
-        self.icons_frame.pack(side=tk.BOTTOM, anchor='se', padx=scale_size(20, self.scale_factor), pady=scale_size(15, self.scale_factor))
-        self._create_icon_buttons(icon_size)
-        self._setup_focus_handling()
         self.load_tg_proxy_settings()
+        self._setup_focus_handling()
 
     def load_tg_proxy_settings(self):
         if hasattr(self.app, 'tg_host'):
@@ -175,13 +244,9 @@ class MainPage:
         if hasattr(self.app, 'tg_port'):
             self.tg_port_entry.delete(0, tk.END)
             self.tg_port_entry.insert(0, str(self.app.tg_port))
-        
+            
         if hasattr(self.app, 'tg_fake_tls'):
             self.fake_tls_var.set(self.app.tg_fake_tls)
-            if self.app.tg_fake_tls:
-                self.fake_tls_text.config(text=tr('status_enabled'), fg=self.colors['accent_green'])
-            else:
-                self.fake_tls_text.config(text=tr('status_disabled'), fg=self.colors['text_secondary'])
         
         if hasattr(self.app, 'tg_fake_tls_domain'):
             self.tg_domain_entry.delete(0, tk.END)
@@ -210,8 +275,7 @@ class MainPage:
                     tr('tg_proxy_bind_all_warning')
                 )
                 if not confirm:
-                    self.tg_host_entry.delete(0, tk.END)
-                    self.tg_host_entry.insert(0, self.app.tg_host)
+                    self.load_tg_proxy_settings()
                     return
 
             self.app.tg_host = new_host
@@ -233,133 +297,11 @@ class MainPage:
     def _setup_focus_handling(self):
         def remove_focus(event=None):
             focused = self.app.root.focus_get()
-            if focused and isinstance(focused, (tk.Entry, tk.Text)):
+            if focused and isinstance(focused, (ctk.CTkEntry, tk.Entry, tk.Text)):
                 if event and event.widget != focused:
                     self.app.root.focus_set()
         
         self.app.root.bind_all("<Button-1>", remove_focus)
-
-    def _create_tg_proxy_card(self, parent, font_size_small):
-        card = tk.Frame(parent, bg=self.colors['bg_light'], relief=tk.FLAT, bd=0)
-        card.pack(fill=tk.X, pady=(0, scale_size(15, self.scale_factor)))
-        
-        inner = tk.Frame(card, bg=self.colors['bg_light'])
-        inner.pack(fill=tk.X, padx=scale_size(15, self.scale_factor), pady=scale_size(12, self.scale_factor))
-        
-        title_frame = tk.Frame(inner, bg=self.colors['bg_light'])
-        title_frame.pack(fill=tk.X, pady=(0, scale_size(8, self.scale_factor)))
-        
-        tk.Label(title_frame, text="Telegram Proxy", font=("Inter", scale_size(13, self.scale_factor), "bold"),
-                fg=self.colors['accent'], bg=self.colors['bg_light']).pack(side=tk.LEFT)
-        
-        tk.Frame(inner, bg=self.colors['separator'], height=1).pack(fill=tk.X, pady=(0, scale_size(10, self.scale_factor)))
-        
-        row1 = tk.Frame(inner, bg=self.colors['bg_light'])
-        row1.pack(fill=tk.X, pady=(0, scale_size(8, self.scale_factor)))
-        
-        port_frame = tk.Frame(row1, bg=self.colors['bg_light'])
-        port_frame.pack(side=tk.RIGHT)
-        
-        tk.Label(port_frame, text=tr('main_page_tg_proxy_port'), font=("Inter", scale_font(9, self.scale_factor)),
-                fg=self.colors['text_secondary'], bg=self.colors['bg_light'], anchor='w').pack(anchor='w')
-        
-        self.tg_port_entry = tk.Entry(port_frame, font=("Inter", scale_size(10, self.scale_factor)),
-                                    bg=self.colors['bg_light'], fg=self.colors['text_primary'],
-                                    relief=tk.FLAT, highlightthickness=1,
-                                    highlightcolor=self.colors['accent'],
-                                    highlightbackground=self.colors['separator'],
-                                    width=scale_size(6, self.scale_factor))
-        self.tg_port_entry.pack(pady=(scale_size(2, self.scale_factor), 0), ipady=scale_size(4, self.scale_factor))
-        self.tg_port_entry.insert(0, "1443")
-        
-        host_frame = tk.Frame(row1, bg=self.colors['bg_light'])
-        host_frame.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, scale_size(10, self.scale_factor)))
-        
-        tk.Label(host_frame, text=tr('main_page_tg_proxy_host'), font=("Inter", scale_font(9, self.scale_factor)),
-                fg=self.colors['text_secondary'], bg=self.colors['bg_light'], anchor='w').pack(anchor='w')
-        
-        self.tg_host_entry = tk.Entry(host_frame, font=("Inter", scale_size(10, self.scale_factor)),
-                                    bg=self.colors['bg_light'], fg=self.colors['text_primary'],
-                                    relief=tk.FLAT, highlightthickness=1,
-                                    highlightcolor=self.colors['accent'],
-                                    highlightbackground=self.colors['separator'])
-        self.tg_host_entry.pack(fill=tk.X, pady=(scale_size(2, self.scale_factor), 0), ipady=scale_size(4, self.scale_factor))
-        self.tg_host_entry.insert(0, "127.0.0.1")
-        
-        row2 = tk.Frame(inner, bg=self.colors['bg_light'])
-        row2.pack(fill=tk.X, pady=(0, scale_size(8, self.scale_factor)))
-
-        tk.Label(row2, text="Fake TLS", font=("Inter", scale_size(9, self.scale_factor)),
-                fg=self.colors['text_secondary'], bg=self.colors['bg_light'], width=scale_size(8, self.scale_factor), anchor='w').pack(side=tk.LEFT)
-
-        self.fake_tls_var = tk.BooleanVar(value=True)
-        self.fake_tls_text = tk.Label(row2, text=tr('status_enabled'), font=("Inter", scale_size(9, self.scale_factor)),
-                                    fg=self.colors['accent_green'], bg=self.colors['bg_light'])
-
-        def on_fake_tls_toggle():
-            if self.fake_tls_var.get():
-                self.fake_tls_text.config(text=tr('status_enabled'), fg=self.colors['accent_green'])
-            else:
-                self.fake_tls_text.config(text=tr('status_disabled'), fg=self.colors['text_secondary'])
-
-        self.fake_tls_switch = tk.Checkbutton(
-            row2,
-            variable=self.fake_tls_var,
-            command=on_fake_tls_toggle,
-            bg=self.colors['bg_light'],
-            activebackground=self.colors['bg_light'],
-            selectcolor=self.colors['bg_light'],
-            relief=tk.FLAT,
-            highlightthickness=0
-        )
-        self.fake_tls_switch.pack(side=tk.LEFT, padx=(scale_size(5, self.scale_factor), 0))
-        self.fake_tls_text.pack(side=tk.LEFT, padx=(scale_size(5, self.scale_factor), 0))
-        
-        row3 = tk.Frame(inner, bg=self.colors['bg_light'])
-        row3.pack(fill=tk.X, pady=(0, scale_size(10, self.scale_factor)))
-        
-        tk.Label(row3, text=tr('main_page_tg_proxy_domain'),
-         font=("Inter", scale_font(9, self.scale_factor)),
-         fg=self.colors['text_secondary'], bg=self.colors['bg_light'],
-         width=scale_size(8, self.scale_factor), anchor='w').pack(side=tk.LEFT)
-        
-        self.tg_domain_entry = tk.Entry(row3, font=("Inter", scale_font(10, self.scale_factor, softness=0.2)),
-                                        bg=self.colors['bg_light'], fg=self.colors['text_primary'],
-                                        relief=tk.FLAT, highlightthickness=1,
-                                        highlightcolor=self.colors['accent'],
-                                        highlightbackground=self.colors['separator'])
-        self.tg_domain_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(scale_size(5, self.scale_factor), 0), ipady=scale_size(4, self.scale_factor))
-        self.tg_domain_entry.insert(0, "www.google.com")
-        
-        apply_btn = RoundedButton(
-            inner,
-            text=tr('button_apply'),
-            command=self.save_tg_proxy_settings,
-            width=scale_size(200, self.scale_factor), height=scale_font(32, self.scale_factor),
-            bg=self.colors['accent'],
-            fg=self.colors['button_text_hover'],
-            hover_fg=self.colors['button_text_hover'],
-            font=("Inter", scale_font(10, self.scale_factor, softness=0.2)),
-            corner_radius=scale_size(8, self.scale_factor),
-            hover_color=self.colors['accent'],
-            theme_name=self.app.current_theme
-        )
-        apply_btn.pack(pady=(scale_size(5, self.scale_factor), 5))
-
-        copy_secret_btn = RoundedButton(
-            inner,
-            text=tr('tg_copy_secret'),
-            command=self.copy_current_link,
-            width=scale_size(200, self.scale_factor), height=scale_font(32, self.scale_factor),
-            bg=self.colors['button_bg'],
-            fg=self.colors['button_text'],
-            hover_fg=self.colors['button_text_hover'],
-            font=("Inter", scale_font(10, self.scale_factor, softness=0.2)),
-            corner_radius=scale_size(8, self.scale_factor),
-            hover_color=self.colors['accent'],
-            theme_name=self.app.current_theme
-        )
-        copy_secret_btn.pack(pady=(scale_size(5, self.scale_factor), 5))
 
     def copy_current_link(self):
         secret = getattr(self.app, '_tg_secret', None)
@@ -389,7 +331,6 @@ class MainPage:
         icons = [
             ("tg.png", "https://t.me/zapret_launcher"),
             ("star.png", "https://github.com/avaxngard/zapret-launcher")
-            #("star2.png", "https://gitlab.com/tweenkrage/zapret-launcher")
         ]
         
         for icon_file, url in icons:
@@ -405,7 +346,7 @@ class MainPage:
                 
                 photo = ImageTk.PhotoImage(img)
                 
-                btn = tk.Label(self.icons_frame, image=photo, bg=self.colors['bg_dark'], cursor="hand2")
+                btn = ctk.CTkLabel(self.icons_frame, image=photo, text="", fg_color="transparent", cursor="hand2")
                 btn.image = photo
                 btn.url = url
                 
