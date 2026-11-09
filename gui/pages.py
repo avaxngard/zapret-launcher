@@ -10,10 +10,10 @@ import tkinter as tk
 from .page.main_page import MainPage
 from .page.service_page import ServicePage
 from .page.lists_page import ListsPage
-from .page.traffic_page import TrafficPage
 from .page.hosts_page import HostsPage
 from .page.logs_page import LogsPage
 from .page.settings_page import SettingsPage
+#from .page.schedule_page import SchedulePage
 from .page.stats_page import StatsPage
 
 class Pages:
@@ -34,9 +34,6 @@ class Pages:
         
         self.lists_page_obj = ListsPage(app.content_panel, app)
         self.lists_page = self.lists_page_obj.get_frame()
-        
-        self.traffic_page_obj = TrafficPage(app.content_panel, app)
-        self.traffic_page = self.traffic_page_obj.get_frame()
 
         self.hosts_page_obj = HostsPage(app.content_panel, app, app.dialogs)
         self.hosts_page = self.hosts_page_obj.get_frame()
@@ -47,6 +44,9 @@ class Pages:
         self.settings_page_obj = SettingsPage(app.content_panel, app)
         self.settings_page = self.settings_page_obj.get_frame()
 
+        #self.schedule_page_obj = SchedulePage(app.content_panel, app)
+        #self.schedule_page = self.schedule_page_obj.get_frame()
+
         self.stats_page_obj = StatsPage(app.content_panel, app)
         self.stats_page = self.stats_page_obj.get_frame()
         
@@ -54,10 +54,10 @@ class Pages:
             "main": self.main_page,
             "service": self.service_page,
             "lists": self.lists_page,
-            "traffic": self.traffic_page,
             "hosts": self.hosts_page,
             "logs": self.logs_page,
             "settings": self.settings_page,
+            #"schedule": self.schedule_page,
             "stats": self.stats_page
         }
     
@@ -72,6 +72,7 @@ class Pages:
             if page_name in self.pages:
                 self.pages[page_name].place(x=0, y=0, relwidth=1, relheight=1)
                 self.current_page = page_name
+                self.pages[page_name].update_idletasks()
         except Exception as e:
             try:
                 self.app.log_event("info", f"show_page({page_name}): {e}")
@@ -109,25 +110,30 @@ class Pages:
         if alpha <= 1.0:
             try:
                 overlay.attributes('-alpha', alpha)
-                self.app.root.after(10, lambda: self._animate_fade_out(overlay, page_name, alpha + 0.05))
+                self.app.root.after(10, lambda: self._animate_fade_out(overlay, page_name, alpha + 0.08))
             except Exception as e:
-                if alpha <= 0.05:
+                if alpha <= 0.08:
                     try:
                         self.app.log_event("info", f"_animate_fade_out start: {e}")
                     except Exception:
                         pass
                 self._finish_animation()
         else:
+            try:
+                overlay.attributes('-alpha', 1.0)
+            except Exception:
+                pass
+            
             self.show_page(page_name)
-            self._animate_fade_in(overlay)
+            self.app.root.after(15, lambda: self._animate_fade_in(overlay))
 
     def _animate_fade_in(self, overlay, alpha=1.0):
         if alpha >= 0.0:
             try:
                 overlay.attributes('-alpha', alpha)
-                self.app.root.after(10, lambda: self._animate_fade_in(overlay, alpha - 0.05))
+                self.app.root.after(10, lambda: self._animate_fade_in(overlay, alpha - 0.08))
             except Exception as e:
-                if alpha >= 0.95:
+                if alpha >= 0.92:
                     try:
                         self.app.log_event("info", f"_animate_fade_in start: {e}")
                     except Exception:
