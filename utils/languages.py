@@ -227,6 +227,7 @@ class Languages:
             'settings_update_source_desc': 'Выберите сервис загрузки обновлений Zapret Launcher',
             'settings_update_source_main': 'Сайт (Основной)',
             'settings_update_source_github': 'GitHub (Зеркало)',
+            'reinstall_success': 'Ядро Zapret успешно переустановлено\nЛаунчер будет перезапущен для применения изменений',
             
             'mode_standard': 'Стандартный',
             'mode_standard_desc': 'Обход блокировок через zapret',
@@ -344,9 +345,9 @@ class Languages:
             'restart_zapret': 'Перезапустите zapret',
             'reinstall_launcher': 'Переустановите лаунчер',
             
-            'main_page_tg_proxy_host': 'ХОСТ:',
-            'main_page_tg_proxy_port': 'ПОРТ:',
-            'main_page_tg_proxy_domain': 'ДОМЕН:',
+            'main_page_tg_proxy_host': 'ХОСТ',
+            'main_page_tg_proxy_port': 'ПОРТ',
+            'main_page_tg_proxy_domain': 'ДОМЕН',
             
             'autostart_enabled': 'Автозапуск включен',
             'autostart_disabled': 'Автозапуск отключен',
@@ -375,6 +376,8 @@ class Languages:
             'menu_settings_folder': 'Открыть папку с лаунчером',
             'menu_help': 'Помощь',
             'menu_help_changelog': 'Список изменений',
+            'menu_help_donate': 'Пожертвовать',
+            'menu_help_github': 'Исходный код',
             'menu_help_report': 'Сообщить об ошибке',
             'menu_help_license': 'Условия использования',
             'menu_help_security': 'Политика безопасности',
@@ -625,6 +628,7 @@ class Languages:
             'settings_update_source_desc': 'Select a download service for Zapret Launcher updates',
             'settings_update_source_main': 'Website (Main)',
             'settings_update_source_github': 'GitHub (Mirror)',
+            'reinstall_success': 'zapret core has been successfully reinstalled\nLauncher will now restart to apply the changes',
                         
             'mode_standard': 'Standard',
             'mode_standard_desc': 'Bypass blocks via zapret',
@@ -664,7 +668,7 @@ class Languages:
             'tg_generate_secret': 'Generate secret-key',
             'tg_instruction_settings_show': 'Show instruction',
             'tg_instruction_settings_hide': 'Hide instruction',
-            'tg_copy_secret': 'Copy the secret-key',
+            'tg_copy_secret': 'Copy secret-key',
             'tg_step1': 'Open Telegram and go to',
             'tg_step1_desc': 'Settings - Advanced Settings',
             'tg_step2': 'In the "Connection Type" section select:',
@@ -742,9 +746,9 @@ class Languages:
             'restart_zapret': 'Restart the zapret',
             'reinstall_launcher': 'Reinstall the  launcher',
 
-            'main_page_tg_proxy_host': 'Host',
-            'main_page_tg_proxy_port': 'Port',
-            'main_page_tg_proxy_domain': 'Domain',
+            'main_page_tg_proxy_host': 'HOST',
+            'main_page_tg_proxy_port': 'PORT',
+            'main_page_tg_proxy_domain': 'DOMAIN',
             
             'autostart_enabled': 'Autostart enabled',
             'autostart_disabled': 'Autostart disabled',
@@ -773,6 +777,8 @@ class Languages:
             'menu_settings_folder': 'Open launcher folder',
             'menu_help': 'Help',
             'menu_help_changelog': 'Release notes',
+            'menu_help_donate': 'Donate',
+            'menu_help_github': 'Source code',
             'menu_help_report': 'Report a bug',
             'menu_help_license': 'Terms of use',
             'menu_help_security': 'Security Policy',
