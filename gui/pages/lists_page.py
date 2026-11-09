@@ -84,8 +84,7 @@ class ListsPage:
         ).pack(anchor='w', pady=(0, scale_size(20, self.scale_factor)), padx=padx)
 
         self.grid_frame = tk.Frame(self.frame, bg=self.colors['bg_dark'])
-        self.grid_frame.pack(fill=tk.BOTH, expand=True,
-                             padx=padx,
+        self.grid_frame.pack(fill=tk.BOTH, expand=True, padx=padx,
                              pady=(pady, scale_size(20, self.scale_factor)))
         self.grid_frame.columnconfigure(0, weight=1, uniform="cards")
         self.grid_frame.columnconfigure(1, weight=1, uniform="cards")
