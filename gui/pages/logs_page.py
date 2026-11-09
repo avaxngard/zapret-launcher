@@ -7,8 +7,7 @@
 # Distributed WITHOUT ANY WARRANTY.
 
 import tkinter as tk
-from tkinter import ttk
-from gui.widgets import RoundedButton
+import customtkinter as ctk
 from utils.languages import tr
 from utils.scaling import scale_size
 from config import APPDATA_DIR
@@ -24,13 +23,13 @@ class LogsPage:
         self.update_interval = 1000
         self._update_job = None
 
-        font_size_title = scale_size(20, self.scale_factor)
-        font_size_desc = scale_size(10, self.scale_factor)
+        font_size_title = scale_size(23, self.scale_factor)
+        font_size_desc = scale_size(13, self.scale_factor)
         font_size_text = scale_size(10, self.scale_factor)
-        font_size_btn = scale_size(10, self.scale_factor)
+        font_size_btn = scale_size(12, self.scale_factor)
         btn_width = scale_size(120, self.scale_factor)
         btn_height = scale_size(32, self.scale_factor)
-        btn_radius = scale_size(8, self.scale_factor)
+        btn_radius = scale_size(6, self.scale_factor)
         padx = scale_size(30, self.scale_factor)
         pady = scale_size(10, self.scale_factor)
 
@@ -38,61 +37,58 @@ class LogsPage:
         self.old_scroll_position = 1.0
         self.last_log_count = 0
         self.auto_scroll_enabled = True
+        self._delayed_update = None
 
-        self.frame = tk.Frame(parent, bg=self.colors['bg_dark'])
+        self.frame = ctk.CTkFrame(parent, fg_color=self.colors['bg_dark'], corner_radius=0)
         
-        title_label = tk.Label(
+        title_label = ctk.CTkLabel(
             self.frame,
             text=tr('logs_title'),
             font=("Inter", font_size_title, "bold"),
-            fg=self.colors['text_primary'],
-            bg=self.colors['bg_dark']
+            text_color=self.colors['text_primary']
         )
         title_label.pack(anchor='w', pady=(scale_size(30, self.scale_factor), 5), padx=padx)
         
-        desc_label = tk.Label(
+        desc_label = ctk.CTkLabel(
             self.frame,
             text=tr('logs_desc'),
             font=("Inter", font_size_desc),
-            fg=self.colors['text_secondary'],
-            bg=self.colors['bg_dark']
+            text_color=self.colors['text_secondary']
         )
         desc_label.pack(anchor='w', pady=(0, scale_size(20, self.scale_factor)), padx=padx)
         
-        control_frame = tk.Frame(self.frame, bg=self.colors['bg_dark'])
+        control_frame = ctk.CTkFrame(self.frame, fg_color=self.colors['bg_dark'], corner_radius=0)
         control_frame.pack(fill=tk.X, padx=padx, pady=(0, pady))
         
-        clear_btn = RoundedButton(
+        clear_btn = ctk.CTkButton(
             control_frame,
             text=tr('logs_clear'),
             command=self.clear_logs,
-            width=btn_width, height=btn_height,
-            bg=self.colors['button_bg'],
-            fg=self.colors['button_text'],
-            hover_fg=self.colors['button_text_hover'],
+            width=btn_width, 
+            height=btn_height,
+            fg_color=self.colors['button_bg'],
+            hover_color=self.colors['accent'],
+            text_color=self.colors['button_text'],
             font=("Inter", font_size_btn),
-            corner_radius=btn_radius,
-            hover_color=self.colors['accent'], 
-            theme_name=self.app.current_theme
+            corner_radius=btn_radius
         )
         clear_btn.pack(side=tk.RIGHT, padx=(5, 0))
         
-        refresh_btn = RoundedButton(
+        refresh_btn = ctk.CTkButton(
             control_frame,
             text=tr('logs_refresh'),
             command=self.refresh_logs,
-            width=btn_width, height=btn_height,
-            bg=self.colors['button_bg'],
-            fg=self.colors['button_text'],
-            hover_fg=self.colors['button_text_hover'],
+            width=btn_width, 
+            height=btn_height,
+            fg_color=self.colors['button_bg'],
+            hover_color=self.colors['accent'],
+            text_color=self.colors['button_text'],
             font=("Inter", font_size_btn),
-            corner_radius=btn_radius,
-            hover_color=self.colors['accent'], 
-            theme_name=self.app.current_theme
+            corner_radius=btn_radius
         )
         refresh_btn.pack(side=tk.RIGHT)
         
-        logs_container = tk.Frame(self.frame, bg=self.colors['bg_medium'])
+        logs_container = ctk.CTkFrame(self.frame, fg_color=self.colors['bg_medium'], corner_radius=0)
         logs_container.pack(fill=tk.BOTH, expand=True, padx=padx, pady=pady)
         
         self.logs_text = tk.Text(
@@ -112,10 +108,9 @@ class LogsPage:
             pady=scale_size(10, self.scale_factor)
         )
         
-        self.scrollbar = ttk.Scrollbar(
+        self.scrollbar = ctk.CTkScrollbar(
             logs_container,
-            command=self.logs_text.yview,
-            style="Custom.Vertical.TScrollbar"
+            command=self.logs_text.yview
         )
         self.logs_text.configure(yscrollcommand=self.scrollbar.set)
         
