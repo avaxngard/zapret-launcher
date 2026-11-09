@@ -221,13 +221,11 @@ class _CustomMessageBox:
 
         dialog = tk.Toplevel(top)
         
-        # --- СКРЫВАЕМ ОКНО И ДЕЛАЕМ ЕГО ПРОЗРАЧНЫМ ДО ОТРИСОВКИ ---
         dialog.withdraw()
         try:
             dialog.attributes('-alpha', 0.0)
         except Exception:
             pass
-        # ----------------------------------------------------------
 
         try:
             dialog.geometry(f"+{x}+{y}")
@@ -360,7 +358,7 @@ class _CustomMessageBox:
             if hwnd:
                 ctypes.windll.user32.SetWindowPos(
                     hwnd, 0, x, y, 0, 0,
-                    0x0001 | 0x0004 | 0x0010,  # SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE
+                    0x0001 | 0x0004 | 0x0010  # SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE
                 )
         except Exception:
             pass
@@ -369,7 +367,6 @@ class _CustomMessageBox:
         cls._set_header_color(dialog, colors)
         dialog.update_idletasks()
 
-        # --- АНИМАЦИЯ ПОЯВЛЕНИЯ (FADE IN) ---
         dialog.deiconify()
         dialog.update_idletasks()
         
@@ -406,7 +403,6 @@ class _CustomMessageBox:
                     pass
 
         dialog.after(10, fade_in)
-        # ------------------------------------
 
         try:
             top.wait_window(dialog)
