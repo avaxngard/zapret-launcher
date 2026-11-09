@@ -156,7 +156,7 @@ class ModernSystemTray:
             return (
                 f"Zapret Launcher\n"
                 f"{tr('mode')} {mode_text}\n"
-                f"———————————\n"
+                f"—————————————\n"
                 f"{stats['session_time_str']}\n"
                 f"{rtt_text}"
                 f"{stats['speed_down_str']} / {stats['speed_up_str']}\n"
