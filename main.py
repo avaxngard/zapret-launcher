@@ -1348,6 +1348,11 @@ class ZapretLauncher:
             self.root.after(500, self.dialogs.show_tg_proxy_instruction)
 
         self._connecting = False
+        
+        if hasattr(self, 'tray_icon') and self.tray_icon:
+            self.root.after(100, self.tray_icon.update_menu)
+            self.root.after(100, self.tray_icon.update_icon_state)
+            
         self.force_tray_menu_update()
         self.update_tray_icon_state()
 
@@ -2644,8 +2649,8 @@ class ZapretLauncher:
     def start_update_checker(self):
         self.stop_update_checker()
         self._schedule_update_check()
-        if hasattr(self, 'tray_icon') and self.tray_icon:
-            self.tray_icon.start_update_checker()
+            
+        self.root.after(3000, self._initial_update_check)
 
     def stop_update_checker(self):
         if hasattr(self, 'update_check_timer_id') and self.update_check_timer_id:
@@ -2662,6 +2667,24 @@ class ZapretLauncher:
 
         self.log_event("info", f"Next update check in {self._format_interval_ms(interval)} " f"(at {next_check_str})")
         self.update_check_timer_id = self.root.after(interval, self._do_update_check)
+
+    def _initial_update_check(self):
+        if not getattr(self, '_auto_update_enabled', True):
+            return
+            
+        self.log_event("info", "Initial update check started")
+        
+        def check_thread():
+            try:
+                has_update = self.check_for_updates()
+                if has_update:
+                    self.log_event("info", "Initial update check: update available")
+                else:
+                    self.log_event("info", "Initial update check: no updates")
+            except Exception as e:
+                self.log_event("info", f"Initial update check failed: {e}")
+                
+        threading.Thread(target=check_thread, daemon=True).start()
 
     def _do_update_check(self):
         self.log_event("info", "Update check started")
