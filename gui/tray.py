@@ -13,12 +13,8 @@ from utils.messagebox import messagebox
 import subprocess
 from utils.languages import tr
 import tkinter as tk
-import urllib.request
-import threading
 import re
-from update_source import get_source
-from utils.version import compare_builds, compare_zapret_versions
-from config import CURRENT_BUILD, ICON_PATH, CHECK_UPDATES_INTERVAL
+from config import ICON_PATH
 
 class ModernSystemTray:
     def __init__(self, app):
@@ -26,9 +22,6 @@ class ModernSystemTray:
         self.icon = None
         self.current_rtt = None
         self.last_rtt_update = 0
-        self.update_available = False
-        self.zapret_update_available = False
-        self.update_check_timer_id = None
         self.colors = {
             'bg_dark': '#1E1E24',
             'bg_medium': '#2D2D35',
@@ -258,15 +251,6 @@ class ModernSystemTray:
             connect_item,
         ]
         
-        #if self.app.is_connected:
-        #    menu_items.append(
-        #        pystray.MenuItem(
-        #            tr('menu_change_mode'),
-        #            self.change_mode,
-        #            enabled=True
-        #        )
-        #    )
-        
         menu_items.extend([
             pystray.MenuItem(
                 tr('menu_settings'),
@@ -301,24 +285,6 @@ class ModernSystemTray:
                 self.get_tooltip_text(),
                 menu
             )
-        
-        if self.icon:
-            self.icon.menu = menu
-            if image:
-                self.icon.icon = image
-            self.icon.title = self.get_tooltip_text()
-        else:
-            if image is None:
-                image = Image.new('RGBA', (64, 64), color=self.colors['accent'])
-                draw = ImageDraw.Draw(image)
-                draw.text((20, 20), "Z", fill='white')
-            
-            self.icon = pystray.Icon(
-                "zapret_launcher",
-                image,
-                self.get_tooltip_text(),
-                menu
-            )
 
     def open_logs(self):
         try:
@@ -333,86 +299,6 @@ class ModernSystemTray:
                 self.icon.title = self.get_tooltip_text()
             except:
                 pass
-
-    def check_for_updates(self):
-        if not getattr(self.app, '_auto_update_enabled', True):
-            if self.update_available or self.zapret_update_available:
-                self.update_available = False
-                self.zapret_update_available = False
-                self.update_icon_state()
-            return
-        
-        try:
-            src = get_source(getattr(self.app, '_update_source', 'main'))
-
-            req = urllib.request.Request(src.build_number_url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
-            with urllib.request.urlopen(req, timeout=10) as response:
-                latest_build = response.read().decode('utf-8').strip()
-            
-            current_build = CURRENT_BUILD
-            need_launcher_update = compare_builds(current_build, latest_build)
-            
-            if need_launcher_update:
-                if not self.update_available:
-                    self.update_available = True
-                    self.zapret_update_available = False
-                    self.update_icon_state()
-                return
-            
-            try:
-                req_zapret = urllib.request.Request(src.zapret_version_url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
-                with urllib.request.urlopen(req_zapret, timeout=10) as response:
-                    latest_zapret = response.read().decode('utf-8').strip()
-                
-                current_zapret = self.app.get_current_zapret_version()
-                need_zapret_update = compare_zapret_versions(current_zapret, latest_zapret)
-                
-                if need_zapret_update:
-                    if not self.zapret_update_available:
-                        self.zapret_update_available = True
-                        self.update_available = False
-                        self.update_icon_state()
-                else:
-                    if self.zapret_update_available or self.update_available:
-                        self.zapret_update_available = False
-                        self.update_available = False
-                        self.update_icon_state()
-            except Exception:
-                if self.zapret_update_available or self.update_available:
-                    self.zapret_update_available = False
-                    self.update_available = False
-                    self.update_icon_state()
-                    
-        except Exception:
-            pass
-
-    def _compare_builds(self, current, latest):
-        try:
-            current_int = int(current)
-            latest_int = int(latest)
-            return latest_int > current_int
-        except ValueError:
-            return str(latest) > str(current)
-
-    def start_update_checker(self):
-        self.stop_update_checker()
-        self._schedule_update_check()
-
-    def stop_update_checker(self):
-        if self.update_check_timer_id:
-            try:
-                self.app.root.after_cancel(self.update_check_timer_id)
-            except:
-                pass
-            self.update_check_timer_id = None
-
-    def _schedule_update_check(self):
-        interval = CHECK_UPDATES_INTERVAL
-        self.update_check_timer_id = self.app.root.after(interval, self._do_update_check)
-
-    def _do_update_check(self):
-        threading.Thread(target=self.check_for_updates, daemon=True).start()
-        self._schedule_update_check()
 
     def update_icon_state(self):
         try:
@@ -453,43 +339,20 @@ class ModernSystemTray:
                 indicator_x = 64 - indicator_size - 4
                 indicator_y = 64 - indicator_size - 4
                 
-                auto_update_enabled = getattr(self.app, '_auto_update_enabled', True)
-                
-                if auto_update_enabled and hasattr(self, 'update_available') and self.update_available:
-                    draw.ellipse(
-                        [indicator_x, indicator_y, indicator_x + indicator_size, indicator_y + indicator_size],
-                        fill=(30, 144, 255)
-                    )
-                    draw.ellipse(
-                        [indicator_x - 1, indicator_y - 1, indicator_x + indicator_size + 1, indicator_y + indicator_size + 1],
-                        outline=(255, 255, 255, 255),
-                        width=1
-                    )
-                elif auto_update_enabled and hasattr(self, 'zapret_update_available') and self.zapret_update_available:
-                    draw.ellipse(
-                        [indicator_x, indicator_y, indicator_x + indicator_size, indicator_y + indicator_size],
-                        fill=(30, 144, 255)
-                    )
-                    draw.ellipse(
-                        [indicator_x - 1, indicator_y - 1, indicator_x + indicator_size + 1, indicator_y + indicator_size + 1],
-                        outline=(255, 255, 255, 255),
-                        width=1
-                    )
+                if is_connected:
+                    indicator_color = self._hex_to_rgb(self.colors['accent_green'])
                 else:
-                    if is_connected:
-                        indicator_color = self._hex_to_rgb(self.colors['accent_green'])
-                    else:
-                        indicator_color = self._hex_to_rgb(self.colors['accent_red'])
-                    
-                    draw.ellipse(
-                        [indicator_x, indicator_y, indicator_x + indicator_size, indicator_y + indicator_size],
-                        fill=indicator_color
-                    )
-                    draw.ellipse(
-                        [indicator_x - 1, indicator_y - 1, indicator_x + indicator_size + 1, indicator_y + indicator_size + 1],
-                        outline=(255, 255, 255, 255),
-                        width=1
-                    )
+                    indicator_color = self._hex_to_rgb(self.colors['accent_red'])
+                
+                draw.ellipse(
+                    [indicator_x, indicator_y, indicator_x + indicator_size, indicator_y + indicator_size],
+                    fill=indicator_color
+                )
+                draw.ellipse(
+                    [indicator_x - 1, indicator_y - 1, indicator_x + indicator_size + 1, indicator_y + indicator_size + 1],
+                    outline=(255, 255, 255, 255),
+                    width=1
+                )
                 
                 self.icon.icon = image
         except Exception:
@@ -624,5 +487,4 @@ class ModernSystemTray:
         return None
 
     def run(self):
-        self.start_update_checker()
         self.icon.run()
