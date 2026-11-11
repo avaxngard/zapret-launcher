@@ -14,7 +14,7 @@ import subprocess
 from utils.languages import tr
 import tkinter as tk
 import re
-from config import ICON_PATH
+from config import ICON_PATH, CONFIG_FILE
 
 class ModernSystemTray:
     def __init__(self, app):
@@ -209,6 +209,11 @@ class ModernSystemTray:
                 tr('menu_settings_folder'),
                 self.app.open_appdata_folder,
                 enabled=True
+            ),
+            pystray.MenuItem(
+                tr('menu_settings_open_config'),
+                self.open_config,
+                enabled=True
             )
         )
         
@@ -292,6 +297,15 @@ class ModernSystemTray:
             self.app.root.after(500, lambda: self.app.show_logs_page())
         except Exception:
             pass
+
+    def open_config(self):
+        try:
+            if CONFIG_FILE.exists():
+                subprocess.Popen(['notepad.exe', str(CONFIG_FILE)])
+            else:
+                messagebox.showwarning(tr('error'), tr('config_not_found'))
+        except Exception as e:
+            messagebox.showerror(tr('error'), f"{tr('error')}: {e}")
 
     def update_tooltip(self):
         if self.icon:
