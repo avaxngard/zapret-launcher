@@ -7,7 +7,6 @@
 # Distributed WITHOUT ANY WARRANTY.
 
 import tkinter as tk
-import customtkinter as ctk
 import pywinstyles
 from tkinter import ttk
 from gui.pages import Pages
@@ -262,6 +261,7 @@ class ZapretLauncher:
         self.mode_label = None
         self.connect_btn = None
         self._connecting = False
+        self._switching_strategy = False
         self.main_status = None
         self.stats_frame = None
         self.stats_time_label = None
@@ -281,6 +281,8 @@ class ZapretLauncher:
 
         self._tg_instruction = False
         self._tg_secret = None
+
+        self._tray_notification_shown = False
 
         self._show_vpn_detection = False
         self._hide_duplicates_warning = False
@@ -373,7 +375,7 @@ class ZapretLauncher:
         self.root.after(500, self.check_lists_for_duplicates)
         self.root.after(2000, self.check_initial_status)
         saved_page = getattr(self, '_initial_page', 'main')
-        if saved_page not in ['main', 'service', 'lists', 'schedule' 'stats', 'hosts', 'logs', 'settings']:
+        if saved_page not in ['main', 'service', 'lists', 'stats', 'hosts', 'logs', 'settings']:
             saved_page = 'main'
         
         self.pages.show_page(saved_page)
@@ -413,6 +415,7 @@ class ZapretLauncher:
                     pass
 
         self.root.after(100, fade_in)
+        self.root.after(1500, self._show_tray_notification)
 
     def on_window_state_change(self, event=None):
         if self._updating:
@@ -557,6 +560,16 @@ class ZapretLauncher:
         self.update_ui_colors()
         self._update_window_title_color()
         self.update_all_window_headers()
+
+        if hasattr(self, 'left_status') and self.left_status:
+            try:
+                is_sakura = (self.current_theme == 'Sakura')
+                self.left_status.config(
+                    text="✿" if is_sakura else "●",
+                    font=("Inter", scale_size(14 if is_sakura else 12, self.scale_factor))
+                )
+            except Exception:
+                pass
         
         if hasattr(self, 'pages') and self.pages:
             self.pages.colors = self.colors
@@ -595,6 +608,8 @@ class ZapretLauncher:
                 header_color = "#1E1B2E"
             elif self.current_theme == 'Old':
                 header_color = "#0F172A"
+            elif self.current_theme == 'Sakura':
+                header_color = "#1F1519"
             elif self.current_theme == 'Orange':
                 header_color = "#1A120B"
             elif self.current_theme == 'Contrast':
@@ -871,10 +886,11 @@ class ZapretLauncher:
         self.credit_frame = tk.Frame(left_panel, bg=self.colors['bg_medium'])
         self.credit_frame.pack(side=tk.BOTTOM, pady=(0, scale_size(15, self.scale_factor)), fill=tk.X)
 
+        status_char = "✿" if self.current_theme == 'Sakura' else "●"
         self.left_status = tk.Label(
             self.credit_frame,
-            text="●",
-            font=("Inter", scale_size(12, self.scale_factor)),
+            text=status_char,
+            font=("Inter", scale_size(14 if self.current_theme == 'Sakura' else 12, self.scale_factor)),
             fg=self.colors['text_secondary'],
             bg=self.colors['bg_medium']
         )
@@ -1650,12 +1666,17 @@ class ZapretLauncher:
                 except:
                     pass
 
-            notif_width = scale_size(300, self.scale_factor)
-            notif_height = scale_size(40, self.scale_factor)
-            notif_font_size = scale_size(12, self.scale_factor)
+            notif_width = scale_size(220, self.scale_factor)
+            notif_height = scale_size(45, self.scale_factor)
+            notif_font_size = scale_size(10, self.scale_factor)
+            corner_r = scale_size(10, self.scale_factor)
             
             notification = tk.Toplevel(self.root)
             notification.overrideredirect(True)
+            try:
+                notification.attributes('-transparentcolor', self.colors['bg_medium'])
+            except:
+                pass
             notification.configure(bg=self.colors['bg_medium']) 
             notification._is_alive = True
 
@@ -1739,25 +1760,52 @@ class ZapretLauncher:
             x = self.root.winfo_x() + self.root.winfo_width() - notif_width - 30
             y = self.root.winfo_y() + 50
             notification.geometry(f"{notif_width}x{notif_height}+{x}+{y}")
-            
-            inner = ctk.CTkFrame(
-                notification,
-                fg_color=self.colors['bg_medium'],
-                border_width=1,
-                border_color=self.colors['accent'],
-                corner_radius=scale_size(8, self.scale_factor)
+
+            canvas = tk.Canvas(
+                notification, 
+                width=notif_width, 
+                height=notif_height, 
+                bg=self.colors['bg_medium'],
+                highlightthickness=0, 
+                bd=0
             )
-            inner.pack(fill=tk.BOTH, expand=True)
-            
-            label = ctk.CTkLabel(
-                inner, 
+            canvas.pack(fill=tk.BOTH, expand=True)
+
+            def create_rounded_rect(canvas, x1, y1, x2, y2, r, fill, outline, width=1):
+                points = [
+                    x1+r, y1,
+                    x2-r, y1,
+                    x2, y1,
+                    x2, y1+r,
+                    x2, y2-r,
+                    x2, y2,
+                    x2-r, y2,
+                    x1+r, y2,
+                    x1, y2,
+                    x1, y2-r,
+                    x1, y1+r,
+                    x1, y1
+                ]
+                return canvas.create_polygon(points, smooth=True, fill=fill, outline=outline, width=width)
+
+            create_rounded_rect(
+                canvas, 
+                1, 1, notif_width - 1, notif_height - 1, 
+                corner_r, 
+                self.colors['bg_medium'], 
+                self.colors['accent'], 
+                width=1
+            )
+
+            canvas.create_text(
+                notif_width / 2, notif_height / 2, 
                 text=message, 
-                font=("Inter", notif_font_size),
-                text_color=self.colors['text_primary'],
-                padx=12,
-                pady=8
+                fill=self.colors['text_primary'], 
+                font=("Inter", notif_font_size), 
+                anchor='center', 
+                justify='center',
+                width=notif_width - scale_size(30, self.scale_factor)
             )
-            label.pack(fill=tk.BOTH, expand=True, padx=2, pady=2) 
             
             notification.lift()
             notification.attributes('-alpha', 0.0)
@@ -1797,8 +1845,7 @@ class ZapretLauncher:
                 cleanup()
             
             notification.bind("<Button-1>", on_notification_click)
-            inner.bind("<Button-1>", on_notification_click)
-            label.bind("<Button-1>", on_notification_click)
+            canvas.bind("<Button-1>", on_notification_click)
             
         except Exception as e:
             self.log_event("info", f"show_notification: {e}")
@@ -1904,6 +1951,15 @@ class ZapretLauncher:
     def open_website(self):
         webbrowser.open("https://zapret-launcher.ru")
 
+    def _show_tray_notification(self):
+        if getattr(self, '_tray_notification_shown', False):
+            return
+            
+        result = messagebox.showinfo(tr('information_desc'), tr('tray_notification_message'))
+        
+        self._tray_notification_shown = True
+        self.save_settings()
+
     def _ask_start_tg_proxy_after_detect(self):
         if getattr(self, 'tg_proxy', None) and self.tg_proxy.is_running:
             return
@@ -1993,7 +2049,7 @@ class ZapretLauncher:
                     self.connect_btn.update_colors('#3D3D45', '#FFFFFF', self.colors['accent'])
                 else:
                     self.connect_btn.set_text(tr('button_connect'))
-                    self.connect_btn.update_colors(self.colors['accent'], '#FFFFFF', '#3D3D45')
+                    self.connect_btn.update_colors(self.colors['accent'], '#FFFFFF', self.colors['accent'])
         except (tk.TclError, AttributeError, RuntimeError):
             pass
         
@@ -2048,6 +2104,103 @@ class ZapretLauncher:
                 self.root.after(0, lambda: self._on_connect_failed(msg))
         
         threading.Thread(target=start_thread, daemon=True).start()
+
+    def open_strategy_switcher(self):
+        if not self.is_connected:
+            return
+        
+        if self._connecting or self._disconnecting:
+            return
+        
+        if self.zapret.is_winws_running():
+            self._pending_mode = {
+                "name": self._current_mode_key if self._current_mode_key != "Telegram Proxy" else tr('mode_standard'),
+                "key": self._current_mode_key
+            }
+            self._pending_mode["_is_switch"] = True
+            self.dialogs.show_strategy_selector(self._pending_mode["name"])
+
+    def _on_strategy_switched(self, new_strategy):
+        self._connecting = True
+        self._switching_strategy = True
+        self.update_status(tr('status_switching'), self.colors['accent'])
+        self.force_tray_menu_update()
+        
+        if hasattr(self, 'connect_btn') and self.connect_btn:
+            try:
+                self.connect_btn.set_enabled(False)
+            except Exception:
+                pass
+        
+        def switch_thread():
+            try:
+                self.zapret.stop_current_strategy()
+                time.sleep(0.5)
+                
+                success, msg = self.zapret.run_strategy(new_strategy)
+                
+                if success:
+                    self.current_strategy = new_strategy
+                    self.save_settings()
+                    self.root.after(0, lambda: self._on_strategy_switch_success(new_strategy))
+                else:
+                    self.root.after(0, lambda: self._on_strategy_switch_failed(msg))
+                    
+            except Exception as e:
+                self.root.after(0, lambda: self._on_strategy_switch_failed(str(e)))
+                
+        threading.Thread(target=switch_thread, daemon=True).start()
+
+    def _on_strategy_switch_success(self, new_strategy):
+        self._switching_strategy = False
+        self.update_status(tr('status_connected'), self.colors['accent_green'])
+        
+        if hasattr(self, 'mode_label') and self.mode_label:
+            strategy_display = self.zapret.get_strategy_display_name(new_strategy)
+            
+            if self._current_mode_key == "Combined":
+                display_text = f"{tr('mode_zapret_tgproxy')} ({strategy_display})"
+            else:
+                display_text = f"{tr('mode_standard')} ({strategy_display})"
+                
+            try:
+                self.mode_label.configure(text=display_text, text_color=self.colors['accent_green'])
+            except Exception:
+                self.mode_label.configure(text=display_text)
+        
+        self._connecting = False
+        self.update_ui_state() 
+        if hasattr(self, 'connect_btn') and self.connect_btn:
+            try:
+                self.connect_btn.set_enabled(True)
+            except Exception:
+                pass
+
+        self.save_settings()
+        self.update_stats_display()
+        self.update_tray_icon_state()
+        self.force_tray_menu_update()
+        
+        self.log_event("info", f"Strategy switched to {new_strategy}")
+        
+        if hasattr(self, 'tray_icon') and self.tray_icon:
+            self.tray_icon.update_tooltip()
+
+    def _on_strategy_switch_failed(self, error_msg):
+        self._switching_strategy = False
+        self.update_status(tr('status_error'), self.colors['accent_red'])
+        messagebox.showerror(tr('error_startup'), f"{tr('error_startup')}: {error_msg}")
+        
+        self._connecting = False
+        if hasattr(self, 'connect_btn') and self.connect_btn:
+            try:
+                self.connect_btn.set_enabled(True)
+            except Exception:
+                pass
+                
+        if self.is_connected:
+            self.update_status(tr('status_connected'), self.colors['accent_green'])
+        self.force_tray_menu_update()
 
     def _on_connect_success(self, strategy, msg):
         self.update_status(f"{tr('status_connected')}", self.colors['accent_green'])
@@ -2191,7 +2344,7 @@ class ZapretLauncher:
                         if self.connect_btn.winfo_exists():
                             self.connect_btn.set_enabled(True)
                             self.connect_btn.set_text(tr('button_connect'))
-                            self.connect_btn.update_colors(self.colors['accent'], '#FFFFFF', '#3D3D45')
+                            self.connect_btn.update_colors(self.colors['accent'], '#FFFFFF', self.colors['accent'])
                 except Exception as e:
                     self.log_event("info", f"finish_disconnect update_button: {e}")
                         
@@ -2293,6 +2446,8 @@ class ZapretLauncher:
                     self.tg_fake_tls = data.get('tg_fake_tls', TG_FAKE_TLS)
                     self.tg_fake_tls_domain = data.get('tg_fake_tls_domain', TG_FAKE_TLS_DOMAIN)
 
+                    self._tray_notification_shown = data.get('tray_notification_shown', False)
+
                     self._show_vpn_detection = data.get('show_vpn_detection', False)
                     self._hide_duplicates_warning = data.get('hide_duplicates_warning', False)
 
@@ -2345,6 +2500,7 @@ class ZapretLauncher:
                 'current_strategy': self.current_strategy,
                 'autostart_enabled': self.check_autostart_status(),
                 'tg_instruction': getattr(self, '_tg_instruction', False),
+                'tray_notification_shown': getattr(self, '_tray_notification_shown', False),
                 'show_vpn_detection': getattr(self, '_show_vpn_detection', False),
                 'hide_duplicates_warning': getattr(self, '_hide_duplicates_warning', False),
                 'auto_update_enabled': getattr(self, '_auto_update_enabled', True),
@@ -2623,6 +2779,7 @@ class ZapretLauncher:
         self.log_event("connect", "", mode_name)
 
     def _on_combined_start_failed(self, error_msg):
+        self._connecting = False
         self.update_status(tr('status_error'), self.colors['accent_red'])
         messagebox.showerror(tr('error_startup'), f"{tr('error_startup')}: {error_msg}")
         if hasattr(self, 'connect_btn') and self.connect_btn:
@@ -2630,6 +2787,7 @@ class ZapretLauncher:
 
         if hasattr(self, 'tg_proxy') and self.tg_proxy:
             self.tg_proxy.stop()
+        self.force_tray_menu_update()
 
     def _format_interval_ms(self, ms: int) -> str:
         total_seconds = ms // 1000
