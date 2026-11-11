@@ -304,9 +304,8 @@ class Dialogs:
         )
         select_btn[0].normal_color = self.colors['accent']
         select_btn[0].hover_color = self.colors['accent']
-        select_btn[0].set_enabled(True)
-        select_btn[0].config(cursor="hand2")
         select_btn[0].pack(side=tk.RIGHT, padx=(scale_size(10, self.scale_factor), 0))
+        update_select_button()
         
         cancel_btn = RoundedButton(
             bottom_frame,
@@ -364,7 +363,6 @@ class Dialogs:
                     dialog.destroy()
             except Exception:
                 pass
-            self.app.dialogs.show_mode_selector()
 
         dialog.protocol("WM_DELETE_WINDOW", on_close)
 
@@ -1020,8 +1018,11 @@ class Dialogs:
             set_last_used(name)
 
             mode = self.app._pending_mode
+            if mode and mode.get("_is_switch"):
+                dialog.destroy()
+                self.app._on_strategy_switched(name)
+                return
             dialog.destroy()
-            self.app._connecting = False
             self.app.force_tray_menu_update()
 
             self.app.strategy_var.set(name)
@@ -1115,6 +1116,7 @@ class Dialogs:
             except Exception as e:
                 self._log("user_stats.on_connect", e)
 
+            self.app._connecting = False
             self.app.force_tray_menu_update()
 
         redraw_list()
@@ -1928,9 +1930,8 @@ class Dialogs:
         )
         select_btn[0].normal_color = self.colors['accent']
         select_btn[0].hover_color = self.colors['accent']
-        select_btn[0].set_enabled(True)
-        select_btn[0].config(cursor="hand2")
         select_btn[0].pack(side=tk.RIGHT, padx=(scale_size(10, self.scale_factor), 0))
+        update_select_button()
         
         cancel_btn = RoundedButton(
             bottom_frame,
@@ -1958,7 +1959,7 @@ class Dialogs:
         dialog.grab_set()
         dialog.focus_force()
 
-        w, h = scale_size(400, self.scale_factor), scale_size(340, self.scale_factor)
+        w, h = scale_size(400, self.scale_factor), scale_size(370, self.scale_factor)
         x = self.app.root.winfo_x() + (self.app.root.winfo_width() // 2) - w // 2
         y = self.app.root.winfo_y() + (self.app.root.winfo_height() // 2) - h // 2
         dialog.geometry(f"{w}x{h}+{x}+{y}")
