@@ -30,6 +30,8 @@ class Languages:
             'button_connect': 'ПОДКЛЮЧИТЬСЯ',
             'button_disconnect': 'ОТКЛЮЧИТЬСЯ',
 
+            'tray_notification_message': 'Лаунчер свернут в системный трей\nЕсли вы закроете окно в панели задач, программа продолжит работать в фоне\n\nЧтобы полностью выйти, используйте меню трея -> Выход',
+
             'update_available': 'Доступно обновление',
             'information_desc': 'Информация',
             'dev': 'В разработке',
@@ -139,6 +141,8 @@ class Languages:
             'logs_desc': 'Журнал событий',
             'logs_clear': 'Очистить',
             'logs_refresh': 'Обновить',
+
+            'news_title': 'Новости',
 
             'theme_dark': 'Темное',
             'theme_pink': 'Розовое',
@@ -258,9 +262,6 @@ class Languages:
             'vpn_detected_interfaces': 'Найденные интерфейсы',
             'vpn_ignore': 'Игнорировать',
             'vpn_disable': 'Отключить VPN',
-
-            'dialog_enabled': 'Окно будет показываться',
-            'dialog_disabled': 'Окно не будет показываться',
                         
             'tg_instruction_title': 'Настройка Telegram',
             'tg_instruction_subtitle': 'Для использования прокси выполните следующие шаги:',
@@ -301,6 +302,7 @@ class Languages:
             'error_update_check': 'Не удалось проверить обновления',
             'error_no_strategies': 'Нет доступных стратегий zapret',
             'error_select_strategy': 'Выберите стратегию',
+            'config_not_found': 'Файл config.json не найден',
             'error_zapret_folder': 'Папка с zapret не найдена',
             'error_tgproxy_start': 'Не удалось запустить Telegram Proxy',
             'error_tgproxy_timeout': 'Таймаут запуска',
@@ -338,6 +340,7 @@ class Languages:
                         
             'status_disconnecting': 'Отключение...',
             'status_starting': 'Подключение...',
+            'status_switching': 'Смена стратегии...',
             'status_error': 'Ошибка запуска',
             'status_strategy_started': 'Запущена стратегия:',
             'status_enabled': 'включен',
@@ -374,6 +377,7 @@ class Languages:
             'menu_settings': 'Настройки',
             'menu_settings_copy_secret': 'Скопировать секрет-ключ прокси',
             'menu_settings_folder': 'Открыть папку с лаунчером',
+            'menu_settings_open_config': 'Открыть конфиг',
             'menu_help': 'Помощь',
             'menu_help_changelog': 'Список изменений',
             'menu_help_donate': 'Пожертвовать',
@@ -430,6 +434,8 @@ class Languages:
             'stats_rtt_ms': 'ms',
             'button_connect': 'CONNECT',
             'button_disconnect': 'DISCONNECT',
+
+            'tray_notification_message': 'The launcher is minimized to the system tray\nIf you close the window from the taskbar, the program will continue running in the background\n\nTo exit completely, use the tray menu -> Exit',
 
             'update_available': 'Update available',
             'information_desc': 'Information',
@@ -540,6 +546,8 @@ class Languages:
             'logs_desc': 'Event log',
             'logs_clear': 'Clear',
             'logs_refresh': 'Refresh',
+
+            'news_title': 'News',
 
             'theme_dark': 'Dark',
             'theme_pink': 'Pink',
@@ -659,9 +667,6 @@ class Languages:
             'vpn_detected_interfaces': 'Detected interfaces',
             'vpn_ignore': 'Ignore',
             'vpn_disable': 'Disable VPN',
-
-            'dialog_enabled': 'Window will be displayed',
-            'dialog_disabled': 'Window will not be displayed',
             
             'tg_instruction_title': 'Telegram Setup',
             'tg_instruction_subtitle': 'To use the proxy, follow these steps:',
@@ -701,6 +706,7 @@ class Languages:
             'error_update_check': 'Failed to check for updates',
             'error_no_strategies': 'No zapret strategies available',
             'error_select_strategy': 'Select a strategy',
+            'config_not_found': 'config.json file not found',
             'error_zapret_folder': 'zapret folder not found',
             'error_tgproxy_start': 'Failed to start Telegram Proxy',
             'error_tgproxy_timeout': 'Startup timeout',
@@ -739,6 +745,7 @@ class Languages:
                         
             'status_disconnecting': 'Disconnecting...',
             'status_starting': 'Connecting...',
+            'status_switching': 'Switching strategy...',
             'status_error': 'Startup error',
             'status_strategy_started': 'Strategy started:',
             'status_enabled': 'enabled',
@@ -775,6 +782,7 @@ class Languages:
             'menu_settings': 'Settings',
             'menu_settings_copy_secret': 'Copy proxy secret-key',
             'menu_settings_folder': 'Open launcher folder',
+            'menu_settings_open_config': 'Open config',
             'menu_help': 'Help',
             'menu_help_changelog': 'Release notes',
             'menu_help_donate': 'Donate',
