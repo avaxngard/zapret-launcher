@@ -41,6 +41,7 @@ THEME_ICON_FILES = {
     'Pink':         'icon_pink.png',
     'Old':          'icon_blue.png',
     'Light':        'icon_white.png',
+    'Sakura':       'icon_sakura.png',
     'Orange':       'icon_orange.png',
     'Contrast':     'icon_contrast.png'
 }
