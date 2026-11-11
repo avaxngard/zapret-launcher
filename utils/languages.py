@@ -148,6 +148,7 @@ class Languages:
             'theme_pink': 'Розовое',
             'theme_old': 'Синее',
             'theme_light': 'Светлое',
+            'theme_sakura': 'Сакура',
             'theme_orange': 'Оранжевое',
             'theme_contrast': 'Контрастное',
 
@@ -371,6 +372,7 @@ class Languages:
             
             'menu_show_app': 'Показать лаунчер',
             'menu_minimaze': 'Свернуть в трей',
+            'menu_change_strategy': 'Сменить стратегию',
             'menu_connect': 'Подключиться',
             'menu_disconnect': 'Отключиться',
             'menu_change_mode': 'Сменить режим',
@@ -553,6 +555,7 @@ class Languages:
             'theme_pink': 'Pink',
             'theme_old': 'Blue',
             'theme_light': 'Light',
+            'theme_sakura': 'Sakura',
             'theme_orange': 'Orange',
             'theme_contrast': 'Contrast',
 
@@ -776,6 +779,7 @@ class Languages:
             
             'menu_show_app': 'Show launcher',
             'menu_minimaze': 'Minimize to tray',
+            'menu_change_strategy': 'Change strategy',
             'menu_connect': 'Connect',
             'menu_disconnect': 'Disconnect',
             'menu_change_mode': 'Change mode',
