@@ -97,6 +97,15 @@ class ModernSystemTray:
         except:
             return False
 
+    def _is_zapret_mode_running(self) -> bool:
+        try:
+            if hasattr(self.app, 'zapret') and self.app.zapret:
+                if self.app.zapret.is_winws_running():
+                    return True
+        except Exception:
+            pass
+        return False
+
     def _is_mode_selector_open(self):
         try:
             for w in self.app.root.winfo_children():
@@ -219,9 +228,16 @@ class ModernSystemTray:
         
         is_connecting = hasattr(self.app, '_connecting') and self.app._connecting
         is_disconnecting = hasattr(self.app, '_disconnecting') and self.app._disconnecting
-        is_busy = is_connecting or is_disconnecting
+        is_switching_strategy = bool(getattr(self.app, '_switching_strategy', False))
+        is_busy = is_connecting or is_disconnecting or is_switching_strategy
         
-        if is_busy:
+        if is_switching_strategy:
+            connect_item = pystray.MenuItem(
+                tr('status_switching'),
+                None,
+                enabled=False
+            )
+        elif is_busy:
             if is_connecting:
                 connect_text = tr('status_starting')
             else:
@@ -255,6 +271,15 @@ class ModernSystemTray:
             pystray.Menu.SEPARATOR,
             connect_item,
         ]
+        
+        if self._is_zapret_mode_running():
+            menu_items.append(
+                pystray.MenuItem(
+                    tr('menu_change_strategy'),
+                    self.app.open_strategy_switcher,
+                    enabled=not is_busy
+                )
+            )
         
         menu_items.extend([
             pystray.MenuItem(
