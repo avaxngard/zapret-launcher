@@ -117,37 +117,58 @@ class MainPage:
         info_grid.columnconfigure(0, weight=1, uniform="col")
         info_grid.columnconfigure(1, weight=1, uniform="col")
 
-        def make_info_block(parent, row, col, label, initial_text, text_color=None):
+        def make_info_block(parent, row, col, label, initial_text, text_color=None, click_command=None):
             block = ctk.CTkFrame(
                 parent, 
                 fg_color=self.colors['bg_medium'], 
                 border_width=1, 
                 border_color=self.colors['separator'],
-                corner_radius=corner_r
+                corner_radius=corner_r,
+                cursor="hand2" if click_command else "arrow"
             )
             block.grid(row=row, column=col, sticky="nsew", padx=(0 if col == 0 else scale_size(10, self.scale_factor), 0), pady=(0 if row == 0 else scale_size(10, self.scale_factor), 0))
             
-            inner = ctk.CTkFrame(block, fg_color="transparent", corner_radius=0)
+            inner = ctk.CTkFrame(block, fg_color="transparent", corner_radius=0, cursor="hand2" if click_command else "arrow")
             inner.pack(padx=scale_size(15, self.scale_factor), pady=scale_size(10, self.scale_factor), fill=tk.BOTH, expand=True)
             
-            ctk.CTkLabel(
+            lbl = ctk.CTkLabel(
                 inner, 
                 text=label.upper(), 
                 font=font_mono_small, 
-                text_color=self.colors['text_secondary']
-            ).pack(anchor='w')
+                text_color=self.colors['text_secondary'],
+                cursor="hand2" if click_command else "arrow"
+            )
+            lbl.pack(anchor='w')
             
             val_lbl = ctk.CTkLabel(
                 inner, 
                 text=initial_text, 
                 font=font_mono_large, 
-                text_color=text_color if text_color else self.colors['text_primary']
+                text_color=text_color if text_color else self.colors['text_primary'],
+                cursor="hand2" if click_command else "arrow"
             )
             val_lbl.pack(anchor='w', pady=(scale_size(2, self.scale_factor), 0))
+
+            if click_command:
+                def on_enter(e):
+                    block.configure(border_color=self.colors['accent'])
+                def on_leave(e):
+                    block.configure(border_color=self.colors['separator'])
+                def on_click(e):
+                    click_command()
+
+                for w in (block, inner, lbl, val_lbl):
+                    w.bind("<Button-1>", on_click)
+                    w.bind("<Enter>", on_enter)
+                    w.bind("<Leave>", on_leave)
+
             return val_lbl
 
         self.app.main_status = make_info_block(info_grid, 0, 0, tr('status'), tr('status_ready'), self.colors['text_secondary'])
-        self.app.mode_label = make_info_block(info_grid, 0, 1, tr('mode'), tr('mode_not_selected'), self.colors['text_secondary'])
+        self.app.mode_label = make_info_block(
+            info_grid, 0, 1, tr('mode'), tr('mode_not_selected'), 
+            self.colors['text_secondary'], click_command=self.app.open_strategy_switcher
+        )
         
         self.app.stats_time_label = make_info_block(info_grid, 1, 0, tr('stats_time'), "00:00:00")
         self.app.stats_traffic_label = make_info_block(info_grid, 1, 1, tr('traffic'), "⬇ 0 B | ⬆ 0 B")
