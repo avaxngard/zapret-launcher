@@ -6,7 +6,6 @@
 #
 # Distributed WITHOUT ANY WARRANTY.
 
-import os
 import re
 import time
 import shutil
