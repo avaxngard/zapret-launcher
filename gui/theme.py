@@ -76,6 +76,28 @@ def get_theme(theme_name='Dark'):
             
             'separator': "#3E4C63"
         },
+        'Sakura': {
+            'accent': "#E09BA9",
+            'accent_hover': "#E4B4BF",
+            'accent_green': '#4ade80',
+            'accent_darkgreen': '#348f55',
+            'accent_red': '#EF4444',
+                    
+            'bg_dark': '#1F1519',
+            'bg_medium': '#2B1D22',
+            'bg_light': '#3D2A32',
+            'bg_light_hover': '#4F3842',
+                    
+            'text_primary': '#FDF5F7',
+            'text_secondary': '#D4B5C0',
+                    
+            'button_bg': '#4F3842',
+            'button_hover': '#6B4D5B',
+            'button_text': '#FDF5F7',
+            'button_text_hover': '#FFFFFF',
+                    
+            'separator': '#4F3842'
+        },
         'Light': {
             'accent': '#7c5a8a',
             'accent_hover': '#9b78a8',
@@ -97,28 +119,6 @@ def get_theme(theme_name='Dark'):
             'button_text_hover': '#FFFFFF',
             
             'separator': '#D0D0D8'
-        },
-        'Sakura': {
-            'accent': "#E09BA9",
-            'accent_hover': "#E4B4BF",
-            'accent_green': '#4ade80',
-            'accent_darkgreen': '#348f55',
-            'accent_red': '#EF4444',
-            
-            'bg_dark': '#1F1519',
-            'bg_medium': '#2B1D22',
-            'bg_light': '#3D2A32',
-            'bg_light_hover': '#4F3842',
-            
-            'text_primary': '#FDF5F7',
-            'text_secondary': '#D4B5C0',
-            
-            'button_bg': '#4F3842',
-            'button_hover': '#6B4D5B',
-            'button_text': '#FDF5F7',
-            'button_text_hover': '#FFFFFF',
-            
-            'separator': '#4F3842'
         },
         'Orange': {
             'accent': '#E87A1E',
@@ -168,7 +168,7 @@ def get_theme(theme_name='Dark'):
     return themes.get(theme_name, themes['Dark'])
 
 def get_theme_names():
-    return ['Dark', 'Pink', 'Old', 'Light', 'Sakura', 'Orange', 'Contrast']
+    return ['Dark', 'Pink', 'Old', 'Sakura', 'Light', 'Orange', 'Contrast']
 
 def get_theme_display_name(theme_name: str) -> str:
     key = f"theme_{theme_name.lower()}"
