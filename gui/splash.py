@@ -399,7 +399,6 @@ class SplashWindow:
         if not text:
             return
         
-        # Если для этого текста уже есть кадры, просто выходим
         if text in self._status_anim_frames:
             self.status_label.configure(image=self._status_anim_frames[text][0])
             return
@@ -419,12 +418,11 @@ class SplashWindow:
         w = text_w + pad_x * 2
         h = pil_size_px + pad_y * 2
 
-        # Ищем шрифт
         pil_font = None
         for path in (
             r"C:\Windows\Fonts\Inter-Regular.ttf",
             r"C:\Windows\Fonts\segoeui.ttf",
-            r"C:\Windows\Fonts\arial.ttf",
+            r"C:\Windows\Fonts\arial.ttf"
         ):
             try:
                 pil_font = ImageFont.truetype(path, pil_size_px)
@@ -434,7 +432,6 @@ class SplashWindow:
         if pil_font is None:
             pil_font = ImageFont.load_default()
 
-        # Отрисовка маски текста по центру
         mask = Image.new("L", (w, h), 0)
         mdraw = ImageDraw.Draw(mask)
         mdraw.text((w // 2, h // 2), text, font=pil_font, fill=255, anchor="mm")
@@ -445,7 +442,7 @@ class SplashWindow:
 
         c1 = hex2rgb(self.colors['text_secondary'])
         c3 = hex2rgb(self.colors['text_primary'])
-        c2 = hex2rgb("#FFFFFF") # Яркий блик
+        c2 = hex2rgb("#FFFFFF")
 
         grad_w = w * 2
         grad = Image.new("RGB", (grad_w, h), (0, 0, 0))
