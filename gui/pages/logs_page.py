@@ -119,6 +119,7 @@ class LogsPage:
         
         self.logs_text.bind("<MouseWheel>", self._on_scroll)
         self.logs_text.config(state=tk.DISABLED)
+        self.logs_text.bind('<Key>', self._on_key_handler, add='+')
         self.update_logs_display()
         self.start_auto_update()
 
@@ -150,6 +151,34 @@ class LogsPage:
             else:
                 self.auto_scroll_enabled = False
                 self.old_scroll_position = current_view[0]
+
+    def _on_key_handler(self, event):
+        if not (event.state & 0x4):
+            return None
+        if event.keycode == 65:
+            return self.select_all(event)
+        if event.keycode == 67:
+            return self.copy_text(event)
+        return None
+
+    def select_all(self, event=None):
+        try:
+            if str(self.logs_text.cget("state")) == "disabled":
+                self.logs_text.config(state=tk.NORMAL)
+                self.logs_text.tag_add("sel", "1.0", "end-1c")
+                self.logs_text.config(state=tk.DISABLED)
+            else:
+                self.logs_text.tag_add("sel", "1.0", "end-1c")
+            return "break"
+        except Exception as e:
+            self._log("select_all", e)
+
+    def copy_text(self, event=None):
+        try:
+            self.logs_text.event_generate("<<Copy>>")
+            return "break"
+        except Exception as e:
+            self._log("copy_text", e)
 
     def _full_reload_logs(self, logs):
         self.logs_text.config(state=tk.NORMAL)
