@@ -7,6 +7,7 @@
 # Distributed WITHOUT ANY WARRANTY.
 
 import tkinter as tk
+import tkinter.font as tkfont
 import pywinstyles
 from tkinter import ttk
 from gui.pages import Pages
@@ -38,6 +39,7 @@ import subprocess
 import os
 import json
 import time
+import math
 import threading
 import webbrowser
 import asyncio
@@ -47,7 +49,7 @@ import sys
 import re
 import ctypes
 import urllib.request
-from PIL import Image, ImageTk
+from PIL import Image, ImageTk, ImageDraw, ImageFont
 from utils.version import compare_builds, compare_zapret_versions
 from utils.scaling import set_dpi_awareness, get_optimal_scale, scale_size
 from update_source import get_source
@@ -523,6 +525,10 @@ class ZapretLauncher:
     def update_ui_colors(self):
         def update_widget(widget):
             try:
+                if hasattr(self, 'credit_frame') and self.credit_frame:
+                    if widget is self.credit_frame or getattr(widget, 'master', None) is self.credit_frame:
+                        return
+                                    
                 if isinstance(widget, (tk.Frame, tk.Label, tk.Canvas)):
                     current_bg = widget.cget('bg')
                     if current_bg and current_bg not in [self.colors['accent'], self.colors['accent_green'], self.colors['accent_red']]:
@@ -558,6 +564,40 @@ class ZapretLauncher:
         self.root.configure(bg=self.colors['bg_dark'])
         self.setup_scrollbar_style()
         self.update_ui_colors()
+
+        if hasattr(self, 'credit_frame') and self.credit_frame and self.credit_frame.winfo_exists():
+            try:
+                new_frames, new_delay, _ = self._build_credit_frames(
+                    text="zapret-launcher.ru",
+                    font_size=int(scale_size(10, self.scale_factor)),
+                    color_start=self.colors['accent_hover'],
+                    color_end=self.colors['accent'],
+                    color_shine=self._mix_color(self.colors['accent'],
+                                                self.colors['accent_hover'], 0.5, 0.35),
+                    frames=80, fps_ms=30,
+                )
+                self._stop_credit_animation()
+                if hasattr(self, 'credit_label') and self.credit_label:
+                    try:
+                        self.credit_label.destroy()
+                    except Exception:
+                        pass
+                self._credit_frames = new_frames
+                self._credit_delay = new_delay
+                self._credit_index = 0
+                self._credit_running = True
+                self.credit_label = tk.Label(
+                    self.credit_frame, image=self._credit_frames[0],
+                    bg=self.colors['bg_medium'], cursor="hand2", bd=0,
+                )
+                self.credit_label.pack(pady=0)
+                self.credit_label.bind("<Enter>", lambda e: setattr(self, "_credit_hovered", True))
+                self.credit_label.bind("<Leave>", lambda e: setattr(self, "_credit_hovered", False))
+                self.credit_label.bind("<Button-1>", lambda e: self.open_website())
+                self._animate_credit()
+            except Exception as e:
+                self.log_event("info", f"apply_theme credit rebuild: {e}")
+                
         self._update_window_title_color()
         self.update_all_window_headers()
 
@@ -651,6 +691,7 @@ class ZapretLauncher:
         self.stop_update_checker()
         
         try:
+            self._stop_credit_animation()
             self.root.quit()
             self.root.destroy()
         except Exception as e:
@@ -807,6 +848,125 @@ class ZapretLauncher:
             if self.tray_icon.icon:
                 self.tray_icon.icon.update_menu()
 
+    def _build_credit_frames(self, text, font_size, color_start, 
+                             color_end, color_shine, frames=80, fps_ms=30):
+
+        font_size = int(font_size)
+        pil_size_px = max(11, int(round(font_size * 1.333)))
+
+        f = tkfont.Font(family="Inter", size=font_size, weight="normal")
+        
+        text_w = f.measure(text)
+        pad_x = 10
+        pad_y = 4 
+        w = text_w + pad_x * 2
+        h = pil_size_px + pad_y * 2
+
+        pil_font = None
+        for path in (
+            r"C:\Windows\Fonts\Inter-Regular.ttf",
+            r"C:\Windows\Fonts\segoeui.ttf",
+            r"C:\Windows\Fonts\arial.ttf"
+        ):
+            try:
+                pil_font = ImageFont.truetype(path, pil_size_px)
+                break
+            except Exception:
+                continue
+        if pil_font is None:
+            pil_font = ImageFont.load_default()
+
+        mask = Image.new("L", (w, h), 0)
+        mdraw = ImageDraw.Draw(mask)
+        mdraw.text((w // 2, h // 2), text, font=pil_font, fill=255, anchor="mm")
+
+        def hex2rgb(c):
+            c = c.lstrip("#")
+            return tuple(int(c[i:i + 2], 16) for i in (0, 2, 4))
+
+        c1 = hex2rgb(color_start)
+        c3 = hex2rgb(color_end)
+        c2 = hex2rgb(color_shine)
+
+        grad_w = w * 2
+        grad = Image.new("RGB", (grad_w, h), (0, 0, 0))
+        px = grad.load()
+
+        for x in range(grad_w):
+            t = (math.sin((x / grad_w) * 2 * math.pi - math.pi / 2) + 1) / 2
+            
+            r = int(c1[0] + (c3[0] - c1[0]) * t)
+            g = int(c1[1] + (c3[1] - c1[1]) * t)
+            b = int(c1[2] + (c3[2] - c1[2]) * t)
+
+            shine_intensity = max(0, math.sin((x / grad_w) * 2 * math.pi)) ** 4
+            r = int(r + (c2[0] - r) * shine_intensity)
+            g = int(g + (c2[1] - g) * shine_intensity)
+            b = int(b + (c2[2] - b) * shine_intensity)
+
+            for y in range(h):
+                px[x, y] = (r, g, b)
+
+        result_frames = []
+        for i in range(frames):
+            t = i / frames
+            
+            offset = int(grad_w - (t * grad_w))
+            if offset >= grad_w:
+                offset = 0
+            
+            frame_grad = Image.new("RGB", (w, h), (0, 0, 0))
+            crop_w = min(w, grad_w - offset)
+            
+            frame_grad.paste(grad.crop((offset, 0, offset + crop_w, h)), (0, 0))
+            if crop_w < w:
+                frame_grad.paste(grad.crop((0, 0, w - crop_w, h)), (crop_w, 0))
+
+            frame_grad.putalpha(mask)
+            rgba = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+            rgba.alpha_composite(frame_grad.convert("RGBA"))
+            result_frames.append(ImageTk.PhotoImage(rgba))
+
+        return result_frames, fps_ms, (w, h)
+
+    def _mix_color(self, a, b, t=0.5, to_white=0.0):
+        def h2r(c):
+            c = c.lstrip("#")
+            return [int(c[i:i+2], 16) for i in (0, 2, 4)]
+
+        a_rgb, b_rgb = h2r(a), h2r(b)
+        mixed = [int(a_rgb[i] + (b_rgb[i] - a_rgb[i]) * t) for i in range(3)]
+
+        if to_white > 0:
+            mixed = [int(mixed[i] + (255 - mixed[i]) * to_white) for i in range(3)]
+
+        return "#{:02x}{:02x}{:02x}".format(*mixed)
+
+    def _animate_credit(self):
+        if not getattr(self, "_credit_running", False):
+            return
+        if not (hasattr(self, "credit_label") and self.credit_label.winfo_exists()):
+            return
+
+        try:
+            self.credit_label.configure(image=self._credit_frames[self._credit_index])
+        except Exception:
+            return
+
+        delay = self._credit_delay // 2 if getattr(self, "_credit_hovered", False) else self._credit_delay
+
+        self._credit_index = (self._credit_index + 1) % len(self._credit_frames)
+        self._credit_anim_after_id = self.root.after(delay, self._animate_credit)
+
+    def _stop_credit_animation(self):
+        self._credit_running = False
+        if getattr(self, "_credit_anim_after_id", None):
+            try:
+                self.root.after_cancel(self._credit_anim_after_id)
+            except Exception:
+                pass
+            self._credit_anim_after_id = None
+
     def create_left_panel(self, width=250):
         left_panel = tk.Frame(self.main_container, bg=self.colors['bg_medium'], width=width)
         left_panel.pack(side=tk.LEFT, fill=tk.Y)
@@ -897,29 +1057,47 @@ class ZapretLauncher:
         self.left_status.pack()
         
         version_frame = tk.Frame(self.credit_frame, bg=self.colors['bg_medium'])
-        version_frame.pack()
+        version_frame.pack(pady=(4, 0))
 
         tk.Label(
             version_frame,
             text=f"v{CURRENT_VERSION} (build {CURRENT_BUILD})",
             font=("Inter", scale_size(8, self.scale_factor)),
             fg=self.colors['text_secondary'],
-            bg=self.colors['bg_medium']
+            bg=self.colors['bg_medium'],
+            pady=0
         ).pack(side=tk.LEFT)
         
+        self._credit_frames, self._credit_delay, credit_size = self._build_credit_frames(
+            text="zapret-launcher.ru",
+            font_size=int(scale_size(10, self.scale_factor)),
+            color_start=self.colors['accent_hover'],
+            color_end=self.colors['accent'],
+            color_shine=self._mix_color(self.colors['accent'],
+                                        self.colors['accent_hover'], 0.5, 0.35),
+            frames=80,
+            fps_ms=30
+        )
+
+        self._credit_index = 0
+        self._credit_running = True
+        self._credit_hovered = False
+
         self.credit_label = tk.Label(
             self.credit_frame,
-            text="zapret-launcher.ru",
-            font=("Inter", scale_size(8, self.scale_factor)),
-            fg=self.colors['text_secondary'],
+            image=self._credit_frames[0],
             bg=self.colors['bg_medium'],
-            cursor="hand2"
+            cursor="hand2",
+            bd=0,
         )
-        self.credit_label.pack()
+        self.credit_label.pack(pady=0)
 
-        self.credit_label.bind("<Enter>", lambda e: self.credit_label.config(fg=self.colors['accent']))
-        self.credit_label.bind("<Leave>", lambda e: self.credit_label.config(fg=self.colors['text_secondary']))
+        self.credit_label.bind("<Enter>", lambda e: setattr(self, "_credit_hovered", True))
+        self.credit_label.bind("<Leave>", lambda e: setattr(self, "_credit_hovered", False))
         self.credit_label.bind("<Button-1>", lambda e: self.open_website())
+
+        self._credit_anim_after_id = None
+        self._animate_credit()
 
     def show_update_label(self):
         if not getattr(self, '_auto_update_enabled', True):
@@ -1526,6 +1704,7 @@ class ZapretLauncher:
             return
 
         try:
+            self._stop_credit_animation()
             self.root.quit()
             self.root.destroy()
         except Exception:
