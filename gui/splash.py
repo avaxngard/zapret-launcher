@@ -209,12 +209,16 @@ class SplashWindow:
         
         self.status_label = tk.Label(
             center_container,
-            text=tr('splash_check_connecting'),
-            font=("Inter", 10),
-            fg=self.colors['text_secondary'],
-            bg=self.colors['bg_dark']
+            bg=self.colors['bg_dark'],
+            bd=0
         )
         self.status_label.pack(pady=(0, 4))
+        
+        self._status_anim_frames = {}
+        self._status_anim_index = 0
+        self._status_anim_running = True
+        self._status_text = tr('splash_check_connecting')
+        self._build_status_animation(self._status_text)
         
         self.progress_var = tk.IntVar(value=0)
         
@@ -266,6 +270,8 @@ class SplashWindow:
         manual_label.bind("<Leave>", on_leave_manual)
         manual_label.bind("<Button-1>", on_click_manual)
         
+        self._animate_status()
+        
     def load_logo(self):
         try:
             name = THEME_ICON_FILES.get(self.colors_name, 'icon.png')
@@ -302,9 +308,11 @@ class SplashWindow:
             return
         
         try:
-            if self.status_label and self.status_label.winfo_exists():
-                if text is not None:
-                    self.status_label.config(text=text)
+            if text is not None and hasattr(self, '_status_text'):
+                if text != self._status_text:
+                    self._status_text = text
+                    self._build_status_animation(text)
+            
             if progress is not None:
                 self._target_progress = progress
                 if self._animation_id:
@@ -386,6 +394,115 @@ class SplashWindow:
             cv.coords(ids[3], x2 - rr * 2, y1, x2, y1 + rr * 2)
             cv.coords(ids[4], x1, y2 - rr * 2, x1 + rr * 2, y2)
             cv.coords(ids[5], x2 - rr * 2, y2 - rr * 2, x2, y2)
+
+    def _build_status_animation(self, text):
+        if not text:
+            return
+        
+        # Если для этого текста уже есть кадры, просто выходим
+        if text in self._status_anim_frames:
+            self.status_label.configure(image=self._status_anim_frames[text][0])
+            return
+
+        from PIL import Image, ImageDraw, ImageFont
+        import tkinter.font as tkfont
+        import math
+
+        font_size = 10
+        pil_size_px = max(11, int(round(font_size * 1.333)))
+
+        f = tkfont.Font(family="Inter", size=font_size)
+        
+        text_w = f.measure(text)
+        pad_x = 10
+        pad_y = 4
+        w = text_w + pad_x * 2
+        h = pil_size_px + pad_y * 2
+
+        # Ищем шрифт
+        pil_font = None
+        for path in (
+            r"C:\Windows\Fonts\Inter-Regular.ttf",
+            r"C:\Windows\Fonts\segoeui.ttf",
+            r"C:\Windows\Fonts\arial.ttf",
+        ):
+            try:
+                pil_font = ImageFont.truetype(path, pil_size_px)
+                break
+            except Exception:
+                continue
+        if pil_font is None:
+            pil_font = ImageFont.load_default()
+
+        # Отрисовка маски текста по центру
+        mask = Image.new("L", (w, h), 0)
+        mdraw = ImageDraw.Draw(mask)
+        mdraw.text((w // 2, h // 2), text, font=pil_font, fill=255, anchor="mm")
+
+        def hex2rgb(c):
+            c = c.lstrip("#")
+            return tuple(int(c[i:i + 2], 16) for i in (0, 2, 4))
+
+        c1 = hex2rgb(self.colors['text_secondary'])
+        c3 = hex2rgb(self.colors['text_primary'])
+        c2 = hex2rgb("#FFFFFF") # Яркий блик
+
+        grad_w = w * 2
+        grad = Image.new("RGB", (grad_w, h), (0, 0, 0))
+        px = grad.load()
+
+        for x in range(grad_w):
+            t = (math.sin((x / grad_w) * 2 * math.pi - math.pi / 2) + 1) / 2
+            r = int(c1[0] + (c3[0] - c1[0]) * t)
+            g = int(c1[1] + (c3[1] - c1[1]) * t)
+            b = int(c1[2] + (c3[2] - c1[2]) * t)
+
+            shine_intensity = max(0, math.sin((x / grad_w) * 2 * math.pi)) ** 4
+            r = int(r + (c2[0] - r) * shine_intensity)
+            g = int(g + (c2[1] - g) * shine_intensity)
+            b = int(b + (c2[2] - b) * shine_intensity)
+
+            for y in range(h):
+                px[x, y] = (r, g, b)
+
+        frames = []
+        num_frames = 60
+        for i in range(num_frames):
+            t = i / num_frames
+            offset = int(grad_w - (t * grad_w))
+            if offset >= grad_w:
+                offset = 0
+            
+            frame_grad = Image.new("RGB", (w, h), (0, 0, 0))
+            crop_w = min(w, grad_w - offset)
+            
+            frame_grad.paste(grad.crop((offset, 0, offset + crop_w, h)), (0, 0))
+            if crop_w < w:
+                frame_grad.paste(grad.crop((0, 0, w - crop_w, h)), (crop_w, 0))
+
+            frame_grad.putalpha(mask)
+            rgba = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+            rgba.alpha_composite(frame_grad.convert("RGBA"))
+            frames.append(ImageTk.PhotoImage(rgba))
+
+        self._status_anim_frames[text] = frames
+        self.status_label.configure(image=frames[0])
+
+    def _animate_status(self):
+        if not getattr(self, '_status_anim_running', False) or self._is_closing:
+            return
+            
+        text = getattr(self, '_status_text', '')
+        frames = self._status_anim_frames.get(text)
+        
+        if frames:
+            self._status_anim_index = (self._status_anim_index + 1) % len(frames)
+            try:
+                self.status_label.configure(image=frames[self._status_anim_index])
+            except Exception:
+                pass
+            
+        self._status_anim_id = self.window.after(30, self._animate_status)
     
     def _animate_progress(self):
         if self._is_closing:
@@ -1234,6 +1351,14 @@ class SplashWindow:
             self._log("_launch_main_app", e)
     
     def close(self):
+        self._status_anim_running = False
+        if getattr(self, '_status_anim_id', None):
+            try:
+                self.window.after_cancel(self._status_anim_id)
+            except Exception:
+                pass
+            self._status_anim_id = None
+
         if self._animation_id:
             try:
                 self.window.after_cancel(self._animation_id)
