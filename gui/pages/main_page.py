@@ -124,11 +124,11 @@ class MainPage:
                 border_width=1, 
                 border_color=self.colors['separator'],
                 corner_radius=corner_r,
-                cursor="hand2" if click_command else "arrow"
+                cursor="arrow"
             )
             block.grid(row=row, column=col, sticky="nsew", padx=(0 if col == 0 else scale_size(10, self.scale_factor), 0), pady=(0 if row == 0 else scale_size(10, self.scale_factor), 0))
             
-            inner = ctk.CTkFrame(block, fg_color="transparent", corner_radius=0, cursor="hand2" if click_command else "arrow")
+            inner = ctk.CTkFrame(block, fg_color="transparent", corner_radius=0, cursor="arrow")
             inner.pack(padx=scale_size(15, self.scale_factor), pady=scale_size(10, self.scale_factor), fill=tk.BOTH, expand=True)
             
             lbl = ctk.CTkLabel(
@@ -136,7 +136,7 @@ class MainPage:
                 text=label.upper(), 
                 font=font_mono_small, 
                 text_color=self.colors['text_secondary'],
-                cursor="hand2" if click_command else "arrow"
+                cursor="arrow"
             )
             lbl.pack(anchor='w')
             
@@ -145,17 +145,21 @@ class MainPage:
                 text=initial_text, 
                 font=font_mono_large, 
                 text_color=text_color if text_color else self.colors['text_primary'],
-                cursor="hand2" if click_command else "arrow"
+                cursor="arrow"
             )
             val_lbl.pack(anchor='w', pady=(scale_size(2, self.scale_factor), 0))
 
             if click_command:
                 def on_enter(e):
-                    block.configure(border_color=self.colors['accent'])
+                    if self.app.zapret.is_winws_running():
+                        block.configure(border_color=self.colors['accent'])
+                
                 def on_leave(e):
                     block.configure(border_color=self.colors['separator'])
+                
                 def on_click(e):
-                    click_command()
+                    if self.app.zapret.is_winws_running():
+                        click_command()
 
                 for w in (block, inner, lbl, val_lbl):
                     w.bind("<Button-1>", on_click)
