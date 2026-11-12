@@ -20,7 +20,7 @@ HOSTS_PATH = Path(r"C:\Windows\System32\drivers\etc\hosts")
 BACKUP_DIR = APPDATA_DIR / "hosts_backups"
 
 CURRENT_VERSION = "3.2.4.1"
-CURRENT_BUILD = "3524"
+CURRENT_BUILD = "3525"
 
 CHECK_UPDATES_INTERVAL = 3 * 60 * 60 * 1000
 STATS_RETRY_INTERVAL_MS = 1 * 60 * 1000
@@ -40,8 +40,8 @@ THEME_ICON_FILES = {
     'Dark':         'icon.png',
     'Pink':         'icon_pink.png',
     'Old':          'icon_blue.png',
-    'Light':        'icon_white.png',
     'Sakura':       'icon_sakura.png',
+    'Light':        'icon_white.png',
     'Orange':       'icon_orange.png',
     'Contrast':     'icon_contrast.png'
 }
