@@ -69,6 +69,73 @@ def run_as_admin():
         messagebox.showerror(tr('error_no_connection'), f"{tr('error_admin_required')}: {e}")
     sys.exit(0)
 
+def _is_dev_mode_enabled() -> bool:
+    try:
+        if CONFIG_FILE.exists():
+            with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                val = data.get('dev_mode', False)
+                if isinstance(val, str):
+                    return val.strip().lower() in ('true', '1', 'yes', 'on')
+                return bool(val)
+    except Exception:
+        pass
+    return False
+
+def _verify_current_binary() -> tuple[bool, str]:
+    if not getattr(sys, 'frozen', False):
+        return True, "dev mode (not frozen)"
+
+    if _is_dev_mode_enabled():
+        return True, "dev_mode=true in config.json"
+
+    try:
+        from utils.update_verifier import is_safe_to_install
+        exe_path = sys.executable
+        ok, msg = is_safe_to_install(exe_path)
+        return ok, msg
+    except Exception as e:
+        return False, f"verification error: {e}"
+
+def _get_launch_block_message(reason: str) -> tuple[str, str]:
+    lang = 'en'
+    try:
+        if CONFIG_FILE.exists():
+            with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                saved = (data.get('language') or '').lower()
+                if saved.startswith('ru'):
+                    lang = 'ru'
+                elif saved.startswith('en'):
+                    lang = 'en'
+    except Exception:
+        pass
+
+    if lang == 'ru':
+        text = (
+            "Эта сборка Zapret Launcher не является официальной\n"
+            f"Причина: {reason}\n\n"
+            "Скачайте официальную версию с сайта:\n"
+            "https://zapret-launcher.ru\n"
+            "или GitHub:\n"
+            "https://github.com/avaxngard/zapret-launcher\n"
+            "(см. папку updater)\n"
+        )
+        caption = "Запуск заблокирован"
+    else:
+        text = (
+            "This build of Zapret Launcher is not an official\n"
+            f"Reason: {reason}\n\n"
+            "Please download the official version from:\n"
+            "https://zapret-launcher.ru\n"
+            "or GitHub:\n"
+            "https://github.com/avaxngard/zapret-launcher\n"
+            "(see the updater folder)\n"
+        )
+        caption = "Launch blocked"
+
+    return text, caption
+
 class TGProxyServer:
     def __init__(self, host=None, port=None, fake_tls_domain=None):
         self._thread = None
@@ -2726,37 +2793,26 @@ class ZapretLauncher:
         except Exception as e:
             self.log_event("info", f"save_settings: {e}")
 
-    def show_main_page(self):
-        self.current_page = "main"
-        self.pages.show_page_with_animation("main")
-        
-    def show_service_page(self):
-        self.current_page = "service"
-        self.pages.show_page_with_animation("service")
-        
-    def show_lists_page(self):
-        self.current_page = "lists"
-        self.pages.show_page_with_animation("lists")
+    def _navigate(self, page: str):
+        if self.current_page == page:
+            return
 
-    def show_stats_page(self):
-        self.current_page = "stats"
-        self.pages.show_page_with_animation("stats")
+        self.current_page = page
+        self.pages.show_page_with_animation(page)
 
-    def show_settings_page(self):
-        self.current_page = "settings"
-        self.pages.show_page_with_animation("settings")
+        try:
+            if hasattr(self, "user_stats"):
+                self.user_stats.send_page_view(page)
+        except Exception as e:
+            self.log_event("info", f"send_page_view: {e}")
 
-    #def show_schedule_page(self):
-        #self.current_page = "schedule"
-        #self.pages.show_page_with_animation("schedule")
-
-    def show_hosts_page(self):
-        self.current_page = "hosts"
-        self.pages.show_page_with_animation("hosts")
-
-    def show_logs_page(self):
-        self.current_page = "logs"
-        self.pages.show_page_with_animation("logs")
+    def show_main_page(self):     self._navigate("main")
+    def show_service_page(self):  self._navigate("service")
+    def show_lists_page(self):    self._navigate("lists")
+    def show_stats_page(self):    self._navigate("stats")
+    def show_settings_page(self): self._navigate("settings")
+    def show_hosts_page(self):    self._navigate("hosts")
+    def show_logs_page(self):     self._navigate("logs")
 
     def check_lists_for_duplicates(self):
         if getattr(self, '_hide_duplicates_warning', False):
@@ -3088,6 +3144,18 @@ class ZapretLauncher:
 
 if __name__ == "__main__":
     set_dpi_awareness()
+
+    _sig_ok, _sig_msg = _verify_current_binary()
+    if not _sig_ok:
+        _text, _caption = _get_launch_block_message(_sig_msg)
+        ctypes.windll.user32.MessageBoxW(
+            0,
+            _text,
+            _caption,
+            0x00000010
+        )
+        sys.exit(1)
+
     mutex_name = "ZapretLauncher_SingleInstance"
     mutex = ctypes.windll.kernel32.CreateMutexW(None, False, mutex_name)
     last_error = ctypes.windll.kernel32.GetLastError()
