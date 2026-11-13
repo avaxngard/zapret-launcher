@@ -194,6 +194,8 @@ class Languages:
                 'За это время он мог накопить кеш, временные файлы, '
                 'логи и состояние сети. Перезапустить лаунчер?'
             ),
+
+            'certified_info': 'Официальная сборка',
                         
             'settings_title': 'Настройки',
             'settings_desc': 'Настройка интерфейса и параметров работы',
@@ -214,6 +216,14 @@ class Languages:
             'settings_current_tg_secret': 'Ваш секрет-ключ:',
             'settings_autostart': 'Автозапуск',
             'settings_autostart_desc': 'Запуск лаунчера при старте Windows',
+            'settings_autostart_mode_desc': 'Режим автозапуска: {mode}',
+            'settings_autostart_launch': 'Параметры автозапуска',
+            'settings_autostart_launch_desc': 'Настроить режим, стратегию и закрытие',
+            'auto_launch_mode_title': 'Настройки автозапуска',
+            'auto_launch_mode': 'Режим при запуске',
+            'auto_launch_close': 'Закрывать лаунчер после старта',
+            'auto_launch_strategy': 'Стратегия',
+            'auto_launch_save': 'Сохранить',
             'settings_search_dublicate': 'Поиск дубликатов',
             'settings_search_vpn': 'Поиск VPN-процессов',
             'settings_theme_desc': 'Сменить оформление лаунчера',
@@ -601,6 +611,8 @@ class Languages:
                 'During this time, it could accumulate cache, temporary files, '
                 'logs and network status. Restart the launcher?'
             ),
+
+            'certified_info': 'Official build',
                         
             'settings_title': 'Settings',
             'settings_desc': 'Interface and operation settings',
