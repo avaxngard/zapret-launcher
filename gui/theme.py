@@ -23,6 +23,7 @@ def get_theme(theme_name='Dark'):
             'bg_light_hover': '#3a3a44',
             
             'text_primary': '#FFFFFF',
+            'text_select': '#FFFFFF',
             'text_secondary': '#A1A1AA',
             
             'button_bg': '#2D2D35',
@@ -45,6 +46,7 @@ def get_theme(theme_name='Dark'):
             'bg_light_hover': '#4D4A6B',
             
             'text_primary': '#FFFFFF',
+            'text_select': '#FFFFFF',
             'text_secondary': "#B0B0C9",
             
             'button_bg': '#4D4A6B',
@@ -67,6 +69,7 @@ def get_theme(theme_name='Dark'):
             'bg_light_hover': '#475569',
             
             'text_primary': '#FFFFFF',
+            'text_select': '#FFFFFF',
             'text_secondary': "#94A3B8",
             
             'button_bg': '#475569',
@@ -89,6 +92,7 @@ def get_theme(theme_name='Dark'):
             'bg_light_hover': '#4F3842',
                     
             'text_primary': '#FDF5F7',
+            'text_select': '#FFFFFF',
             'text_secondary': '#D4B5C0',
                     
             'button_bg': '#4F3842',
@@ -111,6 +115,7 @@ def get_theme(theme_name='Dark'):
             'bg_light_hover': '#DADAE0',
             
             'text_primary': '#1A1A1F',
+            'text_select': '#1A1A1F',
             'text_secondary': '#5A5A66',
             
             'button_bg': "#D3D0D0",
@@ -133,6 +138,7 @@ def get_theme(theme_name='Dark'):
             'bg_light_hover': '#503522',
 
             'text_primary': '#F4E4C1',
+            'text_select': '#FFFFFF',
             'text_secondary': '#B89968',
 
             'button_bg': "#533723",
@@ -155,6 +161,7 @@ def get_theme(theme_name='Dark'):
             'bg_light_hover': "#D8D4D4",
 
             'text_primary': '#000000',
+            'text_select': '#FFFFFF',
             'text_secondary': '#404040',
 
             'button_bg': '#000000',
