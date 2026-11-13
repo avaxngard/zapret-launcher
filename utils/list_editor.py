@@ -83,13 +83,13 @@ class ListEditor:
             bg=self.colors['bg_light'],
             fg=self.colors['text_primary'],
             insertbackground=self.colors['text_primary'],
-            selectbackground=self.colors['accent'],
-            selectforeground=self.colors['text_primary'],
+            selectbackground=self.colors['text_select'],
+            selectforeground=self.colors['bg_dark'],
             relief=tk.FLAT,
             highlightthickness=1,
             highlightcolor=self.colors['accent'],
             highlightbackground=self.colors['bg_medium'],
-            bd=0,
+            bd=0
         )
 
         scrollbar = ctk.CTkScrollbar(text_frame, command=self.text_area.yview)
@@ -104,7 +104,7 @@ class ListEditor:
             self.search_frame,
             text=tr('editor_find'),
             font=("Inter", font_size_label),
-            text_color=self.colors['text_secondary'],
+            text_color=self.colors['text_secondary']
         )
         self.search_label.pack(side=tk.LEFT, padx=(0, 5))
 
@@ -115,9 +115,15 @@ class ListEditor:
             fg_color=self.colors['bg_light'],
             text_color=self.colors['text_primary'],
             border_color=self.colors['accent'],
-            border_width=1,
+            border_width=1
         )
         self.search_entry.pack(side=tk.LEFT, padx=(0, 10))
+        
+        self.search_entry._entry.configure(
+            selectbackground=self.colors['text_select'],
+            selectforeground=self.colors['bg_dark']
+        )
+        
         self.search_entry.bind('<Return>', self.search_next)
 
         btn_w_search = scale_size(80, self.scale_factor)
@@ -131,8 +137,8 @@ class ListEditor:
             width=btn_w_search,
             height=btn_h,
             fg_color=self.colors['accent'],
-            hover_color=self.colors['accent_hover'],
-            text_color=self.colors['button_text_hover'],
+            hover_color=self.colors['accent'],
+            text_color=self.colors['button_text_hover']
         )
         self.search_next_btn.pack(side=tk.LEFT, padx=(0, 5))
 
@@ -144,7 +150,7 @@ class ListEditor:
             height=btn_h,
             fg_color=self.colors['button_bg'],
             hover_color=self.colors['accent'],
-            text_color=self.colors['button_text'],
+            text_color=self.colors['button_text']
         )
         self.search_close_btn.pack(side=tk.LEFT)
 
@@ -152,7 +158,7 @@ class ListEditor:
             self.search_frame,
             text="",
             font=("Inter", font_size_info),
-            text_color=self.colors['accent'],
+            text_color=self.colors['accent']
         )
         self.search_info.pack(side=tk.LEFT, padx=(10, 0))
 
@@ -190,7 +196,7 @@ class ListEditor:
             height=btn_h_main,
             fg_color=self.colors['accent'],
             hover_color=self.colors['accent'],
-            text_color=self.colors['button_text_hover'],
+            text_color=self.colors['button_text_hover']
         )
         self.save_btn.pack(side=tk.RIGHT, padx=(5, 0))
 
@@ -202,7 +208,7 @@ class ListEditor:
             height=btn_h_main,
             fg_color=self.colors['button_bg'],
             hover_color=self.colors['accent'],
-            text_color=self.colors['button_text'],
+            text_color=self.colors['button_text']
         )
         self.cancel_btn.pack(side=tk.RIGHT)
         self.buttons = [self.save_btn, self.cancel_btn]
@@ -214,7 +220,7 @@ class ListEditor:
             info_frame,
             text=tr('editor_tooltip'),
             font=("Inter", font_size_info),
-            text_color=self.colors['text_secondary'],
+            text_color=self.colors['text_secondary']
         )
         info_label.pack(side=tk.LEFT, padx=10)
 
