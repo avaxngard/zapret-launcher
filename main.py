@@ -525,6 +525,22 @@ class ZapretLauncher:
     def update_ui_colors(self):
         def update_widget(widget):
             try:
+                if hasattr(self.pages, 'main_page'):
+                    mp = self.pages.main_page
+                    if hasattr(mp, 'tg_host_entry'):
+                        mp.tg_host_entry._entry.configure(
+                            selectbackground=self.colors['text_select'], 
+                            selectforeground=self.colors['bg_dark']
+                        )
+                        mp.tg_port_entry._entry.configure(
+                            selectbackground=self.colors['text_select'], 
+                            selectforeground=self.colors['bg_dark']
+                        )
+                        mp.tg_domain_entry._entry.configure(
+                            selectbackground=self.colors['text_select'], 
+                            selectforeground=self.colors['bg_dark']
+                        )
+                        
                 if hasattr(self, 'credit_frame') and self.credit_frame:
                     if widget is self.credit_frame or getattr(widget, 'master', None) is self.credit_frame:
                         return
@@ -1059,14 +1075,24 @@ class ZapretLauncher:
         version_frame = tk.Frame(self.credit_frame, bg=self.colors['bg_medium'])
         version_frame.pack(pady=(4, 0))
 
-        tk.Label(
+        self.version_label = tk.Label(
             version_frame,
             text=f"v{CURRENT_VERSION} (build {CURRENT_BUILD})",
             font=("Inter", scale_size(8, self.scale_factor)),
             fg=self.colors['text_secondary'],
             bg=self.colors['bg_medium'],
             pady=0
-        ).pack(side=tk.LEFT)
+        )
+        self.version_label.pack(side=tk.LEFT)
+
+        def _on_version_click(event=None):
+            current = self.version_label.cget("text")
+            if current == tr('certified_info'):
+                self.version_label.config(text=f"v{CURRENT_VERSION} (build {CURRENT_BUILD})")
+            else:
+                self.version_label.config(text=tr('certified_info'))
+
+        self.version_label.bind("<Button-1>", _on_version_click)
         
         self._credit_frames, self._credit_delay, credit_size = self._build_credit_frames(
             text="zapret-launcher.ru",
@@ -1145,7 +1171,7 @@ class ZapretLauncher:
             headers = {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
                 'Accept': 'text/plain',
-                'Connection': 'close',
+                'Connection': 'close'
             }
 
             src = get_source(getattr(self, '_update_source', 'main'))
@@ -1691,7 +1717,7 @@ class ZapretLauncher:
             subprocess.Popen(
                 [exe_path, '--no-splash', '--from-splash'],
                 creationflags=subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS,
-                close_fds=True,
+                close_fds=True
             )
         except Exception as e:
             try:
