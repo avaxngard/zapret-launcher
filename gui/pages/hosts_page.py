@@ -67,8 +67,8 @@ class HostsPage:
             bg=self.colors['bg_light'],
             fg=self.colors['text_primary'],
             insertbackground=self.colors['text_primary'],
-            selectbackground=self.colors['accent'],
-            selectforeground=self.colors['text_primary'],
+            selectbackground=self.colors['text_select'],
+            selectforeground=self.colors['bg_dark'],
             relief=tk.FLAT,
             highlightthickness=1,
             highlightcolor=self.colors['accent'],
@@ -105,6 +105,12 @@ class HostsPage:
             border_width=1
         )
         self.search_entry.pack(side=tk.LEFT, padx=(0, 10))
+        
+        self.search_entry._entry.configure(
+            selectbackground=self.colors['text_select'],
+            selectforeground=self.colors['bg_dark']
+        )
+        
         self.search_entry.bind('<Return>', self.search_next)
         self.search_entry.bind('<Escape>', self.on_escape_search)
         
