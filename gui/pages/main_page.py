@@ -205,12 +205,14 @@ class MainPage:
         ctk.CTkLabel(host_f, text=tr('main_page_tg_proxy_host'), font=font_mono_small, text_color=self.colors['text_secondary']).pack(anchor='w')
         self.tg_host_entry = ctk.CTkEntry(host_f, font=font_mono_small, height=scale_size(28, self.scale_factor), fg_color=self.colors['bg_dark'], text_color=self.colors['text_primary'], border_color=self.colors['separator'], corner_radius=corner_r)
         self.tg_host_entry.pack(fill=tk.X, pady=(2,0))
+        self.tg_host_entry._entry.configure(selectbackground=self.colors['text_select'], selectforeground=self.colors['bg_dark'])
         
         port_f = ctk.CTkFrame(row_1, fg_color="transparent", corner_radius=0, width=scale_size(80, self.scale_factor))
         port_f.pack(side=tk.RIGHT)
         ctk.CTkLabel(port_f, text=tr('main_page_tg_proxy_port'), font=font_mono_small, text_color=self.colors['text_secondary']).pack(anchor='w')
         self.tg_port_entry = ctk.CTkEntry(port_f, font=font_mono_small, height=scale_size(28, self.scale_factor), fg_color=self.colors['bg_dark'], text_color=self.colors['text_primary'], border_color=self.colors['separator'], corner_radius=corner_r)
         self.tg_port_entry.pack(fill=tk.X, pady=(2,0))
+        self.tg_port_entry._entry.configure(selectbackground=self.colors['text_select'], selectforeground=self.colors['bg_dark'])
 
         row_2 = ctk.CTkFrame(config_inner, fg_color="transparent", corner_radius=0)
         row_2.pack(fill=tk.X, pady=(0, scale_size(10, self.scale_factor)))
@@ -236,6 +238,7 @@ class MainPage:
         ctk.CTkLabel(dom_f, text=tr('main_page_tg_proxy_domain'), font=font_mono_small, text_color=self.colors['text_secondary']).pack(anchor='w')
         self.tg_domain_entry = ctk.CTkEntry(dom_f, font=font_mono_small, height=scale_size(28, self.scale_factor), fg_color=self.colors['bg_dark'], text_color=self.colors['text_primary'], border_color=self.colors['separator'], corner_radius=corner_r)
         self.tg_domain_entry.pack(fill=tk.X, pady=(2,0))
+        self.tg_domain_entry._entry.configure(selectbackground=self.colors['text_select'], selectforeground=self.colors['bg_dark'])
 
         btn_row = ctk.CTkFrame(config_inner, fg_color="transparent", corner_radius=0)
         btn_row.pack(fill=tk.X, pady=(scale_size(5, self.scale_factor), 0))
