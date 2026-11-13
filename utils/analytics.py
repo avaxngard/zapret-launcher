@@ -14,7 +14,6 @@ import time
 import uuid
 import winreg
 from datetime import datetime
-from pathlib import Path
 import requests
 from config import (
     CONFIG_FILE,
@@ -22,12 +21,12 @@ from config import (
     ZAPRET_CORE_DIR,
     CURRENT_VERSION,
     CURRENT_BUILD,
-    API_URL_STATS,
+    API_URL_STATS
 )
 from utils.secure_store import (
     save_encrypted,
     load_encrypted,
-    hardware_fingerprint,
+    hardware_fingerprint
 )
 
 ID_FILE      = APPDATA_DIR / "install_id.dat"
@@ -284,9 +283,6 @@ class UserStats:
         self.start()
 
     def fetch_user_stats(self) -> None:
-        if self.cached_stats is not None:
-            return
-
         def worker():
             payload = {
                 "install_id": self.install_id,
@@ -318,6 +314,21 @@ class UserStats:
                 "hw": self.hw_fingerprint,
                 "action": "ping",
                 "ping": int(ping_ms),
+            }
+            self._post(payload)
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    def send_page_view(self, page: str) -> None:
+        if not self._enabled or not page:
+            return
+
+        def worker():
+            payload = {
+                "install_id": self.install_id,
+                "hw": self.hw_fingerprint,
+                "action": "page_view",
+                "page": page,
             }
             self._post(payload)
 
