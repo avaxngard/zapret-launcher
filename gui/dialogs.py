@@ -371,7 +371,7 @@ class Dialogs:
                     pady=(scale_size(16, self.scale_factor), scale_size(6, self.scale_factor)))
 
         tk.Label(
-            header, text=tr('select_strategy'),
+            header, text=tr('error_select_strategy'),
             font=("Inter", fs_title, "bold"),
             fg=self.colors['text_primary'], bg=self.colors['bg_medium'],
             anchor='center'
@@ -393,6 +393,8 @@ class Dialogs:
             font=("Inter", fs_input),
             bg=self.colors['bg_light'], fg=self.colors['text_primary'],
             insertbackground=self.colors['text_primary'],
+            selectbackground=self.colors['text_select'],
+            selectforeground=self.colors['bg_dark'],
             relief=tk.FLAT, bd=0
         )
         search_entry.pack(side=tk.LEFT, fill=tk.X, expand=True,
@@ -562,7 +564,7 @@ class Dialogs:
         start_btn = RoundedButton(
             footer_inner, text=tr('button_start'),
             command=lambda: launch_selected(),
-            width=scale_size(110, self.scale_factor), height=btn_h,
+            width=scale_size(90, self.scale_factor), height=btn_h,
             bg=self.colors['accent'], fg=self.colors['button_text_hover'],
             hover_fg=self.colors['button_text_hover'],
             font=("Inter", fs_btn),
@@ -1388,9 +1390,11 @@ class Dialogs:
         
         text_widget = tk.Text(
             text_frame,
-            font=("Consolas", font_size_text),
+            font=("Inter", font_size_text),
             fg=self.colors['text_primary'],
             bg=self.colors['bg_dark'],
+            selectbackground=self.colors['text_select'],
+            selectforeground=self.colors['bg_dark'],
             wrap=tk.WORD,
             relief=tk.FLAT,
             bd=0
