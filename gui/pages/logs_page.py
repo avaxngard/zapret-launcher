@@ -102,8 +102,8 @@ class LogsPage:
             highlightthickness=1,
             highlightbackground=self.colors['separator'],
             highlightcolor=self.colors['accent'],
-            selectbackground=self.colors['accent'],
-            selectforeground='white',
+            selectbackground=self.colors['text_select'],
+            selectforeground=self.colors['bg_dark'],
             padx=scale_size(10, self.scale_factor),
             pady=scale_size(10, self.scale_factor)
         )
@@ -116,6 +116,21 @@ class LogsPage:
         
         self.logs_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        self._scrollbar_dragging = False
+        
+        def _on_scrollbar_press(event):
+            self._scrollbar_dragging = True
+            self.auto_scroll_enabled = False
+            
+        def _on_scrollbar_release(event):
+            self._scrollbar_dragging = False
+            current_view = self.logs_text.yview()
+            if current_view[1] >= 0.99:
+                self.auto_scroll_enabled = True
+                
+        self.scrollbar.bind("<ButtonPress-1>", _on_scrollbar_press)
+        self.scrollbar.bind("<ButtonRelease-1>", _on_scrollbar_release)
         
         self.logs_text.bind("<MouseWheel>", self._on_scroll)
         self.logs_text.config(state=tk.DISABLED)
@@ -151,6 +166,7 @@ class LogsPage:
             else:
                 self.auto_scroll_enabled = False
                 self.old_scroll_position = current_view[0]
+            self._scrollbar_dragging = False 
 
     def _on_key_handler(self, event):
         if not (event.state & 0x4):
@@ -267,7 +283,7 @@ class LogsPage:
         if new_logs:
             self.logs_text.config(state=tk.NORMAL)
             
-            if not was_at_bottom and not self.auto_scroll_enabled:
+            if self._scrollbar_dragging or not was_at_bottom or not self.auto_scroll_enabled:
                 self.logs_text.yview_moveto(saved_top)
             
             for log_line in new_logs:
@@ -284,14 +300,14 @@ class LogsPage:
             self.logs_text.config(state=tk.DISABLED)
             self.last_log_count = len(logs)
             
-            if self.auto_scroll_enabled or was_at_bottom:
-                self.logs_text.see(tk.END)
-                self.auto_scroll_enabled = True
+            if not self._scrollbar_dragging:
+                if self.auto_scroll_enabled or was_at_bottom:
+                    self.logs_text.see(tk.END)
+                    self.auto_scroll_enabled = True
+                else:
+                    self.logs_text.yview_moveto(saved_top)
             else:
                 self.logs_text.yview_moveto(saved_top)
-        else:
-            if len(logs) != self.last_log_count:
-                self.last_log_count = len(logs)
         
         if has_selection and sel_start and sel_end:
             try:
