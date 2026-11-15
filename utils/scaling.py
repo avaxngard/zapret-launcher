@@ -10,7 +10,7 @@ import ctypes
 
 def set_dpi_awareness():
     try:
-        ctypes.windll.shcore.SetProcessDpiAwareness(1)
+        ctypes.windll.shcore.SetProcessDpiAwareness(2)
     except AttributeError:
         try:
             ctypes.windll.user32.SetProcessDPIAware()
@@ -34,29 +34,21 @@ def get_scale_factor():
 
 def get_optimal_scale():
     dpi_scale = get_dpi_scale()
-
     try:
         user32 = ctypes.windll.user32
         screen_w = user32.GetSystemMetrics(0)
         screen_h = user32.GetSystemMetrics(1)
 
         base_w, base_h = 1200, 800
-        max_scale_w = (screen_w * 0.92) / base_w
-        max_scale_h = (screen_h * 0.92) / base_h
+        
+        max_scale_w = (screen_w * 0.92) / (base_w * dpi_scale)
+        max_scale_h = (screen_h * 0.92) / (base_h * dpi_scale)
         max_scale = min(max_scale_w, max_scale_h)
-
-        scale = min(dpi_scale, max_scale)
-
-        if screen_w >= 2560 and screen_h >= 1440 and scale < 1.0:
-            scale = 1.0
-
-        if screen_w >= 3840 and screen_h >= 2160 and dpi_scale <= 1.0:
-            scale = max(scale, 1.25)
-
-        scale = max(0.75, min(2.5, scale))
-        return scale
+        scale = min(1.0, max_scale)
+        
+        return max(0.75, scale)
     except Exception:
-        return dpi_scale if dpi_scale else 1.0
+        return 1.0
 
 def scale_size(size, scale_factor):
     return int(size * scale_factor)
