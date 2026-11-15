@@ -274,8 +274,8 @@ class UserStats:
     def _schedule_heartbeat(self) -> None:
         if not self._is_active or not self._enabled:
             return
-        self._send("heartbeat")
-        self._heartbeat_timer = threading.Timer(30, self._schedule_heartbeat)
+        
+        self._heartbeat_timer = threading.Timer(300, self._schedule_heartbeat)
         self._heartbeat_timer.daemon = True
         self._heartbeat_timer.start()
 
