@@ -10,6 +10,7 @@ import tkinter as tk
 from utils.scaling import scale_size, scale_font
 from utils.languages import tr, tr_plural
 from utils.messagebox import messagebox
+from config import STATS_RETRY_INTERVAL_MS
 
 MODE_TRANSLATION_KEYS = {
     "Standard": "mode_standard",
@@ -23,6 +24,10 @@ class StatsPage(tk.Frame):
         self.colors = app.colors
         self.sf = app.scale_factor
         self._labels = {}
+
+        self._retry_timer_id = None
+        self._stats_loaded = False
+        self._destroyed = False
 
         self._build()
         self._load_stats()
@@ -44,14 +49,14 @@ class StatsPage(tk.Frame):
             header_frame,
             text=tr("stats_title"),
             font=("Inter", scale_size(20, sf), "bold"),
-            fg=c["text_primary"], bg=c["bg_dark"],
+            fg=c["text_primary"], bg=c["bg_dark"]
         ).pack(anchor="w")
 
         tk.Label(
             header_frame,
             text=tr("stats_desc"),
             font=("Inter", scale_size(10, sf)),
-            fg=c["text_secondary"], bg=c["bg_dark"],
+            fg=c["text_secondary"], bg=c["bg_dark"]
         ).pack(anchor="w", pady=(5, 0))
 
         outer = tk.Frame(self, bg=c["bg_dark"])
@@ -70,14 +75,14 @@ class StatsPage(tk.Frame):
             hero_inner,
             text=tr("stats_since_upper"),
             font=("Inter", scale_size(10, sf)),
-            fg=c["text_secondary"], bg=c["bg_medium"],
+            fg=c["text_secondary"], bg=c["bg_medium"]
         ).pack(anchor="w")
 
         self._labels["first_connect"] = tk.Label(
             hero_inner,
             text="—",
             font=("Inter", scale_size(26, sf), "bold"),
-            fg=c["text_primary"], bg=c["bg_medium"],
+            fg=c["text_primary"], bg=c["bg_medium"]
         )
         self._labels["first_connect"].pack(anchor="w", pady=(scale_size(4, sf), 0))
 
@@ -85,7 +90,7 @@ class StatsPage(tk.Frame):
             hero_inner,
             text="—",
             font=("Inter", scale_size(10, sf)),
-            fg=c["text_secondary"], bg=c["bg_medium"],
+            fg=c["text_secondary"], bg=c["bg_medium"]
         )
         self._labels["hero_sub"].pack(anchor="w", pady=(scale_size(6, sf), 0))
 
@@ -98,7 +103,7 @@ class StatsPage(tk.Frame):
             font=("Inter", scale_size(10, sf)),
             fg=c["accent"],
             bg=c["bg_dark"],
-            cursor="hand2",
+            cursor="hand2"
         )
         self._id_link.pack(anchor="w")
 
@@ -140,7 +145,7 @@ class StatsPage(tk.Frame):
         tk.Label(
             card, text=label.upper(),
             font=("Inter", scale_font(9, sf, softness=SOF)),
-            fg=c["text_secondary"], bg=c["bg_medium"], anchor="w",
+            fg=c["text_secondary"], bg=c["bg_medium"], anchor="w"
         ).pack(fill=tk.X)
 
         if vtype == "duo":
@@ -154,7 +159,7 @@ class StatsPage(tk.Frame):
 
             tk.Label(row, text="/",
                      font=("Inter", scale_font(16, sf, softness=SOF)),
-                     fg=c["text_secondary"], bg=c["bg_medium"],
+                     fg=c["text_secondary"], bg=c["bg_medium"]
                      ).pack(side=tk.LEFT, padx=scale_size(6, sf))
 
             v2 = tk.Label(row, text="—",
@@ -169,35 +174,107 @@ class StatsPage(tk.Frame):
             value_label = tk.Label(
                 card, text=value,
                 font=("Inter", scale_font(18, sf, softness=SOF), "bold"),
-                fg=color, bg=c["bg_medium"], anchor="w",
+                fg=color, bg=c["bg_medium"], anchor="w"
             )
             value_label.pack(fill=tk.X, pady=(scale_size(10, sf), 0))
 
         sub_label = tk.Label(
             card, text=sub,
             font=("Inter", scale_size(9, sf)),
-            fg=c["text_secondary"], bg=c["bg_medium"], anchor="w",
+            fg=c["text_secondary"], bg=c["bg_medium"], anchor="w"
         )
         sub_label.pack(fill=tk.X, pady=(scale_size(8, sf), 0))
         return {"value": value_label, "sub": sub_label}
+
+    def _has_stats(self) -> bool:
+        user_stats = getattr(self.app, "user_stats", None)
+        return bool(user_stats and getattr(user_stats, "cached_stats", None))
 
     def _load_stats(self):
         user_stats = getattr(self.app, "user_stats", None)
         if user_stats is None:
             return
 
-        if user_stats.cached_stats:
+        if self._has_stats():
             self._apply_stats(user_stats.cached_stats)
-        else:
-            self._wait_for_cache(attempts=20)
+            self._stats_loaded = True
+            return
+
+        self._wait_for_cache(attempts=20)
 
     def _wait_for_cache(self, attempts):
-        user_stats = getattr(self.app, "user_stats", None)
-        if user_stats and user_stats.cached_stats:
-            self._apply_stats(user_stats.cached_stats)
+        if self._destroyed or self._stats_loaded:
             return
+
+        user_stats = getattr(self.app, "user_stats", None)
+        if user_stats and getattr(user_stats, "cached_stats", None):
+            self._apply_stats(user_stats.cached_stats)
+            self._stats_loaded = True
+            self._cancel_retry_timer()
+            return
+
         if attempts > 0:
             self.after(250, lambda: self._wait_for_cache(attempts - 1))
+        else:
+            self._schedule_stats_retry()
+
+    def _schedule_stats_retry(self):
+        if self._destroyed or self._stats_loaded:
+            return
+
+        self._cancel_retry_timer()
+        try:
+            self._retry_timer_id = self.after(STATS_RETRY_INTERVAL_MS, self._retry_load_stats)
+        except Exception:
+            self._retry_timer_id = None
+
+    def _retry_load_stats(self):
+        self._retry_timer_id = None
+
+        if self._destroyed or self._stats_loaded:
+            return
+
+        user_stats = getattr(self.app, "user_stats", None)
+        if user_stats is None:
+            self._schedule_stats_retry()
+            return
+
+        if getattr(user_stats, "cached_stats", None):
+            self._apply_stats(user_stats.cached_stats)
+            self._stats_loaded = True
+            self._cancel_retry_timer()
+            return
+
+        try:
+            user_stats.fetch_user_stats()
+        except Exception:
+            pass
+
+        self._wait_for_cache_after_fetch(attempts=60)
+
+    def _wait_for_cache_after_fetch(self, attempts):
+        if self._destroyed or self._stats_loaded:
+            return
+
+        user_stats = getattr(self.app, "user_stats", None)
+        if user_stats and getattr(user_stats, "cached_stats", None):
+            self._apply_stats(user_stats.cached_stats)
+            self._stats_loaded = True
+            self._cancel_retry_timer()
+            return
+
+        if attempts > 0:
+            self.after(250, lambda: self._wait_for_cache_after_fetch(attempts - 1))
+        else:
+            self._schedule_stats_retry()
+
+    def _cancel_retry_timer(self):
+        if self._retry_timer_id is not None:
+            try:
+                self.after_cancel(self._retry_timer_id)
+            except Exception:
+                pass
+            self._retry_timer_id = None
 
     def _apply_stats(self, stats):
         if not stats:
@@ -211,14 +288,14 @@ class StatsPage(tk.Frame):
             days,
             "stats_days_word_one",
             "stats_days_word_few",
-            "stats_days_word_many",
+            "stats_days_word_many"
         ).split(" ", 1)[-1]
 
         sessions_word = tr_plural(
             total,
             "stats_sessions_word_one",
             "stats_sessions_word_few",
-            "stats_sessions_word_many",
+            "stats_sessions_word_many"
         ).split(" ", 1)[-1]
 
         self._labels["hero_sub"].config(
@@ -227,7 +304,7 @@ class StatsPage(tk.Frame):
                 days=days,
                 days_word=days_word,
                 total=total,
-                sessions_word=sessions_word,
+                sessions_word=sessions_word
             )
         )
 
@@ -258,6 +335,11 @@ class StatsPage(tk.Frame):
         v1.config(text=str(min_p) if min_p is not None else "—")
         v2.config(text=str(max_p) if max_p is not None else "—")
         self._labels["current_strategy"]["sub"].config(text=tr("stats_ping_minmax"))
+
+    def destroy(self):
+        self._destroyed = True
+        self._cancel_retry_timer()
+        super().destroy()
 
     def _on_install_id_click(self, event=None):
         if not messagebox.askyesno(
