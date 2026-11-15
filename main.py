@@ -49,6 +49,8 @@ import sys
 import re
 import ctypes
 import urllib.request
+import logging
+from logging.handlers import RotatingFileHandler
 from PIL import Image, ImageTk, ImageDraw, ImageFont
 from utils.version import compare_builds, compare_zapret_versions
 from utils.scaling import set_dpi_awareness, get_optimal_scale, scale_size
@@ -299,7 +301,11 @@ class ZapretLauncher:
         except Exception:
             pass
 
-        self.scale_factor = get_optimal_scale()
+        from utils.scaling import get_dpi_scale
+        self.dpi_scale = get_dpi_scale() 
+        window_limit_scale = get_optimal_scale() 
+        
+        self.scale_factor = self.dpi_scale * window_limit_scale
         
         self.base_width = 1200
         self.base_height = 800
@@ -421,7 +427,19 @@ class ZapretLauncher:
 
         try:
             log_file_path = APPDATA_DIR / "logs.txt"
+            
             setup_tg_logging(str(log_file_path))
+            for logger_name in logging.root.manager.loggerDict:
+                if 'tg_proxy' in logger_name or logger_name == 'tg_proxy':
+                    logger = logging.getLogger(logger_name)
+                    for handler in logger.handlers:
+                        if isinstance(handler, RotatingFileHandler):
+                            handler.maxBytes = 50 * 1024 * 1024
+                            
+            for handler in logging.getLogger().handlers:
+                if isinstance(handler, RotatingFileHandler):
+                    handler.maxBytes = 50 * 1024 * 1024
+                    
         except Exception:
             pass
 
@@ -592,7 +610,7 @@ class ZapretLauncher:
     def update_ui_colors(self):
         def update_widget(widget):
             try:
-                if hasattr(self.pages, 'main_page'):
+                if hasattr(self, 'pages') and hasattr(self.pages, 'main_page'):
                     mp = self.pages.main_page
                     if hasattr(mp, 'tg_host_entry'):
                         mp.tg_host_entry._entry.configure(
@@ -2727,6 +2745,7 @@ class ZapretLauncher:
                     self._auto_update_lists_enabled = data.get('auto_update_lists_enabled', False)
                     saved_page = data.get('current_page', 'main')
                     self._update_source = data.get('update_source', 'main')
+                    self._dev_mode = data.get('dev_mode', False)
                     if saved_page in ['main', 'service', 'lists', 'stats', 'hosts', 'logs', 'settings']:
                         self.current_page = saved_page
                     else:
@@ -2787,6 +2806,7 @@ class ZapretLauncher:
                 'tg_fake_tls_domain': getattr(self, 'tg_fake_tls_domain', TG_FAKE_TLS_DOMAIN),
                 'current_page': getattr(self, 'current_page', 'main'),
                 'update_source': getattr(self, '_update_source', 'main'),
+                'dev_mode': getattr(self, '_dev_mode', False),
             }
             with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
                 json.dump(settings, f, indent=2, ensure_ascii=False)
