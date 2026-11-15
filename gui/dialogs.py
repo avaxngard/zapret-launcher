@@ -1963,17 +1963,13 @@ class Dialogs:
         dialog.grab_set()
         dialog.focus_force()
 
-        w, h = scale_size(400, self.scale_factor), scale_size(370, self.scale_factor)
+        w, h = scale_size(400, self.scale_factor), scale_size(320, self.scale_factor)
         x = self.app.root.winfo_x() + (self.app.root.winfo_width() // 2) - w // 2
         y = self.app.root.winfo_y() + (self.app.root.winfo_height() // 2) - h // 2
         dialog.geometry(f"{w}x{h}+{x}+{y}")
         dialog.withdraw()
         self.app.set_dialog_header_color(dialog)
         dialog.update_idletasks()
-
-        tk.Label(dialog, text=tr('settings_theme'), font=("Inter", scale_size(16, self.scale_factor), "bold"),
-                 fg=self.colors['text_primary'],
-                 bg=self.colors['bg_medium']).pack(pady=(scale_size(15, self.scale_factor), scale_size(3, self.scale_factor)))
 
         list_frame = tk.Frame(dialog, bg=self.colors['bg_medium'])
         list_frame.pack(fill=tk.BOTH, expand=True, padx=scale_size(30, self.scale_factor), pady=scale_size(10, self.scale_factor))
@@ -2008,17 +2004,13 @@ class Dialogs:
         dialog.grab_set()
         dialog.focus_force()
 
-        w, h = scale_size(400, self.scale_factor), scale_size(170, self.scale_factor)
+        w, h = scale_size(400, self.scale_factor), scale_size(110, self.scale_factor)
         x = self.app.root.winfo_x() + (self.app.root.winfo_width() // 2) - w // 2
         y = self.app.root.winfo_y() + (self.app.root.winfo_height() // 2) - h // 2
         dialog.geometry(f"{w}x{h}+{x}+{y}")
         dialog.withdraw()
         self.app.set_dialog_header_color(dialog)
         dialog.update_idletasks()
-
-        tk.Label(dialog, text=tr('settings_language'), font=("Inter", scale_size(16, self.scale_factor), "bold"),
-                 fg=self.colors['text_primary'],
-                 bg=self.colors['bg_medium']).pack(pady=(scale_size(15, self.scale_factor), scale_size(3, self.scale_factor)))
 
         list_frame = tk.Frame(dialog, bg=self.colors['bg_medium'])
         list_frame.pack(fill=tk.BOTH, expand=True, padx=scale_size(30, self.scale_factor), pady=scale_size(10, self.scale_factor))
@@ -2030,7 +2022,7 @@ class Dialogs:
                 list_frame,
                 text=lang_name,
                 command=lambda lc=lang_code, d=dialog: (d.destroy(), self.app.pages.settings_page_obj._change_language(lc)),
-                width=scale_size(340, self.scale_factor),
+                width=scale_size(300, self.scale_factor),
                 height=scale_size(35, self.scale_factor),
                 bg=self.colors['accent'] if is_active else self.colors['bg_light'],
                 fg=self.colors['button_text_hover'] if is_active else self.colors['text_secondary'],
@@ -2054,21 +2046,13 @@ class Dialogs:
         dialog.grab_set()
         dialog.focus_force()
 
-        w, h = scale_size(450, self.scale_factor), scale_size(200, self.scale_factor)
+        w, h = scale_size(430, self.scale_factor), scale_size(130, self.scale_factor)
         x = self.app.root.winfo_x() + (self.app.root.winfo_width() // 2) - w // 2
         y = self.app.root.winfo_y() + (self.app.root.winfo_height() // 2) - h // 2
         dialog.geometry(f"{w}x{h}+{x}+{y}")
         dialog.withdraw()
         self.app.set_dialog_header_color(dialog)
         dialog.update_idletasks()
-
-        tk.Label(
-            dialog,
-            text="Telegram Proxy",
-            font=("Inter", scale_size(16, self.scale_factor), "bold"),
-            fg=self.colors['text_primary'],
-            bg=self.colors['bg_medium']
-        ).pack(pady=(scale_size(15, self.scale_factor), scale_size(3, self.scale_factor)))
 
         secret_label = tk.Label(
             dialog,
