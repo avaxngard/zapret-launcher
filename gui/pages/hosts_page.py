@@ -70,9 +70,7 @@ class HostsPage:
             selectbackground=self.colors['text_select'],
             selectforeground=self.colors['bg_dark'],
             relief=tk.FLAT,
-            highlightthickness=1,
-            highlightcolor=self.colors['accent'],
-            highlightbackground=self.colors['bg_medium'],
+            highlightthickness=0,
             bd=0
         )
         
