@@ -363,7 +363,7 @@ class ZapretLauncher:
         self._hide_duplicates_warning = False
 
         self._auto_update_enabled = True
-        self._auto_update_lists_enabled = False
+        self._auto_update_lists_enabled = True
         self._analytics_enabled = True
         self._update_source = 'main'
 
@@ -2742,7 +2742,7 @@ class ZapretLauncher:
                     self._hide_duplicates_warning = data.get('hide_duplicates_warning', False)
 
                     self._auto_update_enabled = data.get('auto_update_enabled', True)
-                    self._auto_update_lists_enabled = data.get('auto_update_lists_enabled', False)
+                    self._auto_update_lists_enabled = data.get('auto_update_lists_enabled', True)
                     saved_page = data.get('current_page', 'main')
                     self._update_source = data.get('update_source', 'main')
                     self._dev_mode = data.get('dev_mode', False)
@@ -2795,7 +2795,7 @@ class ZapretLauncher:
                 'show_vpn_detection': getattr(self, '_show_vpn_detection', False),
                 'hide_duplicates_warning': getattr(self, '_hide_duplicates_warning', False),
                 'auto_update_enabled': getattr(self, '_auto_update_enabled', True),
-                'auto_update_lists_enabled': getattr(self, '_auto_update_lists_enabled', False),
+                'auto_update_lists_enabled': getattr(self, '_auto_update_lists_enabled', True),
                 'analytics_enabled': getattr(self, '_analytics_enabled', True),
                 'language': self.languages.get_current_language(),
                 'tg_secret': getattr(self, '_tg_secret', None),
