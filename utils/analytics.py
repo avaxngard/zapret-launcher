@@ -7,7 +7,9 @@
 # Distributed WITHOUT ANY WARRANTY.
 
 import json
+import logging
 import platform
+import re
 import struct
 import threading
 import time
@@ -32,18 +34,42 @@ from utils.secure_store import (
 ID_FILE      = APPDATA_DIR / "install_id.dat"
 LEGACY_FILE  = APPDATA_DIR / "install_id.json"
 
+logger = logging.getLogger("analytics")
+logger.setLevel(logging.INFO)
+if not logger.handlers:
+    logger.addHandler(logging.NullHandler())
+
+logging.getLogger("urllib3").setLevel(logging.WARNING)
+logging.getLogger("requests").setLevel(logging.WARNING)
+
+_SQL_LEAK_RE = re.compile(
+    r"(sqlstate|base\s+table\s+or\s+view\s+not\s+found|"
+    r"table\s+'[^']+'|database\s+'[^']+'|column\s+'[^']+'|"
+    r"unknown\s+(database|table|column)|mysql|mariadb|pdoexception|"
+    r"update\s+error|insert\s+error|select\s+error|delete\s+error)",
+    re.IGNORECASE
+)
+
 class UserStats:
+    HEARTBEAT_INTERVAL = 300
+    REQUEST_TIMEOUT    = 5
+    SETTINGS_CACHE_TTL = 30
+
     def __init__(self):
         self.install_id = self._get_install_id()
         self.hw_fingerprint = hardware_fingerprint()
         self.api_stats_url = API_URL_STATS
-        self._last_send = 0
+        self._last_heartbeat = 0
         self._enabled = True
         self._is_active = False
         self._heartbeat_timer = None
+        self._lock = threading.Lock()
         self.os_info = self._get_os_info()
         self.cached_stats = None
         self.on_identity_changed = None
+
+        self._settings_cache = None
+        self._settings_cache_at = 0
 
     def _load_payload(self) -> dict | None:
         raw = load_encrypted(ID_FILE)
@@ -166,14 +192,29 @@ class UserStats:
         except Exception:
             return "x64" if struct.calcsize("P") * 8 == 64 else "x32"
 
-    def _build_payload(self, action: str, extra: dict | None) -> dict:
-        settings = {}
+    def _read_settings(self) -> dict:
+        now = time.time()
+        cached = self._settings_cache
+        if cached is not None and now - self._settings_cache_at < self.SETTINGS_CACHE_TTL:
+            return cached
+
+        data = {}
         try:
             if CONFIG_FILE.exists():
                 with open(CONFIG_FILE, "r", encoding="utf-8") as f:
-                    settings = json.load(f)
-        except Exception:
-            pass
+                    loaded = json.load(f)
+                    if isinstance(loaded, dict):
+                        data = loaded
+        except Exception as e:
+            logger.debug("settings read failed: %s", e)
+            data = {}
+
+        self._settings_cache = data
+        self._settings_cache_at = now
+        return data
+
+    def _build_payload(self, action: str, extra: dict | None) -> dict:
+        settings = self._read_settings()
 
         payload = {
             "install_id": self.install_id,
@@ -195,48 +236,79 @@ class UserStats:
             payload.update(extra)
         return payload
 
+    @staticmethod
+    def _safe_error_code(data: dict) -> str:
+        if not isinstance(data, dict):
+            return "unknown"
+        err = data.get("error")
+        if not err:
+            return "unknown"
+        if not isinstance(err, str):
+            return "invalid_error_field"
+        if _SQL_LEAK_RE.search(err):
+            return "server_db_error"
+        if re.fullmatch(r"[A-Za-z0-9_:.\-]{1,64}", err):
+            return err
+        return "server_error"
+
     def _post(self, payload: dict, allow_regen: bool = True) -> dict | None:
+        action = payload.get("action")
         try:
             resp = requests.post(
                 self.api_stats_url,
                 json=payload,
-                timeout=5,
+                timeout=self.REQUEST_TIMEOUT,
                 headers={"User-Agent": f"Zapret-Launcher/{CURRENT_VERSION}"},
             )
-            try:
-                data = resp.json()
-            except Exception:
-                return None
-
-            if (isinstance(data, dict)
-                    and data.get("error") == "duplicate_install_id"
-                    and allow_regen):
-                self.regenerate_identity()
-                payload["install_id"] = self.install_id
-                payload["hw"] = self.hw_fingerprint
-                return self._post(payload, allow_regen=False)
-
-            return data
-        except Exception:
+        except Exception as e:
+            logger.warning("stats POST failed (%s): %s", action, type(e).__name__)
             return None
+
+        if resp.status_code >= 400:
+            logger.warning("stats POST HTTP %s (%s)", resp.status_code, action)
+
+        try:
+            data = resp.json()
+        except Exception:
+            logger.warning("stats POST non-JSON response (%s)", action)
+            return None
+
+        if (isinstance(data, dict)
+                and data.get("error") == "duplicate_install_id"
+                and allow_regen):
+            self.regenerate_identity()
+            payload["install_id"] = self.install_id
+            payload["hw"] = self.hw_fingerprint
+            return self._post(payload, allow_regen=False)
+
+        if isinstance(data, dict) and data.get("success") is False:
+            logger.info("stats POST rejected (%s): error=%s",
+                        action, self._safe_error_code(data))
+
+        return data
 
     def _send(self, action: str, extra_data: dict | None = None) -> None:
         if not self._enabled:
             return
 
         now = time.time()
-        if action == "heartbeat" and now - self._last_send < 300:
-            return
-        self._last_send = now
+        if action == "heartbeat":
+            if now - self._last_heartbeat < self.HEARTBEAT_INTERVAL:
+                return
+            self._last_heartbeat = now
 
         payload = self._build_payload(action, extra_data)
 
         def worker():
-            self._post(payload)
+            result = self._post(payload)
+            if result is None:
+                logger.debug("stats action %s not delivered", action)
 
         threading.Thread(target=worker, daemon=True).start()
 
     def set_enabled(self, enabled: bool) -> None:
+        if self._enabled == enabled:
+            return
         self._enabled = enabled
         if not enabled and self._is_active:
             self.stop()
@@ -265,19 +337,32 @@ class UserStats:
         self._schedule_heartbeat()
 
     def stop(self) -> None:
+        was_active = self._is_active
         self._is_active = False
         if self._heartbeat_timer:
             self._heartbeat_timer.cancel()
             self._heartbeat_timer = None
-        self._send("logout")
+
+        if was_active:
+            payload = self._build_payload("logout", None)
+            try:
+                self._post(payload)
+            except Exception as e:
+                logger.debug("logout send failed: %s", e)
 
     def _schedule_heartbeat(self) -> None:
         if not self._is_active or not self._enabled:
             return
-        
-        self._heartbeat_timer = threading.Timer(300, self._schedule_heartbeat)
+
+        self._heartbeat_timer = threading.Timer(self.HEARTBEAT_INTERVAL, self._heartbeat_tick)
         self._heartbeat_timer.daemon = True
         self._heartbeat_timer.start()
+
+    def _heartbeat_tick(self) -> None:
+        if not self._is_active or not self._enabled:
+            return
+        self._send("heartbeat")
+        self._schedule_heartbeat()
 
     def on_launch(self) -> None:
         self.start()
@@ -292,7 +377,8 @@ class UserStats:
             data = self._post(payload)
             if isinstance(data, dict) and data.get("success"):
                 self.cached_stats = data.get("stats")
-
+            else:
+                logger.info("fetch_user_stats failed")
         threading.Thread(target=worker, daemon=True).start()
 
     def send_session_progress(self, mode: str | None = None,
@@ -302,7 +388,7 @@ class UserStats:
         extra = {"duration": int(duration_seconds)}
         if mode:
             extra["mode"] = mode
-        self._send("disconnect", extra)
+        self._send("session_progress", extra)
 
     def send_ping(self, ping_ms: int) -> None:
         if not self._enabled or ping_ms <= 0:
@@ -315,7 +401,8 @@ class UserStats:
                 "action": "ping",
                 "ping": int(ping_ms),
             }
-            self._post(payload)
+            if self._post(payload) is None:
+                logger.debug("send_ping not delivered: %s ms", ping_ms)
 
         threading.Thread(target=worker, daemon=True).start()
 
@@ -330,7 +417,8 @@ class UserStats:
                 "action": "page_view",
                 "page": page,
             }
-            self._post(payload)
+            if self._post(payload) is None:
+                logger.debug("send_page_view not delivered: %s", page)
 
         threading.Thread(target=worker, daemon=True).start()
 
