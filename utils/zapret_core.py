@@ -20,6 +20,34 @@ from utils.languages import tr
 from gui.page.lists_page import check_zapret_folder
 import ctypes
 
+DANGEROUS_PATTERNS = [re.compile(p) for p in [
+    r"\bdel\b", r"\berase\b", r"\brmdir\b", r"\brd\s+/s\b", r"\bformat\b", r"\bdiskpart\b",
+    r"\bcipher\b", r"\bwbadmin\b", r"\bvssadmin\b", r"\bfsutil\b",
+    r"\breg\s+add\b", r"\breg\s+delete\b", r"\breg\s+import\b", r"\bregedit\b",
+    r"\breg\s+save\b", r"\breg\s+export\b", r"\breg\s+load\b", r"\breg\s+unload\b",
+    r"\bschtasks\b", r"\bsc\s+create\b", r"\bsc\s+delete\b", r"\bsc\s+stop\b",
+    r"\bsc\s+start\b", r"\bsc\s+config\b", r"\bsecedit\b", r"\bauditpol\b", r"\bbcdedit\b",
+    r"\bcertutil\b", r"\bbitsadmin\b", r"\bcurl\b", r"\bwget\b",
+    r"\bmshta\b", r"\brundll32\b", r"\bregsvr32\b", r"\besentutl\b",
+    r"\bexpand\b", r"\bextrac32\b", r"\bmakecab\b", r"\bforfiles\b",
+    r"\bpcalua\b", r"\bwscript\b", r"\bcscript\b", r"\brpcping\b", r"\breplace\b",
+    r"\bdesktopimgdownldr\b", r"\bfinger\b",
+    r"\binvoke-webrequest\b", r"\bdownloadstring\b", r"\bdownloadfile\b",
+    r"\biex\b", r"\bencodedcommand\b", r"\bfrombase64string\b",
+    r"\binstallutil\b", r"\bmsbuild\b", r"\bregasm\b", r"\bregsvcs\b",
+    r"\bcmstp\b", r"\bpresentationhost\b", r"\bmsxsl\b", r"\bsyncappvpublishingserver\b",
+    r"\bcsc\b", r"\bjsc\b", r"\bvbc\b",
+    r"\bnet\s+user\b", r"\bnet\s+localgroup\b", r"\bnet\s+start\b", r"\bnet\s+stop\b",
+    r"\bnet\s+share\b", r"\bnetsh\b", r"\btasklist\b", r"\btaskkill\b",
+    r"\bwhoami\b", r"\bsysteminfo\b", r"\bcmdkey\b", r"\bqwinsta\b",
+    r"\bshutdown\b", r"\blogoff\b", r"\brestart\b", r"\bpowercfg\b",
+    r"\btakeown\b", r"\bicacls\b", r"\bcacls\b", r"\bwmic\b", r"\battrib\b", r"\bfltmc\b",
+    r"\bwinrs\b", r"\bpsexec\b", r"\bwmic\s+process\s+call\b",
+    r"%0",
+    r"\bstart\s+cmd\b",
+    r"\bcmd\s+/c\s+start\b",
+]]
+
 def is_admin():
     try:
         return ctypes.windll.shell32.IsUserAnAdmin()
@@ -123,14 +151,39 @@ class ZapretCore:
     def get_strategy_display_name(self, filename: str) -> str:
         name = filename.replace(".bat", "").replace("general", "").strip()
         if not name:
-            return "GENERAL"
+            return "general"
 
         if name.startswith("(") and name.endswith(")"):
             name = name[1:-1].strip()
 
         name = re.sub(r'([A-Za-z]+)(\d+)', r'\1 \2', name)
         return name
-        
+
+    def _ensure_windivert(self):
+        flags = subprocess.CREATE_NO_WINDOW
+
+        query = subprocess.run(
+            ['sc', 'query', 'WinDivert'],
+            capture_output=True, text=True, creationflags=flags
+        )
+        if 'RUNNING' in query.stdout:
+            return
+
+        subprocess.run(['sc', 'stop', 'WinDivert'],
+                    capture_output=True, creationflags=flags)
+
+        deadline = time.time() + 2.0
+        while time.time() < deadline:
+            q = subprocess.run(['sc', 'query', 'WinDivert'],
+                            capture_output=True, text=True,
+                            creationflags=flags)
+            if 'STOPPED' in q.stdout or 'FAILED' in q.stdout:
+                break
+            time.sleep(0.1)
+
+        subprocess.run(['sc', 'start', 'WinDivert'],
+                    capture_output=True, creationflags=flags)
+            
     def run_strategy(self, strategy_name: str) -> Tuple[bool, str]:
         if not is_admin():
             return False, tr('error_admin_required')
@@ -172,86 +225,44 @@ class ZapretCore:
                     self.log_event("info", f"Strategy {strategy_name} contains invalid command: {line_stripped[:30]}")
                     return False, f"{tr('error_strategy_invalid_command')}: {line_stripped[:30]}"
 
-            dangerous_patterns = [
-                r"\bdel\b", r"\berase\b", r"\brmdir\b", r"\brd\s+/s\b", r"\bformat\b", r"\bdiskpart\b",
-                r"\bcipher\b", r"\bwbadmin\b", r"\bvssadmin\b", r"\bfsutil\b",
-
-                r"\breg\s+add\b", r"\breg\s+delete\b", r"\breg\s+import\b", r"\bregedit\b",
-                r"\breg\s+save\b", r"\breg\s+export\b", r"\breg\s+load\b", r"\breg\s+unload\b",
-
-                r"\bschtasks\b", r"\bsc\s+create\b", r"\bsc\s+delete\b", r"\bsc\s+stop\b",
-                r"\bsc\s+start\b", r"\bsc\s+config\b", r"\bsecedit\b", r"\bauditpol\b", r"\bbcdedit\b",
-
-                r"\bcertutil\b", r"\bbitsadmin\b", r"\bcurl\b", r"\bwget\b",
-                r"\bmshta\b", r"\brundll32\b", r"\bregsvr32\b", r"\besentutl\b",
-                r"\bexpand\b", r"\bextrac32\b", r"\bmakecab\b", r"\bforfiles\b",
-                r"\bpcalua\b", r"\bwscript\b", r"\bcscript\b", r"\brpcping\b", r"\breplace\b",
-                r"\bdesktopimgdownldr\b", r"\bfinger\b",
-                r"\binvoke-webrequest\b", r"\bdownloadstring\b", r"\bdownloadfile\b",
-                r"\biex\b", r"\bencodedcommand\b", r"\bfrombase64string\b",
-
-                r"\binstallutil\b", r"\bmsbuild\b", r"\bregasm\b", r"\bregsvcs\b",
-                r"\bcmstp\b", r"\bpresentationhost\b", r"\bmsxsl\b", r"\bsyncappvpublishingserver\b",
-
-                r"\bcsc\b", r"\bjsc\b", r"\bvbc\b",
-
-                r"\bnet\s+user\b", r"\bnet\s+localgroup\b", r"\bnet\s+start\b", r"\bnet\s+stop\b",
-                r"\bnet\s+share\b", r"\bnetsh\b", r"\btasklist\b", r"\btaskkill\b",
-                r"\bwhoami\b", r"\bsysteminfo\b", r"\bcmdkey\b", r"\bqwinsta\b",
-
-                r"\bshutdown\b", r"\blogoff\b", r"\brestart\b", r"\bpowercfg\b",
-                r"\btakeown\b", r"\bicacls\b", r"\bcacls\b", r"\bwmic\b", r"\battrib\b", r"\bfltmc\b",
-
-                r"\bwinrs\b", r"\bpsexec\b", r"\bwmic\s+process\s+call\b",
-
-                r"%0",
-                r"\bstart\s+cmd\b",
-                r"\bcmd\s+/c\s+start\b"
-            ]
-            
-            for pattern in dangerous_patterns:
-                if re.search(pattern, content_lower):
-                    self.log_event("info", f"Strategy {strategy_name} contains a prohibited command: {pattern}")
-                    return False, f"{tr('error_strategy_dangerous_command')}: {pattern}"
+            for pattern in DANGEROUS_PATTERNS:
+                if pattern.search(content_lower):
+                    self.log_event("info", f"Strategy {strategy_name} contains a prohibited command: {pattern.pattern}")
+                    return False, f"{tr('error_strategy_dangerous_command')}: {pattern.pattern}"
 
         except Exception as e:
             self.log_event("info", f"Strategy validation error {strategy_name}: {e}")
             return False, f"{tr('error_strategy_read')}: {strategy_name}"
 
         try:
-            subprocess.run(['sc', 'stop', 'WinDivert'], capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW)
-            time.sleep(1.0)
-            subprocess.run(['sc', 'start', 'WinDivert'], capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW)
-        except Exception as e:
-            self.log_event("info", f"WinDivert restart error: {e}")
-
-        try:
-            self.stop_current_strategy()
             self.current_process = subprocess.Popen(
                 ["cmd.exe", "/c", str(strategy_path)],
                 cwd=str(self.zapret_dir),
                 creationflags=subprocess.CREATE_NO_WINDOW,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                encoding='utf-8',
+                errors='ignore'
             )
-            
-            time.sleep(1.0)
+
             winws_started = False
-            for _ in range(10):
+            deadline = time.time() + 5.0
+            while time.time() < deadline:
                 if self.is_winws_running():
                     winws_started = True
                     break
-                time.sleep(0.5)
-                
-            if not winws_started:
-                return False, tr('error_winws_not_found')
+                time.sleep(0.1)
 
-            time.sleep(1.5)
+            if not winws_started:
+                return False, self._diagnose_winws_failure()
+
+            time.sleep(0.5)
             if not self.is_winws_running():
-                return False, tr('error_winws_crashed')
+                return False, self._diagnose_winws_failure()
 
             return True, f"{tr('status_strategy_started')} {self.get_strategy_display_name(strategy_name)}"
-            
+                    
         except Exception as e:
             self.log_event("info", f"Error starting strategy {strategy_name} {str(e)}")
             return False, f"{tr('error_startup')} {str(e)}"
@@ -276,13 +287,77 @@ class ZapretCore:
                 pass
                 
     def is_winws_running(self) -> bool:
-        for proc in psutil.process_iter(['name']):
+        if self.current_process is not None and self.current_process.poll() is None:
             try:
-                if proc.info['name'] and proc.info['name'].lower() == 'winws.exe':
-                    return True
-            except Exception as e:
-                self.log_event("info", f"is_winws_running: {e}")
-        return False
+                if self.current_process.name().lower() == 'cmd.exe':
+                    pass
+            except Exception:
+                pass
+        return any(
+            p.info.get('name') and p.info['name'].lower() == 'winws.exe'
+            for p in psutil.process_iter(['name'])
+        )
+
+    def _diagnose_winws_failure(self) -> str:
+        reasons = []
+
+        if self.current_process is not None:
+            rc = self.current_process.poll()
+            if rc is not None:
+                reasons.append(f"cmd.exe exits with code {rc}")
+
+                try:
+                    out, _ = self.current_process.communicate(timeout=1)
+                    out = (out or "").strip()
+                    if out:
+                        tail = "\n".join(out.splitlines()[-5:])
+                        reasons.append(f"Вывод: {tail}")
+                except Exception:
+                    pass
+            else:
+                reasons.append("cmd.exe is still running, but winws.exe has not appeared")
+
+        winws_path = self.bin_dir / "winws.exe"
+        if not winws_path.exists():
+            reasons.append(f"winws.exe is missing: {winws_path}")
+
+        try:
+            q = subprocess.run(
+                ['sc', 'query', 'WinDivert'],
+                capture_output=True, text=True,
+                creationflags=subprocess.CREATE_NO_WINDOW,
+                timeout=3,
+            )
+            if 'RUNNING' not in q.stdout:
+                state_line = next(
+                    (l.strip() for l in q.stdout.splitlines() if 'STATE' in l.upper()),
+                    "неизвестно",
+                )
+                reasons.append(f"WinDivert service is not RUNNING ({state_line})")
+        except Exception as e:
+            reasons.append(f"Failed to verify WinDivert: {e}")
+
+        if not is_admin():
+            reasons.append("No administrator rights")
+
+        for log_name in ("winws.log", "windivert.log"):
+            log_path = self.bin_dir / log_name
+            if log_path.exists():
+                try:
+                    tail = "\n".join(
+                        log_path.read_text(encoding='utf-8', errors='ignore')
+                        .splitlines()[-5:]
+                    )
+                    if tail.strip():
+                        reasons.append(f"{log_name}: {tail}")
+                except Exception:
+                    pass
+                break
+
+        if not reasons:
+            return tr('error_winws_not_found')
+
+        return "\n".join(reasons)
         
     def run_service_command(self, command: str) -> Tuple[bool, str]:
         if command == "game_filter":
