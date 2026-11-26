@@ -1333,7 +1333,7 @@ class Dialogs:
 
     def show_duplicates_dialog(self, duplicates_text: str):
         dialog_width = scale_size(700, self.scale_factor)
-        dialog_height = scale_size(550, self.scale_factor)
+        dialog_height = scale_size(570, self.scale_factor)
         font_size_title = scale_size(20, self.scale_factor)
         font_size_sub = scale_size(11, self.scale_factor)
         font_size_text = scale_size(9, self.scale_factor)
