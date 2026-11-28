@@ -28,6 +28,10 @@ PACK_ALLOWED_DOMAINS = {
     "discord": [
         "discord.com",
         "updates.discord.com",
+        "media.discordapp.net",
+        "images-ext-1.discordapp.net",
+        "images-ext-2.discordapp.net",
+        "cdn.discordapp.com",
     ],
     "github": [
         "github.com",
